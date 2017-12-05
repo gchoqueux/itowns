@@ -3,6 +3,7 @@ import { Scene, EventDispatcher, Vector2 } from 'three';
 import Camera from '../Renderer/Camera';
 import MainLoop from './MainLoop';
 import c3DEngine from '../Renderer/c3DEngine';
+import { getMaxColorLayerCount } from '../Renderer/LayeredMaterial';
 import { STRATEGY_MIN_NETWORK_TRAFFIC } from './Layer/LayerUpdateStrategy';
 import { GeometryLayer, Layer, defineLayerProperty } from './Layer/Layer';
 import Scheduler from './Scheduler/Scheduler';
@@ -295,7 +296,21 @@ View.prototype.addLayer = function addLayer(layer, parentLayer) {
     }
     layer = _preprocessLayer(this, layer, provider);
     if (parentLayer) {
-        parentLayer.attach(layer);
+        if (layer.type == 'color') {
+            const layerColors = this.getLayers(l => l.type === 'color');
+
+            const sumColorLayers = parentLayer.sumOccupancyColorLayers ?
+                parentLayer.sumOccupancyColorLayers(layerColors, layer) :
+                layerColors.length + 1;
+
+            if (sumColorLayers <= getMaxColorLayerCount()) {
+                parentLayer.attach(layer);
+            } else {
+                throw new Error('Cant add color layer: the maximum layer is reached');
+            }
+        } else {
+            parentLayer.attach(layer);
+        }
     } else {
         if (typeof (layer.update) !== 'function') {
             throw new Error('Cant add GeometryLayer: missing a update function');
