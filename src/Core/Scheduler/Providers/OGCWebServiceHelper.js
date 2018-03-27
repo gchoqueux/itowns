@@ -112,9 +112,9 @@ export default {
     // See link below for more information
     // https://alastaira.wordpress.com/2011/07/06/converting-tms-tile-coordinates-to-googlebingosm-tile-coordinates/
     computeTMSCoordinates(tile, extent, origin = 'bottom') {
-        if (tile.extent.crs() != extent.crs()) {
-            throw new Error('Unsupported configuration. TMS is only supported when geometry has the same crs than TMS layer');
-        }
+        // if (tile.extent.crs() != extent.crs()) {
+        //     throw new Error('Unsupported configuration. TMS is only supported when geometry has the same crs than TMS layer');
+        // }
         const c = tile.extent.center();
         const layerDimension = extent.dimensions();
 
