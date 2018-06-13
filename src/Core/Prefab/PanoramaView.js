@@ -75,12 +75,13 @@ export function createPanoramaLayer(id, coordinates, type, options = {}) {
     // Configure tiles
     const nodeInitFn = function nodeInitFn(layer, parent, node) {
         if (layer.noTextureColor) {
-            node.material.uniforms.noTextureColor.value.copy(layer.noTextureColor);
+            node.material.noTextureColor.value = layer.noTextureColor;
         }
+
         node.material.depthWrite = false;
 
         if (__DEBUG__) {
-            node.material.uniforms.showOutline = { value: layer.showOutline || false };
+            node.material.showOutline = layer.showOutline || false;
             node.material.wireframe = layer.wireframe || false;
         }
     };

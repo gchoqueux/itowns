@@ -6,7 +6,7 @@
 
 import * as THREE from 'three';
 import LayeredMaterial from '../Renderer/LayeredMaterial';
-import { l_ELEVATION } from '../Renderer/LayeredMaterialConstants';
+import { EMPTY_TEXTURE_ZOOM } from '../Renderer/LayeredMaterialConstants';
 import RendererConstant from '../Renderer/RendererConstant';
 import OGCWebServiceHelper, { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
 import { is4326 } from './Geographic/Coordinates';
@@ -43,7 +43,7 @@ function TileMesh(geometry, params) {
 
     this.layerUpdateState = {};
 
-    this.material.setUuid(this.id);
+    this.material.uuid = this.id;
 
     this._state = RendererConstant.FINAL;
 }
@@ -112,26 +112,6 @@ TileMesh.prototype.pushRenderState = function pushRenderState(state) {
     };
 };
 
-TileMesh.prototype.setFog = function setFog(fog) {
-    this.material.setFogDistance(fog);
-};
-
-TileMesh.prototype.setSelected = function setSelected(select) {
-    this.material.setSelected(select);
-};
-
-TileMesh.prototype.setTextureElevation = function setTextureElevation(elevation) {
-    if (this.material === null) {
-        return;
-    }
-
-    const offsetScale = elevation.pitch || new THREE.Vector4(0, 0, 1, 1);
-    this.setBBoxZ(elevation.min, elevation.max);
-
-    this.material.setTexture(elevation.texture, l_ELEVATION, 0, offsetScale);
-};
-
-
 TileMesh.prototype.setBBoxZ = function setBBoxZ(min, max) {
     if (min == undefined && max == undefined) {
         return;
@@ -149,58 +129,26 @@ TileMesh.prototype.updateGeometricError = function updateGeometricError() {
     this.geometricError = this.boundingSphere.radius / SIZE_TEXTURE_TILE;
 };
 
-TileMesh.prototype.setTexturesLayer = function setTexturesLayer(textures, layerType, layerId) {
-    if (this.material === null) {
-        return;
-    }
-    if (textures) {
-        this.material.setTexturesLayer(textures, layerType, layerId);
-    }
+TileMesh.prototype.isLayerLoaded = function isLayerLoaded(layerId) {
+    const layer = this.material.getLayer(layerId);
+    return layer && layer.level > EMPTY_TEXTURE_ZOOM;
 };
 
-TileMesh.prototype.getLayerTextures = function getLayerTextures(layerType, layerId) {
-    const mat = this.material;
-    return mat.getLayerTextures(layerType, layerId);
-};
-
-TileMesh.prototype.isColorLayerLoaded = function isColorLayerLoaded(layerId) {
-    const mat = this.material;
-    return mat.getColorLayerLevelById(layerId) > -1;
-};
-
+// TODO: deprecate this method in favor of tilemesh.isLayerLoaded(elevation.id)
 TileMesh.prototype.isElevationLayerLoaded = function isElevationLayerLoaded() {
-    return this.material.loadedTexturesCount[l_ELEVATION] > 0;
-};
-
-TileMesh.prototype.isColorLayerDownscaled = function isColorLayerDownscaled(layer) {
-    const mat = this.material;
-    return mat.isColorLayerDownscaled(layer.id, this.getZoomForLayer(layer));
+    const layer = this.material.getElevationLayer();
+    return layer ? this.isLayerLoaded(layer.id) : false;
 };
 
 TileMesh.prototype.OBB = function OBB() {
     return this.obb;
 };
 
-TileMesh.prototype.getIndexLayerColor = function getIndexLayerColor(idLayer) {
-    return this.material.indexOfColorLayer(idLayer);
-};
-
-TileMesh.prototype.removeColorLayer = function removeColorLayer(idLayer) {
+TileMesh.prototype.removeLayer = function removeLayer(idLayer) {
     if (this.layerUpdateState && this.layerUpdateState[idLayer]) {
         delete this.layerUpdateState[idLayer];
     }
-    this.material.removeColorLayer(idLayer);
-};
-
-TileMesh.prototype.changeSequenceLayers = function changeSequenceLayers(sequence) {
-    const layerCount = this.material.getColorLayersCount();
-
-    // Quit if there is only one layer
-    if (layerCount < 2) {
-        return;
-    }
-
-    this.material.setSequence(sequence);
+    this.material.removeLayer(idLayer);
 };
 
 TileMesh.prototype.getCoordsForLayer = function getCoordsForLayer(layer) {

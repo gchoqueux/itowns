@@ -20,15 +20,15 @@ export function createPlanarLayer(id, extent, options) {
 
     // Configure tiles
     const nodeInitFn = function nodeInitFn(layer, parent, node) {
-        node.material.setLightingOn(layer.lighting.enable);
-        node.material.uniforms.lightPosition.value = layer.lighting.position;
+        node.material.lightingEnable = layer.lighting.enable;
+        node.material.lightPosition = layer.lighting.position;
 
         if (layer.noTextureColor) {
-            node.material.uniforms.noTextureColor.value.copy(layer.noTextureColor);
+            node.material.noTextureColor = layer.noTextureColor;
         }
 
         if (__DEBUG__) {
-            node.material.uniforms.showOutline = { value: layer.showOutline || false };
+            node.material.showOutline = layer.showOutline || false;
             node.material.wireframe = layer.wireframe || false;
         }
     };
@@ -157,14 +157,10 @@ PlanarView.prototype.selectNodeAt = function selectNodeAt(mouse) {
 
     for (const n of this.tileLayer.level0Nodes) {
         n.traverse((node) => {
-            // only take of selectable nodes
-            if (node.setSelected) {
-                node.setSelected(node.id === selectedId);
-
-                if (node.id === selectedId) {
-                    // eslint-disable-next-line no-console
-                    console.info(node);
-                }
+            node.material.selected = node.id === selectedId;
+            if (node.material.selected) {
+                // eslint-disable-next-line no-console
+                console.info(node);
             }
         });
     }
