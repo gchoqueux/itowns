@@ -66,10 +66,8 @@ function subdivideNode(context, layer, node) {
                 node.add(child);
                 child.updateMatrixWorld(true);
 
-                child.material.uniforms.lightPosition.value =
-                    node.material.uniforms.lightPosition.value;
-                child.material.uniforms.lightingEnabled.value =
-                    node.material.uniforms.lightingEnabled.value;
+                child.material.lightPosition = node.material.lightPosition;
+                child.material.lightingEnabled = node.material.lightingEnabled;
             }
             node.pendingSubdivision = false;
             context.view.notifyChange(node, false);

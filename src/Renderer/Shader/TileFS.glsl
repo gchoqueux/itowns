@@ -90,9 +90,11 @@ vec4 getLayerColor(int i, sampler2D texture, vec4 offsetScale, Layer layer) {
             color.rgb *= color.a;
         }
     }
+    #if defined(DEBUG)
     if (showOutline && uv.x > offsetScale.z) {
         color *= offsetScale.z; // to darken according to downscaling
     }
+    #endif
     return color * layer.opacity;
 }
 

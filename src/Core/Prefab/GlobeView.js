@@ -79,7 +79,7 @@ export function createGlobeLayer(id, options) {
         node.material.lightPosition = layer.lighting.position;
 
         if (layer.noTextureColor) {
-            node.material.noTextureColor.value = layer.noTextureColor;
+            node.material.noTextureColor = layer.noTextureColor;
         }
 
         if (__DEBUG__) {
@@ -454,14 +454,11 @@ GlobeView.prototype.setLightingPos = function setLightingPos(pos) {
     this.notifyChange(this.wgs84TileLayer);
 };
 
-GlobeView.prototype.updateMaterialUniform = function updateMaterialUniform(uniformName, value) {
+GlobeView.prototype.updateMaterialUniform = function updateMaterialUniform(property, value) {
     for (const n of this.wgs84TileLayer.level0Nodes) {
         n.traverse((obj) => {
-            if (!obj.material || !obj.material.uniforms) {
-                return;
-            }
-            if (uniformName in obj.material.uniforms) {
-                obj.material.uniforms[uniformName].value = value;
+            if (obj.material && obj.material[property] !== undefined) {
+                obj.material[property] = value;
             }
         });
     }
