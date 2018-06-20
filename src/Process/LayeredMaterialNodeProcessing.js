@@ -185,7 +185,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
         // Indeed in the second pass, their state (not visible or not displayed) can block them to fetch
         const minLevel = layer.options.zoom ? layer.options.zoom.min : 0;
         if (nodeLayer.level >= minLevel) {
-            context.view.notifyChange(false, node);
+            context.view.notifyChange(node, false);
             return;
         }
     }
