@@ -33,7 +33,7 @@ function TileMesh(geometry, params) {
 
     this.layerUpdateState = {};
 
-    this.setDisplayed(false); // TODO: this.material.visible = false;
+    this.material.visible = false;
     this.material.uuid = this.id;
 }
 
@@ -43,11 +43,6 @@ TileMesh.prototype.constructor = TileMesh;
 TileMesh.prototype.updateMatrixWorld = function updateMatrixWorld(force) {
     THREE.Mesh.prototype.updateMatrixWorld.call(this, force);
     this.OBB().update();
-};
-
-// TODO: remove it, after working around the hack TileDebug.js#L124-L140
-TileMesh.prototype.setDisplayed = function setDisplayed(show) {
-    this.material.visible = show;
 };
 
 TileMesh.prototype.setBBoxZ = function setBBoxZ(min, max) {
