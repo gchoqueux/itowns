@@ -52,7 +52,7 @@ float getOutlineAlpha(vec3 uv) {
 
 #if defined(MATTE_ID_MODE) || defined(DEPTH_MODE)
 #include <packing>
-uniform int  uuid;
+uniform int objectId;
 #endif
 
 vec4 applyWhiteToInvisibleEffect(vec4 color, float intensity) {
@@ -103,7 +103,7 @@ void main() {
 
 #if defined(MATTE_ID_MODE)
 
-    gl_FragColor = packDepthToRGBA(float(uuid) / (256.0 * 256.0 * 256.0));
+    gl_FragColor = packDepthToRGBA(float(objectId) / (256.0 * 256.0 * 256.0));
 
 #elif defined(DEPTH_MODE)
 

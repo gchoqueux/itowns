@@ -240,7 +240,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         // Misc properties
         defineUniform(this, 'distanceFog', 1000000000.0);
         defineUniform(this, 'selected', false);
-        defineUniform(this, 'uuid', 0);
+        defineUniform(this, 'objectId', 0);
 
         // LayeredMaterialLayers
         this.layers = {};

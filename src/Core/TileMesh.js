@@ -23,18 +23,16 @@ function TileMesh(geometry, params) {
     this.boundingSphere = new THREE.Sphere();
     this.OBB().box3D.getBoundingSphere(this.boundingSphere);
 
-    this.material = params.material && params.material.isMaterial ? params.material : new LayeredMaterial(params.material);
+    params.material = params.material || {};
+    params.material.objectId = this.id;
+    this.material = params.material.isMaterial ? params.material : new LayeredMaterial(params.material);
 
     this.frustumCulled = false;
 
     this.updateGeometricError();
 
     // Layer
-
     this.layerUpdateState = {};
-
-    this.material.visible = false;
-    this.material.uuid = this.id;
 }
 
 TileMesh.prototype = Object.create(THREE.Mesh.prototype);
