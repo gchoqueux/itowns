@@ -199,7 +199,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
             visible: layer.visible,
             opacity: layer.opacity,
         };
-        if (node.setValues) {
+        if (nodeLayer.setValues) {
             nodeLayer.setValues(values);
         } else {
             Object.assign(nodeLayer, values);
