@@ -81,11 +81,11 @@ class LayeredMaterialLayer {
 
     updateUniforms() {
         if (this.autoUpdate && this.needsUpdate) {
-            this.material.updateUniforms(this.id);
+            this.material.updateUniforms();
         }
     }
 
-    dispose() {
+    dispose(needsUpdate = true) {
         // TODO: WARNING  verify if textures to dispose aren't attached with ancestor
         for (const texture of this.textures) {
             if (texture instanceof THREE.Texture) {
@@ -95,7 +95,7 @@ class LayeredMaterialLayer {
         this.level = EMPTY_TEXTURE_ZOOM;
         this.textures = [];
         this.offsetScales = [];
-        this.needsUpdate = true;
+        this.needsUpdate = needsUpdate;
         this.updateUniforms();
     }
 
@@ -108,7 +108,7 @@ class LayeredMaterialLayer {
     }
 
     setTextures(textures) {
-        this.dispose();
+        this.dispose(false);
         const autoUpdate = this.autoUpdate;
         this.autoUpdate = false;
         for (let i = 0, il = textures.length; i < il; i++) {
@@ -132,9 +132,9 @@ function defineUniform(object, property, initValue) {
     });
 }
 
-function updateUniforms(material, layerId, fragmentShader) {
+function updateUniforms(material, fragmentShader) {
     const layerIds = fragmentShader ? material.colorLayerIds : material.elevationLayerIds;
-    if (layerId && !layerIds.includes(layerId)) {
+    if (!layerIds.some(layerId => material.layers[layerId] && material.layers[layerId].needsUpdate)) {
         return;
     }
 
@@ -256,20 +256,22 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.setValues(options);
     }
 
-    updateUniforms(layerId) {
-        updateUniforms(this, layerId, false);
-        updateUniforms(this, layerId, true);
+    updateUniforms() {
+        updateUniforms(this, false);
+        updateUniforms(this, true);
     }
 
     dispose() {
         this.dispatchEvent({ type: 'dispose' });
-        Object.keys(this.layers).forEach(id => this.layers[id].dispose());
+        Object.keys(this.layers).forEach(id => this.layers[id].dispose(false));
+        this.layers = {};
+        this.updateUniforms(); // do we care ?
     }
 
     // TODO: rename to setColorLayerIds and add setElevationLayerIds ?
     setSequence(sequenceLayer) {
         this.colorLayerIds = sequenceLayer;
-        updateUniforms(this, undefined, true); // all color layers
+        updateUniforms(this, true); // all color layers
     }
 
     removeLayer(layerId) {
@@ -277,7 +279,6 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         if (layer) {
             layer.dispose();
             delete this.layers[layerId];
-            this.updateUniforms(layerId); // notify the deletion of the old layer
         }
     }
 
