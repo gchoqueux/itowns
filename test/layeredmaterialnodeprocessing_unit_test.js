@@ -46,6 +46,7 @@ describe('updateLayeredMaterialNodeImagery', function () {
         layer.tileInsideLimit = () => true;
         layer.visible = true;
         layer.updateStrategy = STRATEGY_MIN_NETWORK_TRAFFIC;
+        layer.getCoords = () => [extent];
         layer.options = {
             zoom: {
                 min: 0,

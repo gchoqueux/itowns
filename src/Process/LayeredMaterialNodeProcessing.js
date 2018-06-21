@@ -12,7 +12,7 @@ function initNodeImageryTexturesFromParent(node, parent, layer) {
     const parentLayer = parent.material && parent.material.getLayer(layer.id);
     const nodeLayer = node.material && node.material.getLayer(layer.id);
     if (parentLayer && nodeLayer && parentLayer.level > nodeLayer.level) {
-        const coords = node.getCoordsForLayer(layer);
+        const coords = layer.getCoords(node);
         let index = 0;
         for (const c of coords) {
             for (const texture of parentLayer.textures) {
@@ -34,7 +34,7 @@ function initNodeElevationTextureFromParent(node, parent, layer) {
     const parentLayer = parent.material && parent.material.getElevationLayer();
     const nodeLayer = node.material && node.material.getElevationLayer();
     if (parentLayer && nodeLayer && parentLayer.level > nodeLayer.level) {
-        const coords = node.getCoordsForLayer(layer);
+        const coords = layer.getCoords(node);
 
         const texture = parentLayer.textures[0];
         const pitch = coords[0].offsetToParent(texture.coords);
@@ -75,7 +75,7 @@ function insertSignificantValuesFromParent(texture, node, parent, layer) {
     const nodeParent = parent.material && parent.material.getElevationLayer();
     const textureParent = nodeParent && nodeParent.textures[0];
     if (textureParent) {
-        const coords = node.getCoordsForLayer(layer);
+        const coords = layer.getCoords(node);
         const pitch = coords[0].offsetToParent(textureParent.coords);
         const tData = texture.image.data;
         const l = tData.length;
@@ -158,8 +158,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
         }
         if (!nodeLayer) {
             const colorLayer = {
-                tileMT: layer.options.tileMatrixSet || node.getCoordsForLayer(layer)[0].crs(),
-                texturesCount: node.getCoordsForLayer(layer).length,
+                coords: layer.getCoords(node),
                 visible: layer.visible,
                 opacity: layer.opacity,
                 effect: layer.fx,
@@ -212,7 +211,6 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
         return;
     }
 
-
     // does this tile needs a new texture?
     if (layer.canTileTextureBeImproved) {
         // if the layer has a custom method -> use it
@@ -220,10 +218,13 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
             node.layerUpdateState[layer.id].noMoreUpdatePossible();
             return;
         }
-    } else if (nodeLayer.level >= node.getZoomForLayer(layer)) {
-        // default decision method
-        node.layerUpdateState[layer.id].noMoreUpdatePossible();
-        return;
+    } else {
+        const level = layer.getZoom ? layer.getZoom(node) : node.level;
+        if (nodeLayer.level >= level) {
+            // default decision method
+            node.layerUpdateState[layer.id].noMoreUpdatePossible();
+            return;
+        }
     }
 
     // is fetching data from this layer disabled?
@@ -232,7 +233,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     }
 
     const failureParams = node.layerUpdateState[layer.id].failureParams;
-    const nodeLevel = node.getCoordsForLayer(layer)[0].zoom || node.level;
+    const nodeLevel = layer.getCoords(node)[0].zoom || node.level;
     const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, nodeLevel, nodeLayer.level, layer, failureParams);
     if (targetLevel <= nodeLayer.level) {
         return;
@@ -339,7 +340,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
         }
     }
 
-    const c = node.getCoordsForLayer(layer)[0];
+    const c = layer.getCoords(node)[0];
     const zoom = c.zoom || node.level;
     const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, zoom, currentElevation, layer);
 

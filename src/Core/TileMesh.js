@@ -1,7 +1,6 @@
 import * as THREE from 'three';
 import LayeredMaterial from '../Renderer/LayeredMaterial';
-import OGCWebServiceHelper, { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
-import { is4326 } from './Geographic/Coordinates';
+import { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
 
 function TileMesh(geometry, params) {
     // Constructor
@@ -75,41 +74,6 @@ TileMesh.prototype.OBB = function OBB() {
 TileMesh.prototype.removeLayer = function removeLayer(idLayer) {
     if (this.layerUpdateState && this.layerUpdateState[idLayer]) {
         delete this.layerUpdateState[idLayer];
-    }
-};
-
-TileMesh.prototype.getCoordsForLayer = function getCoordsForLayer(layer) {
-    if (layer.protocol.indexOf('wmts') == 0) {
-        OGCWebServiceHelper.computeTileMatrixSetCoordinates(this, layer.options.tileMatrixSet);
-        return this.wmtsCoords[layer.options.tileMatrixSet];
-    } else if (layer.protocol == 'wms' && this.extent.crs() != layer.projection) {
-        if (layer.projection == 'EPSG:3857') {
-            const tilematrixset = 'PM';
-            OGCWebServiceHelper.computeTileMatrixSetCoordinates(this, tilematrixset);
-            return this.wmtsCoords[tilematrixset];
-        } else {
-            throw new Error('unsupported projection wms for this viewer');
-        }
-    } else if (layer.protocol == 'tms' || layer.protocol == 'xyz') {
-        // Special globe case: use the P(seudo)M(ercator) coordinates
-        if (is4326(this.extent.crs()) &&
-                (layer.extent.crs() == 'EPSG:3857' || is4326(layer.extent.crs()))) {
-            OGCWebServiceHelper.computeTileMatrixSetCoordinates(this, 'PM');
-            return this.wmtsCoords.PM;
-        } else {
-            return OGCWebServiceHelper.computeTMSCoordinates(this, layer.extent, layer.origin);
-        }
-    } else {
-        return [this.extent];
-    }
-};
-
-TileMesh.prototype.getZoomForLayer = function getZoomForLayer(layer) {
-    if (layer.protocol.indexOf('wmts') == 0) {
-        OGCWebServiceHelper.computeTileMatrixSetCoordinates(this, layer.options.tileMatrixSet);
-        return this.wmtsCoords[layer.options.tileMatrixSet][0].zoom;
-    } else {
-        return this.level;
     }
 };
 

@@ -166,7 +166,7 @@ function _preprocessLayer(view, layer, provider, parentLayer) {
                 providerPreprocessing = Promise.resolve();
             }
         }
-
+        layer.getCoords = layer.getCoords || function getCoords(node) { return [node.extent]; };
         // the last promise in the chain must return the layer
         layer.whenReady = providerPreprocessing.then(() => {
             layer.ready = true;

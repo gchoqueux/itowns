@@ -54,7 +54,9 @@ class LayeredMaterialLayer {
     constructor(material, options) {
         this.id = options.id;
         this.textureOffset = 0; // will be updated in updateUniforms()
-        this.crs = CRS_DEFINES.findIndex(crs => crs.includes(options.tileMT || 'WGS84'));
+        this.coords = options.coords;
+        const crs = this.coords[0].crs();
+        this.crs = CRS_DEFINES.findIndex(crsArray => crsArray.includes(crs));
         if (this.crs == -1) {
             console.error('Unkown crs:', options.tileMT);
         }
@@ -258,7 +260,10 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.uniforms.colorTextureCount = new THREE.Uniform(0);
 
         // transitory setup with a single hard-coded elevation layer
-        this.elevationLayer = this.addLayer({ id: 'elevation' });
+        this.elevationLayer = this.addLayer({
+            id: 'elevation',
+            coords: [{ crs: () => 'WGS84' }],
+        });
         this.elevationLayerIds[0] = this.elevationLayer.id;
 
         this.setValues(options);
