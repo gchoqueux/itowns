@@ -22,7 +22,7 @@ function TileMesh(geometry, params) {
         throw new Error('params.extent is mandatory to build a TileMesh');
     }
 
-    this.level = params.level;
+    this.level = params.level || 0;
     this.extent = params.extent;
 
     this.geometry = geometry;
@@ -32,7 +32,7 @@ function TileMesh(geometry, params) {
     this.boundingSphere = new THREE.Sphere();
     this.OBB().box3D.getBoundingSphere(this.boundingSphere);
 
-    this.material = new LayeredMaterial(params.materialOptions);
+    this.material = params.material && params.material.isMaterial ? params.material : new LayeredMaterial(params.material);
 
     this.frustumCulled = false;
 

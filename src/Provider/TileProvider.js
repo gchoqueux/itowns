@@ -76,7 +76,7 @@ function executeCommand(command) {
     const params = {
         extent,
         level,
-        materialOptions: layer.materialOptions,
+        material: layer.materialOptions,
     };
 
     geometry._count++;

@@ -159,7 +159,6 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
                 return;
             }
         }
-
         if (!nodeLayer) {
             const colorLayer = {
                 tileMT: layer.options.tileMatrixSet || node.getCoordsForLayer(layer)[0].crs(),
@@ -203,7 +202,6 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
         nodeLayer.opacity = layer.opacity;
         node.material.updateUniforms();
     }
-
     const ts = Date.now();
     // An update is pending / or impossible -> abort
     if (!layer.visible || !node.layerUpdateState[layer.id].canTryUpdate(ts)) {

@@ -12,6 +12,14 @@ describe('updateLayeredMaterialNodeImagery', function () {
     // Misc var to initialize a TileMesh instance
     const geom = new THREE.Geometry();
     geom.OBB = new OBB(new THREE.Vector3(), new THREE.Vector3(1, 1, 1));
+    const extent = new Extent('EPSG:4326', 0, 0, 0, 0);
+
+    const nodeLayer = { };
+    const material = {
+        isMaterial: true,
+        getLayer: () => nodeLayer,
+        updateUniforms: () => {},
+    };
 
     // Mock scheduler
     const context = {
@@ -49,35 +57,28 @@ describe('updateLayeredMaterialNodeImagery', function () {
 
 
     it('hidden tile should not execute commands', () => {
-        const tile = new TileMesh(geom, { extent: new Extent('EPSG:4326', 0, 0, 0, 0) });
-        tile.material.visible = false;
-        tile.material.indexOfColorLayer = () => 0;
+        const tile = new TileMesh(geom, { extent, material });
+        material.visible = false;
+        nodeLayer.level = 0;
         tile.parent = { };
         updateLayeredMaterialNodeImagery(context, layer, tile);
         assert.equal(context.scheduler.commands.length, 0);
     });
 
     it('tile with best texture should not execute commands', () => {
-        const tile = new TileMesh(geom, { extent: new Extent('EPSG:4326', 0, 0, 0, 0) });
-        tile.material.visible = true;
-        tile.material.indexOfColorLayer = () => 0;
+        const tile = new TileMesh(geom, { extent, material, level: 3 });
+        material.visible = true;
+        nodeLayer.level = 3;
         tile.parent = { };
-        tile.material.isColorLayerDownscaled = () => false;
         updateLayeredMaterialNodeImagery(context, layer, tile);
-
         assert.equal(context.scheduler.commands.length, 0);
     });
 
     it('tile with downscaled texture should execute 1 command', () => {
-        const tile = new TileMesh(geom, {
-            extent: new Extent('EPSG:4326', 0, 0, 0, 0),
-            level: 2,
-        });
-        tile.material.visible = true;
+        const tile = new TileMesh(geom, { extent, material, level: 2 });
+        material.visible = true;
+        nodeLayer.level = 1;
         tile.parent = { };
-        tile.material.indexOfColorLayer = () => 0;
-        tile.material.isColorLayerDownscaled = () => true;
-        tile.material.getColorLayerLevelById = () => 1;
 
         // FIRST PASS: init Node From Parent and get out of the function
         // without any network fetch
@@ -89,16 +90,11 @@ describe('updateLayeredMaterialNodeImagery', function () {
     });
 
     it('tile should not request texture with level > layer.zoom.max', () => {
-        const tile = new TileMesh(geom, {
-            extent: new Extent('EPSG:4326', 0, 0, 0, 0),
-            level: 15,
-        });
-        tile.material.visible = true;
-        tile.parent = { };
+        const tile = new TileMesh(geom, { extent, material, level: 15 });
         // Emulate a situation where tile inherited a level 1 texture
-        tile.material.indexOfColorLayer = () => 0;
-        tile.material.isColorLayerDownscaled = () => true;
-        tile.material.getColorLayerLevelById = () => 1;
+        material.visible = true;
+        nodeLayer.level = 1;
+        tile.parent = { };
         // Since layer is using STRATEGY_MIN_NETWORK_TRAFFIC, we should emit
         // a single command, requesting a texture at layer.options.zoom.max level
         updateLayeredMaterialNodeImagery(context, layer, tile);
