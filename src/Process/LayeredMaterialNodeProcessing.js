@@ -72,28 +72,28 @@ function getIndiceWithPitch(i, pitch, w) {
 }
 
 function insertSignificantValuesFromParent(texture, node, parent, layer) {
-    const nodeParent = parent.material && parent.material.getElevationLayer();
-    const textureParent = nodeParent && nodeParent.textures[0];
-    if (textureParent) {
+    const parentLayer = parent.material && parent.material.getElevationLayer();
+    const parentTexture = parentLayer && parentLayer.textures[0];
+    if (parentTexture) {
         const coords = layer.getCoords(node);
-        const pitch = coords[0].offsetToParent(textureParent.coords);
+        const pitch = coords[0].offsetToParent(parentTexture.coords);
         const tData = texture.image.data;
         const l = tData.length;
 
         for (var i = 0; i < l; ++i) {
             if (tData[i] === layer.noDataValue) {
-                tData[i] = textureParent.image.data[getIndiceWithPitch(i, pitch, 256)];
+                tData[i] = parentTexture.image.data[getIndiceWithPitch(i, pitch, 256)];
             }
         }
     }
 }
 
-function nodeCommandQueuePriorityFunction(node) {
+function materialCommandQueuePriorityFunction(material) {
     // We know that 'node' is visible because commands can only be
     // issued for visible nodes.
 
     // TODO: need priorization of displayed nodes
-    if (node.material.visible) {
+    if (material.visible) {
         // Then prefer displayed node over non-displayed one
         return 100;
     } else {
@@ -131,11 +131,13 @@ function checkNodeElevationTextureValidity(texture, noDataValue) {
 }
 
 export function updateLayeredMaterialNodeImagery(context, layer, node) {
-    if (!node.parent) {
+    const parent = node.parent;
+    const material = node.material;
+    if (!parent || !material) {
         return;
     }
 
-    let nodeLayer = node.material.getLayer(layer.id);
+    let nodeLayer = material.getLayer(layer.id);
 
     // Initialisation
     if (node.layerUpdateState[layer.id] === undefined) {
@@ -146,10 +148,9 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
             // because even if this tile is outside of the layer, it could inherit it's
             // parent texture
             if (!layer.noTextureParentOutsideLimit &&
-                node.parent &&
-                node.parent.material &&
-                node.parent.material.getLayer &&
-                node.parent.material.getLayer(layer.id)) {
+                parent.material &&
+                parent.material.getLayer &&
+                parent.material.getLayer(layer.id)) {
                 // ok, we're going to inherit our parent's texture
             } else {
                 node.layerUpdateState[layer.id].noMoreUpdatePossible();
@@ -165,11 +166,11 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
                 id: layer.id,
             };
 
-            nodeLayer = node.material.addLayer(colorLayer);
+            nodeLayer = material.addLayer(colorLayer);
             const colorLayers = context.view.getLayers(l => l.type === 'color');
             const sequence = ImageryLayers.getColorLayersIdOrderedBySequence(colorLayers);
-            node.material.setSequence(sequence);
-            initNodeImageryTexturesFromParent(node, node.parent, layer);
+            material.setSequence(sequence);
+            initNodeImageryTexturesFromParent(node, parent, layer);
         }
 
         // Proposed new process, two separate processes:
@@ -186,7 +187,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     }
 
     // Node is hidden, no need to update it
-    if (!node.material.visible) {
+    if (!material.visible) {
         return;
     }
 
@@ -253,14 +254,14 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
         view: context.view,
         layer,
         requester: node,
-        priority: nodeCommandQueuePriorityFunction(node),
+        priority: materialCommandQueuePriorityFunction(material),
         earlyDropFunction: refinementCommandCancellationFn,
         targetLevel,
     };
 
     return context.scheduler.execute(command).then(
         (result) => {
-            if (node.material === null) {
+            if (material === null) {
                 return;
             }
             if (Array.isArray(result)) {
@@ -296,8 +297,10 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
 }
 
 export function updateLayeredMaterialNodeElevation(context, layer, node) {
-    const nodeLayer = node.material && node.material.getElevationLayer();
-    if (!node.parent || !layer) {
+    const parent = node.parent;
+    const material = node.material;
+    const nodeLayer = material && material.getElevationLayer();
+    if (!parent || !nodeLayer) {
         return;
     }
     // TODO: we need either
@@ -312,7 +315,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
     // Init elevation layer, and inherit from parent if possible
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
-        initNodeElevationTextureFromParent(node, node.parent, layer);
+        initNodeElevationTextureFromParent(node, parent, layer);
         currentElevation = nodeLayer.level;
         const minLevel = layer.options.zoom ? layer.options.zoom.min : 0;
         if (currentElevation >= minLevel) {
@@ -326,7 +329,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
 
     // Possible conditions to *not* update the elevation texture
     if (layer.frozen ||
-            !node.material.visible ||
+            !material.visible ||
             !node.layerUpdateState[layer.id].canTryUpdate(ts)) {
         return;
     }
@@ -357,13 +360,13 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
         layer,
         requester: node,
         targetLevel,
-        priority: nodeCommandQueuePriorityFunction(node),
+        priority: materialCommandQueuePriorityFunction(material),
         earlyDropFunction: refinementCommandCancellationFn,
     };
 
     return context.scheduler.execute(command).then(
         (elevation) => {
-            const nodeLayer = node.material && node.material.getElevationLayer();
+            const nodeLayer = material.getElevationLayer();
             if (!nodeLayer) {
                 return;
             }
@@ -390,7 +393,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
                 // Quick check to avoid using elevation texture with no data value
                 // If we have no data values, we use value from the parent tile
                 // We should later implement multi elevation layer to choose the one to use at each level
-                insertSignificantValuesFromParent(elevation.texture, node, node.parent, layer);
+                insertSignificantValuesFromParent(elevation.texture, node, parent, layer);
             }
 
             node.setBBoxZ(elevation.min, elevation.max);
