@@ -3,7 +3,6 @@ import TileVS from './Shader/TileVS.glsl';
 import TileFS from './Shader/TileFS.glsl';
 import ShaderUtils from './Shader/ShaderUtils';
 import Capabilities from '../Core/System/Capabilities';
-import { EMPTY_TEXTURE_ZOOM } from './LayeredMaterialConstants';
 import precision_qualifier from './Shader/Chunk/PrecisionQualifier.glsl';
 import project_pars_vertex from './Shader/Chunk/project_pars_vertex.glsl';
 import elevation_pars_vertex from './Shader/Chunk/elevation_pars_vertex.glsl';
@@ -16,7 +15,8 @@ THREE.ShaderChunk['itowns.elevation_pars_vertex'] = elevation_pars_vertex;
 THREE.ShaderChunk['itowns.elevation_vertex'] = elevation_vertex;
 THREE.ShaderChunk['itowns.pitUV'] = pitUV;
 
-var identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
+const identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
+const EMPTY_TEXTURE_ZOOM = -1;
 
 // from three.js packDepthToRGBA
 const UnpackDownscale = 255 / 256; // 0..1 -> fraction (excluding 1)

@@ -10,7 +10,8 @@ export default {
         // Prevent subdivision if node is covered by at least one elevation layer
         // and if node doesn't have a elevation texture yet.
         for (const e of context.elevationLayers) {
-            if (!e.frozen && e.ready && e.tileInsideLimit(node, e) && !node.isElevationLayerLoaded()) {
+            const nodeLayer = node.material.getElevationLayer();
+            if (!e.frozen && e.ready && e.tileInsideLimit(node, e) && (!nodeLayer || nodeLayer.level < 0)) {
                 // no stop subdivision in the case of a loading error
                 if (node.layerUpdateState[e.id] && node.layerUpdateState[e.id].inError()) {
                     continue;
@@ -28,7 +29,8 @@ export default {
             if (node.layerUpdateState[c.id] && node.layerUpdateState[c.id].inError()) {
                 continue;
             }
-            if (c.tileInsideLimit(node, c) && !node.isLayerLoaded(c.id)) {
+            const nodeLayer = node.material.getLayer(c.id);
+            if (c.tileInsideLimit(node, c) && (!nodeLayer || nodeLayer.level < 0)) {
                 return false;
             }
         }

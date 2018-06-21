@@ -168,7 +168,8 @@ function tileAt(pt, tile) {
                 return t;
             }
         }
-        if (tile.isElevationLayerLoaded()) {
+        const tileLayer = tile.material.getElevationLayer();
+        if (tileLayer && tileLayer.level >= 0) {
             return tile;
         }
         return undefined;

@@ -97,7 +97,7 @@ function executeCommand(command) {
 
     tile.material.transparent = layer.opacity < 1.0;
     tile.material.opacity = layer.opacity;
-    tile.setVisibility(false);
+    tile.visible = false;
     tile.updateMatrix();
 
     if (parent) {

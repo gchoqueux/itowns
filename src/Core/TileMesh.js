@@ -6,7 +6,6 @@
 
 import * as THREE from 'three';
 import LayeredMaterial from '../Renderer/LayeredMaterial';
-import { EMPTY_TEXTURE_ZOOM } from '../Renderer/LayeredMaterialConstants';
 import RendererConstant from '../Renderer/RendererConstant';
 import OGCWebServiceHelper, { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
 import { is4326 } from './Geographic/Coordinates';
@@ -39,10 +38,10 @@ function TileMesh(geometry, params) {
     this.updateGeometricError();
 
     // Layer
-    this.setDisplayed(false);
 
     this.layerUpdateState = {};
 
+    this.setDisplayed(false); // TODO: this.material.visible = false;
     this.material.uuid = this.id;
 
     this._state = RendererConstant.FINAL;
@@ -56,20 +55,9 @@ TileMesh.prototype.updateMatrixWorld = function updateMatrixWorld(force) {
     this.OBB().update();
 };
 
-TileMesh.prototype.isVisible = function isVisible() {
-    return this.visible;
-};
-
+// TODO: remove it, after working around the hack TileDebug.js#L124-L140
 TileMesh.prototype.setDisplayed = function setDisplayed(show) {
     this.material.visible = show;
-};
-
-TileMesh.prototype.setVisibility = function setVisibility(show) {
-    this.visible = show;
-};
-
-TileMesh.prototype.isDisplayed = function isDisplayed() {
-    return this.material.visible;
 };
 
 // switch material in function of state
@@ -127,17 +115,6 @@ TileMesh.prototype.updateGeometricError = function updateGeometricError() {
     // The geometric error is calculated to have a correct texture display.
     // For the projection of a texture's texel to be less than or equal to one pixel
     this.geometricError = this.boundingSphere.radius / SIZE_TEXTURE_TILE;
-};
-
-TileMesh.prototype.isLayerLoaded = function isLayerLoaded(layerId) {
-    const layer = this.material.getLayer(layerId);
-    return layer && layer.level > EMPTY_TEXTURE_ZOOM;
-};
-
-// TODO: deprecate this method in favor of tilemesh.isLayerLoaded(elevation.id)
-TileMesh.prototype.isElevationLayerLoaded = function isElevationLayerLoaded() {
-    const layer = this.material.getElevationLayer();
-    return layer ? this.isLayerLoaded(layer.id) : false;
 };
 
 TileMesh.prototype.OBB = function OBB() {

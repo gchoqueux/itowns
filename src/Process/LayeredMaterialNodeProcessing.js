@@ -57,7 +57,6 @@ function initNodeElevationTextureFromParent(node, parent, layer) {
         }
 
         node.setBBoxZ(elevation.min, elevation.max);
-        const nodeLayer = node.material.getElevationLayer();
         nodeLayer.setTexture(0, elevation.texture, elevation.pitch);
     }
 }
@@ -94,8 +93,8 @@ function nodeCommandQueuePriorityFunction(node) {
     // issued for visible nodes.
 
     // TODO: need priorization of displayed nodes
-    if (node.isDisplayed()) {
-        // Then prefer displayed() node over non-displayed one
+    if (node.material.visible) {
+        // Then prefer displayed node over non-displayed one
         return 100;
     } else {
         return 10;
@@ -118,7 +117,7 @@ function refinementCommandCancellationFn(cmd) {
         return true;
     }
 
-    return !cmd.requester.isDisplayed();
+    return !cmd.requester.material.visible;
 }
 
 function checkNodeElevationTextureValidity(texture, noDataValue) {
@@ -188,7 +187,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     }
 
     // Node is hidden, no need to update it
-    if (!node.isDisplayed()) {
+    if (!node.material.visible) {
         return;
     }
 
@@ -206,6 +205,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
             Object.assign(nodeLayer, values);
         }
     }
+
     const ts = Date.now();
     // An update is pending / or impossible -> abort
     if (!layer.visible || !node.layerUpdateState[layer.id].canTryUpdate(ts)) {
@@ -325,7 +325,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
 
     // Possible conditions to *not* update the elevation texture
     if (layer.frozen ||
-            !node.isDisplayed() ||
+            !node.material.visible ||
             !node.layerUpdateState[layer.id].canTryUpdate(ts)) {
         return;
     }

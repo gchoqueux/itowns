@@ -442,19 +442,19 @@ GlobeView.prototype.setRealisticLightingOn = function setRealisticLightingOn(val
     this.atmosphere.setRealisticOn(value);
     this.atmosphere.updateLightingPos(coSun);
 
-    this.updateMaterialUniform('lightingEnabled', value);
-    this.updateMaterialUniform('lightPosition', coSun);
+    this.updateMaterialProperty('lightingEnabled', value);
+    this.updateMaterialProperty('lightPosition', coSun);
     this.notifyChange(this.wgs84TileLayer);
 };
 
 GlobeView.prototype.setLightingPos = function setLightingPos(pos) {
     const lightingPos = pos || CoordStars.getSunPositionInScene(this.ellipsoid, new Date().getTime(), 48.85, 2.35);
 
-    this.updateMaterialUniform('lightPosition', lightingPos.clone().normalize());
+    this.updateMaterialProperty('lightPosition', lightingPos.clone().normalize());
     this.notifyChange(this.wgs84TileLayer);
 };
 
-GlobeView.prototype.updateMaterialUniform = function updateMaterialUniform(property, value) {
+GlobeView.prototype.updateMaterialProperty = function updateMaterialProperty(property, value) {
     for (const n of this.wgs84TileLayer.level0Nodes) {
         n.traverse((obj) => {
             if (obj.material && obj.material[property] !== undefined) {

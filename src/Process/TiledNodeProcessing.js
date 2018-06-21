@@ -88,7 +88,7 @@ export function processTiledGeometryNode(cullingTest, subdivisionTest) {
         // early exit if parent' subdivision is in progress
         if (node.parent.pendingSubdivision) {
             node.visible = false;
-            node.setDisplayed(false);
+            node.setDisplayed(false); // TODO: node.material.visible = false;
             return undefined;
         }
 
@@ -102,10 +102,10 @@ export function processTiledGeometryNode(cullingTest, subdivisionTest) {
             if (node.pendingSubdivision || subdivisionTest(context, layer, node)) {
                 subdivideNode(context, layer, node);
                 // display iff children aren't ready
-                node.setDisplayed(node.pendingSubdivision);
+                node.setDisplayed(node.pendingSubdivision); // TODO: node.material.visible = node.pendingSubdivision;
                 requestChildrenUpdate = true;
             } else {
-                node.setDisplayed(true);
+                node.setDisplayed(true); // TODO: node.material.visible = true;
             }
 
             if (node.material.visible) {
@@ -123,7 +123,7 @@ export function processTiledGeometryNode(cullingTest, subdivisionTest) {
             return requestChildrenUpdate ? node.children.filter(n => n.layer == layer) : undefined;
         }
 
-        node.setDisplayed(false);
+        node.setDisplayed(false); // TODO: node.material.visible = false;
         return ObjectRemovalHelper.removeChildren(layer, node);
     };
 }

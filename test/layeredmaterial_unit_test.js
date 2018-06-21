@@ -13,8 +13,8 @@ describe('material state vs layer state', function () {
         },
         material: {
             getLayer: () => nodeLayer,
+            visible: true,
         },
-        isDisplayed: () => true,
     };
     const layer = {
         id: 'test',
