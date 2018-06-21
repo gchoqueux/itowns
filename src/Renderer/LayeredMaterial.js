@@ -36,16 +36,16 @@ const CRS_DEFINES = [
 
 function defineLayerProperty(layer, publicName, initValue, layerNeedsUpdate) {
     const privateName = `_${publicName}`;
-    layerNeedsUpdate = layerNeedsUpdate || (() => false);
     layer[privateName] = initValue;
     Object.defineProperty(layer, publicName, {
         get: () => layer[privateName],
         set: (value) => {
-            const needsUpdate = layer[privateName] != value;
-            layer.needsUpdate |= layerNeedsUpdate(layer[privateName], value);
-            layer.material.uniformsNeedUpdate |= needsUpdate;
-            layer[privateName] = value;
-            layer.updateUniforms();
+            if (layer[privateName] !== value) {
+                layer.needsUpdate |= layerNeedsUpdate(layer[privateName], value);
+                layer.material.uniformsNeedUpdate = true;
+                layer[privateName] = value;
+                layer.updateUniforms();
+            }
         },
     });
 }
@@ -64,8 +64,8 @@ class LayeredMaterialLayer {
         options.effect = options.effect !== undefined ? options.effect : 0;
 
         defineLayerProperty(this, 'opacity', options.opacity, (x, y) => (x > 0) != (y > 0));
-        defineLayerProperty(this, 'visible', options.visible, (x, y) => x != y);
-        defineLayerProperty(this, 'effect', options.effect);
+        defineLayerProperty(this, 'visible', options.visible, () => true);
+        defineLayerProperty(this, 'effect', options.effect, () => false);
 
         this.textures = [];
         this.offsetScales = [];
@@ -76,6 +76,16 @@ class LayeredMaterialLayer {
         // register this to the material
         this.material = material;
         this.material.layers[this.id] = this;
+        this.updateUniforms();
+    }
+
+    setValues(values) {
+        const autoUpdate = this.autoUpdate;
+        this.autoUpdate = false;
+        Object.keys(values).forEach((key) => {
+            this[key] = values[key];
+        });
+        this.autoUpdate = autoUpdate;
         this.updateUniforms();
     }
 
