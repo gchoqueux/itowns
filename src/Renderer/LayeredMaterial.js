@@ -190,6 +190,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
 
         this.defines.NUM_VS_TEXTURES = nbSamplers[0];
         this.defines.NUM_FS_TEXTURES = nbSamplers[1];
+        this.defines.USE_FOG = 1;
+        this.defines.EPSILON = 1e-6;
 
         for (let i = 0, il = CRS_DEFINES.length; i < il; ++i) {
             this.defines[`CRS_${CRS_DEFINES[i][0]}`] = i;
@@ -230,7 +232,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.fragmentShader = ShaderUtils.unrollLoops(TileFS, this.defines);
 
         // Color uniforms
-        defineUniform(this, 'noTextureColor', new THREE.Color(0.04, 0.23, 0.35));
+        defineUniform(this, 'diffuse', new THREE.Color(0.04, 0.23, 0.35));
         defineUniform(this, 'opacity', this.opacity);
 
         // Lighting uniforms
@@ -238,7 +240,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         defineUniform(this, 'lightPosition', new THREE.Vector3(-0.5, 0.0, 1.0));
 
         // Misc properties
-        defineUniform(this, 'distanceFog', 1000000000.0);
+        defineUniform(this, 'fogDistance', 1000000000.0);
+        defineUniform(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
         defineUniform(this, 'selected', false);
         defineUniform(this, 'objectId', 0);
 

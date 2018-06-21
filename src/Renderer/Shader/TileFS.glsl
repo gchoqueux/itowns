@@ -1,6 +1,7 @@
 #include <itowns.precision_qualifier>
 #include <itowns.pitUV>
 #include <logdepthbuf_pars_fragment>
+#include <fog_pars_fragment>
 
 // BUG CHROME 50 UBUNTU 16.04
 // Lose context on compiling shader with too many IF STATEMENT
@@ -22,11 +23,10 @@ struct Layer {
 uniform Layer       colorLayers[NUM_FS_TEXTURES];
 uniform int         colorTextureCount;
 
-uniform float       distanceFog;
-const   vec3        fogColor = vec3( 0.76, 0.85, 1.0);
+uniform float       fogDistance;
 uniform vec3        lightPosition;
 
-uniform vec3        noTextureColor;
+uniform vec3        diffuse;
 uniform float       opacity;
 
 // Options global
@@ -83,19 +83,18 @@ vec4 getLayerColor(int i, sampler2D texture, vec4 offsetScale, Layer layer) {
         if(layer.effect > 2.0) {
             color.rgb /= color.a;
             color = applyLightColorToInvisibleEffect(color, layer.effect);
-            color.rgb *= color.a;
         } else if(layer.effect > 0.0) {
             color.rgb /= color.a;
             color = applyWhiteToInvisibleEffect(color, layer.effect);
-            color.rgb *= color.a;
         }
     }
     #if defined(DEBUG)
     if (showOutline && uv.x > offsetScale.z) {
-        color *= offsetScale.z; // to darken according to downscaling
+        color.rgb *= offsetScale.z; // darken according to downscaling
     }
     #endif
-    return color * layer.opacity;
+    color.a *= layer.opacity;
+    return color;
 }
 
 void main() {
@@ -116,7 +115,7 @@ void main() {
 
 #else
 
-    gl_FragColor.a = opacity;
+    gl_FragColor = vec4(diffuse, opacity);
 
     // Reconstruct PM uv and PM subtexture id (see TileGeometry)
     uv_crs[CRS_WGS84] = vec3(vUv.xy, 0.);
@@ -141,32 +140,26 @@ void main() {
 
     // Layers
     vec4 layerColor;
-    vec3 diffuseColor = noTextureColor;
     #pragma unroll_loop
     for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
         layerColor = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
-        // layerColor is alpha-premultiplied
-        diffuseColor = layerColor.rgb + diffuseColor * (1.0 - layerColor.a);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, layerColor.rgb, layerColor.a);
     }
 
     // Transparent outlines
     #if defined(DEBUG)
-    diffuseColor = mix(diffuseColor, outlineColor.rgb, outlineColor.a);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, outlineColor.rgb, outlineColor.a);
     #endif
 
     // Selected
     if(selected) {
-        diffuseColor = mix(selectedColor, diffuseColor, 0.5 );
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, selectedColor, 0.5 );
     }
 
-    // Fog
-    #if defined(USE_LOGDEPTHBUF) && defined(USE_LOGDEPTHBUF_EXT)
-        float depth = gl_FragDepthEXT / gl_FragCoord.w;
-    #else
-        float depth = gl_FragCoord.z / gl_FragCoord.w;
+    #if defined(USE_FOG)
+    float fogFactor = 1. - min(exp(-fogDepth/fogDistance), 1.);
+    gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
     #endif
-    float fogIntensity = 1.0/(exp(depth/distanceFog));
-    gl_FragColor.rgb = mix(fogColor, diffuseColor.rgb, fogIntensity);
 
     // Add lighting
     if(lightingEnabled) {

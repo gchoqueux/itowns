@@ -111,7 +111,7 @@ export function processTiledGeometryNode(cullingTest, subdivisionTest) {
             if (node.material.visible) {
                 // update uniforms
                 if (context.view.fogDistance != undefined) {
-                    node.material.distanceFog = context.view.fogDistance;
+                    node.material.fogDistance = context.view.fogDistance;
                 }
 
                 if (!requestChildrenUpdate) {

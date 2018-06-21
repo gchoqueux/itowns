@@ -74,8 +74,8 @@ export function createPanoramaLayer(id, coordinates, type, options = {}) {
 
     // Configure tiles
     const nodeInitFn = function nodeInitFn(layer, parent, node) {
-        if (layer.noTextureColor) {
-            node.material.noTextureColor = layer.noTextureColor;
+        if (layer.diffuse) {
+            node.material.diffuse = layer.diffuse;
         }
 
         node.material.depthWrite = false;

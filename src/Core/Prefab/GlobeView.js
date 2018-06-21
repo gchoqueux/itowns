@@ -78,8 +78,8 @@ export function createGlobeLayer(id, options) {
         node.material.lightingEnable = layer.lighting.enable;
         node.material.lightPosition = layer.lighting.position;
 
-        if (layer.noTextureColor) {
-            node.material.noTextureColor = layer.noTextureColor;
+        if (layer.diffuse) {
+            node.material.diffuse = layer.diffuse;
         }
 
         if (__DEBUG__) {
