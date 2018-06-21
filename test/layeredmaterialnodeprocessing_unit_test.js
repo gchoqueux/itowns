@@ -18,7 +18,6 @@ describe('updateLayeredMaterialNodeImagery', function () {
     const material = {
         isMaterial: true,
         getLayer: () => nodeLayer,
-        updateUniforms: () => {},
     };
 
     // Mock scheduler

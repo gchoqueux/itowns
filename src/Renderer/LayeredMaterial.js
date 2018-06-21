@@ -34,21 +34,55 @@ const CRS_DEFINES = [
     ['PM', 'WMTS:PM'],
 ];
 
+function defineLayerProperty(layer, publicName, initValue, layerNeedsUpdate) {
+    const privateName = `_${publicName}`;
+    layerNeedsUpdate = layerNeedsUpdate || (() => false);
+    layer[privateName] = initValue;
+    Object.defineProperty(layer, publicName, {
+        get: () => layer[privateName],
+        set: (value) => {
+            const needsUpdate = layer[privateName] != value;
+            layer.needsUpdate |= layerNeedsUpdate(layer[privateName], value);
+            layer.material.uniformsNeedUpdate |= needsUpdate;
+            layer[privateName] = value;
+            layer.updateUniforms();
+        },
+    });
+}
+
 class LayeredMaterialLayer {
-    constructor(options) {
+    constructor(material, options) {
         this.id = options.id;
         this.textureOffset = 0; // will be updated in updateUniforms()
         this.crs = CRS_DEFINES.findIndex(crs => crs.includes(options.tileMT || 'WGS84'));
         if (this.crs == -1) {
             console.error('Unkown crs:', options.tileMT);
         }
-        this.effect = options.effect !== undefined ? options.effect : 0;
-        this.opacity = options.opacity !== undefined ? options.opacity : 1;
-        this.visible = options.visible !== undefined ? options.visible : true;
+
+        options.opacity = options.opacity !== undefined ? options.opacity : 1;
+        options.visible = options.visible !== undefined ? options.visible : true;
+        options.effect = options.effect !== undefined ? options.effect : 0;
+
+        defineLayerProperty(this, 'opacity', options.opacity, (x, y) => (x > 0) != (y > 0));
+        defineLayerProperty(this, 'visible', options.visible, (x, y) => x != y);
+        defineLayerProperty(this, 'effect', options.effect);
+
         this.textures = [];
         this.offsetScales = [];
         this.level = EMPTY_TEXTURE_ZOOM;
         this.needsUpdate = false;
+        this.autoUpdate = true;
+
+        // register this to the material
+        this.material = material;
+        this.material.layers[this.id] = this;
+        this.updateUniforms();
+    }
+
+    updateUniforms() {
+        if (this.autoUpdate && this.needsUpdate) {
+            this.material.updateUniforms(this.id);
+        }
     }
 
     dispose() {
@@ -62,6 +96,7 @@ class LayeredMaterialLayer {
         this.textures = [];
         this.offsetScales = [];
         this.needsUpdate = true;
+        this.updateUniforms();
     }
 
     setTexture(index, texture, offsetScale) {
@@ -69,15 +104,20 @@ class LayeredMaterialLayer {
         this.textures[index] = texture || null;
         this.offsetScales[index] = offsetScale || identityOffsetScale;
         this.needsUpdate = true;
+        this.updateUniforms();
     }
 
     setTextures(textures) {
         this.dispose();
+        const autoUpdate = this.autoUpdate;
+        this.autoUpdate = false;
         for (let i = 0, il = textures.length; i < il; i++) {
             if (textures[i]) {
                 this.setTexture(i, textures[i].texture, textures[i].pitch);
             }
         }
+        this.autoUpdate = autoUpdate;
+        this.updateUniforms();
     }
 }
 
@@ -91,6 +131,45 @@ function defineUniform(object, property, initValue) {
         },
     });
 }
+
+function updateUniforms(material, layerId, fragmentShader) {
+    const layerIds = fragmentShader ? material.colorLayerIds : material.elevationLayerIds;
+    if (layerId && !layerIds.includes(layerId)) {
+        return;
+    }
+
+    // prepare convenient access to elevation or color uniforms
+    const u = material.uniforms;
+    const layers = (fragmentShader ? u.colorLayers : u.elevationLayers).value;
+    const textures = (fragmentShader ? u.colorTextures : u.elevationTextures).value;
+    const offsetScales = (fragmentShader ? u.colorOffsetScales : u.elevationOffsetScales).value;
+    const textureCount = fragmentShader ? u.colorTextureCount : u.elevationTextureCount;
+
+    // flatten the 2d array [i,j] -> layers[_layerIds[i]].textures[j]
+    const max = material.defines[fragmentShader ? 'NUM_FS_TEXTURES' : 'NUM_VS_TEXTURES'];
+    let count = 0;
+    for (const layerId of layerIds) {
+        const layer = material.layers[layerId];
+        if (layer && layer.visible && layer.opacity > 0) {
+            layer.textureOffset = count;
+            for (let i = 0, il = layer.textures.length; i < il; ++i) {
+                if (count < max) {
+                    offsetScales[count] = layer.offsetScales[i];
+                    textures[count] = layer.textures[i];
+                    layers[count] = layer;
+                }
+                count++;
+            }
+            layer.needsUpdate = false;
+        }
+    }
+    if (count > max) {
+        console.warn(`LayeredMaterial: Not enough texture units (${max} < ${count}), excess textures have been discarded.`);
+    }
+    textureCount.value = count;
+    material.uniformsNeedUpdate = true;
+}
+
 
 class LayeredMaterial extends THREE.RawShaderMaterial {
     constructor(options = {}) {
@@ -177,53 +256,9 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.setValues(options);
     }
 
-    _updateUniforms(fragmentShader, layerId) {
-        const layerIds = fragmentShader ? this.colorLayerIds : this.elevationLayerIds;
-        if (layerId !== undefined && !(layerId in layerIds)) {
-            return;
-        }
-        /*
-        // not there yet...
-        if (!layerIds.some(LayerId => this.layers[LayerId].needsUpdate)) {
-            return;
-        }
-        */
-
-        // prepare convenient access to elevation or color uniforms
-        const u = this.uniforms;
-        const layers = (fragmentShader ? u.colorLayers : u.elevationLayers).value;
-        const textures = (fragmentShader ? u.colorTextures : u.elevationTextures).value;
-        const offsetScales = (fragmentShader ? u.colorOffsetScales : u.elevationOffsetScales).value;
-        const textureCount = fragmentShader ? u.colorTextureCount : u.elevationTextureCount;
-
-        // flatten the 2d array [i,j] -> layers[_layerIds[i]].textures[j]
-        const max = this.defines[fragmentShader ? 'NUM_FS_TEXTURES' : 'NUM_VS_TEXTURES'];
-        let count = 0;
-        for (const layerId of layerIds) {
-            const layer = this.layers[layerId];
-            if (layer && layer.visible && layer.opacity > 0) {
-                layer.textureOffset = count;
-                for (let i = 0, il = layer.textures.length; i < il; ++i) {
-                    if (count < max) {
-                        offsetScales[count] = layer.offsetScales[i];
-                        textures[count] = layer.textures[i];
-                        layers[count] = layer;
-                    }
-                    count++;
-                }
-            }
-            if (layer) layer.needsUpdate = false;
-        }
-        if (count > max) {
-            console.warn(`LayeredMaterial: Not enough texture units (${max} < ${count}), excess textures have been discarded.`);
-        }
-        textureCount.value = count;
-        this.uniformsNeedUpdate = true;
-    }
-
     updateUniforms(layerId) {
-        this._updateUniforms(false, layerId);
-        this._updateUniforms(true, layerId);
+        updateUniforms(this, layerId, false);
+        updateUniforms(this, layerId, true);
     }
 
     dispose() {
@@ -234,7 +269,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
     // TODO: rename to setColorLayerIds and add setElevationLayerIds ?
     setSequence(sequenceLayer) {
         this.colorLayerIds = sequenceLayer;
-        this._updateUniforms(true); // all color layers
+        updateUniforms(this, undefined, true); // all color layers
     }
 
     removeLayer(layerId) {
@@ -250,10 +285,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         if (param.id in this.layers) {
             console.warn('The "{param.id}" layer was already present in the material, overwritting.');
         }
-        const layer = new LayeredMaterialLayer(param);
-        this.layers[layer.id] = layer;
-        this.updateUniforms(layer.id); // notify the addition of the new layer
-        return layer;
+        return new LayeredMaterialLayer(this, param);
     }
 
     getLayer(layerId) {

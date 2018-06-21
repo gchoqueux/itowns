@@ -23,7 +23,6 @@ function initNodeImageryTexturesFromParent(node, parent, layer) {
             }
             index++;
         }
-        node.material.updateUniforms();
     }
 }
 
@@ -60,7 +59,6 @@ function initNodeElevationTextureFromParent(node, parent, layer) {
         node.setBBoxZ(elevation.min, elevation.max);
         const nodeLayer = node.material.getElevationLayer();
         nodeLayer.setTexture(0, elevation.texture, elevation.pitch);
-        node.material.updateUniforms();
     }
 }
 
@@ -200,7 +198,6 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     if (nodeLayer) {
         nodeLayer.visible = layer.visible;
         nodeLayer.opacity = layer.opacity;
-        node.material.updateUniforms();
     }
     const ts = Date.now();
     // An update is pending / or impossible -> abort
@@ -267,7 +264,6 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
                 // Maybe add an error counter for the node/layer,
                 // and stop retrying after X attempts.
             }
-            node.material.updateUniforms();
 
             node.layerUpdateState[layer.id].success();
 
@@ -391,7 +387,6 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
 
             node.setBBoxZ(elevation.min, elevation.max);
             nodeLayer.setTexture(0, elevation.texture, elevation.pitch);
-            node.material.updateUniforms();
         },
         (err) => {
             if (err instanceof CancelledCommandException) {

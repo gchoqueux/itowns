@@ -13,7 +13,6 @@ describe('material state vs layer state', function () {
         },
         material: {
             getLayer: () => nodeLayer,
-            updateUniforms: () => {},
         },
         isDisplayed: () => true,
     };
