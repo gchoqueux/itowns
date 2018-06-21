@@ -82,9 +82,7 @@ class LayeredMaterialLayer {
     setValues(values) {
         const autoUpdate = this.autoUpdate;
         this.autoUpdate = false;
-        Object.keys(values).forEach((key) => {
-            this[key] = values[key];
-        });
+        Object.assign(this, values);
         this.autoUpdate = autoUpdate;
         this.updateUniforms();
     }

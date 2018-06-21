@@ -196,19 +196,15 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     // to avoid mixing layer's network updates and layer's params
     // Update material parameters
     if (nodeLayer) {
-        // disable autoupdate for the first modification to trigger at most one update
-        /*
-        const autoUpdate = nodeLayer.autoUpdate;
-        nodeLayer.autoUpdate = false;
-        nodeLayer.visible = layer.visible;
-        nodeLayer.opacity = layer.opacity;
-        nodeLayer.autoUpdate = autoUpdate;
-        nodeLayer.updateUniforms();
-        */
-        nodeLayer.setValues({
+        const values = {
             visible: layer.visible,
             opacity: layer.opacity,
-        });
+        };
+        if (node.setValues) {
+            nodeLayer.setValues(values);
+        } else {
+            Object.assign(nodeLayer, values);
+        }
     }
     const ts = Date.now();
     // An update is pending / or impossible -> abort
