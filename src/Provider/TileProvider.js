@@ -101,7 +101,7 @@ function executeCommand(command) {
     tile.updateMatrix();
 
     if (parent) {
-        tile.setBBoxZ(parent.OBB().z.min, parent.OBB().z.max);
+        tile.setBBoxZ(parent.obb.z.min, parent.obb.z.max);
     } else if (layer.materialOptions && layer.materialOptions.useColorTextureElevation) {
         tile.setBBoxZ(layer.materialOptions.colorTextureElevationMinZ, layer.materialOptions.colorTextureElevationMaxZ);
     }

@@ -39,7 +39,7 @@ export function requestNewTile(view, scheduler, geometryLayer, extent, parent, l
     };
 
     return scheduler.execute(command).then((node) => {
-        node.add(node.OBB());
+        node.add(node.obb);
         geometryLayer.onTileCreated(geometryLayer, parent, node);
         return node;
     });

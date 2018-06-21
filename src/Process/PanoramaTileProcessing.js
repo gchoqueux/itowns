@@ -1,5 +1,5 @@
 function frustumCullingOBB(node, camera) {
-    return camera.isBox3Visible(node.OBB().box3D, node.OBB().matrixWorld);
+    return camera.isBox3Visible(node.obb.box3D, node.obb.matrixWorld);
 }
 
 export function panoramaCulling(node, camera) {
@@ -7,7 +7,7 @@ export function panoramaCulling(node, camera) {
 }
 
 function _isTileBiggerThanTexture(camera, textureSize, quality, node) {
-    const obb = node.OBB();
+    const obb = node.obb;
 
     obb.updateMatrixWorld();
     const onScreen = camera.box3SizeOnScreen(

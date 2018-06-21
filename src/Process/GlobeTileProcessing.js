@@ -71,7 +71,7 @@ function pointHorizonCulling(pt) {
 }
 
 function horizonCulling(node) {
-    const points = node.OBB().topPointsWorld;
+    const points = node.obb.topPointsWorld;
 
     for (const point of points) {
         if (!pointHorizonCulling(point)) {
@@ -82,7 +82,7 @@ function horizonCulling(node) {
 }
 
 function frustumCullingOBB(node, camera) {
-    return camera.isBox3Visible(node.OBB().box3D, node.OBB().matrixWorld);
+    return camera.isBox3Visible(node.obb.box3D, node.obb.matrixWorld);
 }
 
 export function globeCulling(minLevelForHorizonCulling) {
