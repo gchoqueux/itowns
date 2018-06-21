@@ -196,7 +196,11 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     // to avoid mixing layer's network updates and layer's params
     // Update material parameters
     if (nodeLayer) {
+        // disable autoupdate for the first modification to trigger at most one update
+        const autoUpdate = nodeLayer.autoUpdate;
+        nodeLayer.autoUpdate = false;
         nodeLayer.visible = layer.visible;
+        nodeLayer.autoUpdate = autoUpdate;
         nodeLayer.opacity = layer.opacity;
     }
     const ts = Date.now();
