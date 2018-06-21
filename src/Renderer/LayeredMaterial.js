@@ -30,7 +30,7 @@ export function unpack1K(color, factor) {
 }
 
 const CRS_DEFINES = [
-    ['WGS84', 'WGS84G', 'TMS', 'EPSG:3946', 'EPSG:4326'],
+    ['WGS84', 'WGS84G', 'TMS', 'EPSG:3946', 'EPSG:4326', 'WMTS:WGS84G'],
     ['PM', 'WMTS:PM'],
 ];
 
@@ -55,10 +55,10 @@ class LayeredMaterialLayer {
         this.id = options.id;
         this.textureOffset = 0; // will be updated in updateUniforms()
         this.coords = options.coords;
-        const crs = this.coords[0].crs();
+        const crs = this.coords[0].crs() || 'WGS84';
         this.crs = CRS_DEFINES.findIndex(crsArray => crsArray.includes(crs));
         if (this.crs == -1) {
-            console.error('Unkown crs:', options.tileMT);
+            console.error('Unkown crs:', crs);
         }
 
         options.opacity = options.opacity !== undefined ? options.opacity : 1;
