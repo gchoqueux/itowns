@@ -1,12 +1,5 @@
-/**
- * Generated On: 2015-10-5
- * Class: TileMesh
- * Description: Tuile de maillage, noeud du quadtree MNT. Le Materiel est issus du QuadTree ORTHO.
- */
-
 import * as THREE from 'three';
 import LayeredMaterial from '../Renderer/LayeredMaterial';
-import RendererConstant from '../Renderer/RendererConstant';
 import OGCWebServiceHelper, { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
 import { is4326 } from './Geographic/Coordinates';
 
@@ -43,8 +36,6 @@ function TileMesh(geometry, params) {
 
     this.setDisplayed(false); // TODO: this.material.visible = false;
     this.material.uuid = this.id;
-
-    this._state = RendererConstant.FINAL;
 }
 
 TileMesh.prototype = Object.create(THREE.Mesh.prototype);
@@ -58,46 +49,6 @@ TileMesh.prototype.updateMatrixWorld = function updateMatrixWorld(force) {
 // TODO: remove it, after working around the hack TileDebug.js#L124-L140
 TileMesh.prototype.setDisplayed = function setDisplayed(show) {
     this.material.visible = show;
-};
-
-// switch material in function of state
-TileMesh.prototype.changeState = function changeState(state) {
-    if (state == this._state) {
-        return;
-    }
-    if (state == RendererConstant.DEPTH) {
-        this.material.defines.DEPTH_MODE = 1;
-        delete this.material.defines.MATTE_ID_MODE;
-    } else if (state == RendererConstant.ID) {
-        this.material.defines.MATTE_ID_MODE = 1;
-        delete this.material.defines.DEPTH_MODE;
-    } else {
-        delete this.material.defines.MATTE_ID_MODE;
-        delete this.material.defines.DEPTH_MODE;
-    }
-
-    this._state = state;
-
-    this.material.needsUpdate = true;
-};
-
-function applyChangeState(n, s) {
-    if (n.changeState) {
-        n.changeState(s);
-    }
-}
-
-TileMesh.prototype.pushRenderState = function pushRenderState(state) {
-    if (this._state == state) {
-        return () => { };
-    }
-
-    const oldState = this._state;
-    this.traverse(n => applyChangeState(n, state));
-
-    return () => {
-        this.traverse(n => applyChangeState(n, oldState));
-    };
 };
 
 TileMesh.prototype.setBBoxZ = function setBBoxZ(min, max) {
@@ -125,7 +76,6 @@ TileMesh.prototype.removeLayer = function removeLayer(idLayer) {
     if (this.layerUpdateState && this.layerUpdateState[idLayer]) {
         delete this.layerUpdateState[idLayer];
     }
-    this.material.removeLayer(idLayer);
 };
 
 TileMesh.prototype.getCoordsForLayer = function getCoordsForLayer(layer) {

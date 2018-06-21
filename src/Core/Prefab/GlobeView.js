@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import View, { VIEW_EVENTS } from '../View';
 import { RENDERING_PAUSED, MAIN_LOOP_EVENTS } from '../MainLoop';
 import { COLOR_LAYERS_ORDER_CHANGED } from '../../Renderer/ColorLayersOrdering';
-import RendererConstant from '../../Renderer/RendererConstant';
+import RenderMode from '../../Renderer/RenderMode';
 import GlobeControls from '../../Renderer/ThreeExtended/GlobeControls';
 
 import { GeometryLayer } from '../Layer/Layer';
@@ -224,7 +224,6 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
     }
 
     const mfogDistance = size * 160.0;
-    this._renderState = RendererConstant.FINAL;
     this._fullSizeDepthBuffer = null;
 
     const renderer = this.mainLoop.gfxEngine.renderer;
@@ -314,6 +313,9 @@ GlobeView.prototype.removeLayer = function removeLayer(layerId) {
     const layer = this.getLayers(l => l.id === layerId)[0];
     if (layer && layer.type === 'color' && this.wgs84TileLayer.detach(layer)) {
         var cO = function cO(object) {
+            if (object.material && object.material.removeLayer) {
+                object.material.removeLayer(layerId);
+            }
             if (object.removeLayer) {
                 object.removeLayer(layerId);
             }
@@ -361,7 +363,7 @@ GlobeView.prototype.selectNodeAt = function selectNodeAt(mouse) {
 
 GlobeView.prototype.readDepthBuffer = function readDepthBuffer(x, y, width, height) {
     const g = this.mainLoop.gfxEngine;
-    const restore = this.wgs84TileLayer.level0Nodes.map(n => n.pushRenderState(RendererConstant.DEPTH));
+    const restore = this.wgs84TileLayer.level0Nodes.map(n => RenderMode.pushRenderState(n, RenderMode.DEPTH));
     const buffer = g.renderViewToBuffer(
         { camera: this.camera, scene: this.wgs84TileLayer.object3d },
         { x, y, width, height });

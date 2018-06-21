@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import View from '../View';
 import { RENDERING_PAUSED, MAIN_LOOP_EVENTS } from '../MainLoop';
-import RendererConstant from '../../Renderer/RendererConstant';
+import RenderMode from '../../Renderer/RenderMode';
 
 import { GeometryLayer } from '../Layer/Layer';
 
@@ -127,7 +127,6 @@ function PlanarView(viewerDiv, extent, options = {}) {
 
     this.addLayer(tileLayer);
 
-    this._renderState = RendererConstant.FINAL;
     this._fullSizeDepthBuffer = null;
     this.addFrameRequester(MAIN_LOOP_EVENTS.BEFORE_RENDER, () => {
         if (this._fullSizeDepthBuffer != null) {
@@ -171,7 +170,7 @@ PlanarView.prototype.selectNodeAt = function selectNodeAt(mouse) {
 
 PlanarView.prototype.readDepthBuffer = function readDepthBuffer(x, y, width, height) {
     const g = this.mainLoop.gfxEngine;
-    const restoreState = this.tileLayer.level0Nodes[0].pushRenderState(RendererConstant.DEPTH);
+    const restoreState = RenderMode.pushRenderState(this.tileLayer.level0Nodes[0], RenderMode.DEPTH);
     const buffer = g.renderViewToBuffer(
         { camera: this.camera, scene: this.tileLayer.object3d },
         { x, y, width, height });
