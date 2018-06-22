@@ -42,6 +42,7 @@ vec4 getOutlineColor(vec3 outlineColor, vec2 uv) {
 }
 #endif
 
+uniform float minBorderDistance;
 vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer layer) {
     if ( textureOffset >= colorTextureCount ) return vec4(0);
 
@@ -52,7 +53,7 @@ vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer
     }
 
     float borderDistance = getBorderDistance(uv.xy);
-    if (textureOffset != layer.textureOffset + int(uv.z) || borderDistance < -0.01 ) return vec4(0);
+    if (textureOffset != layer.textureOffset + int(uv.z) || borderDistance < minBorderDistance ) return vec4(0);
     vec4 color = texture2D(texture, pitUV(uv.xy, offsetScale));
     if(color.a > 0.0) {
         if(layer.effect > 2.0) {

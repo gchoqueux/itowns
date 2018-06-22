@@ -259,6 +259,12 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         setUniformProperty(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
         setUniformProperty(this, 'objectId', 0);
 
+        // > 0 produces gaps,
+        // < 0 causes oversampling of textures
+        // = 0 causes sampling artefacts due to bad estimation of texture-uv gradients
+        // best is a small negative number
+        setUniformProperty(this, 'minBorderDistance', -0.01);
+
         // LayeredMaterialLayers
         this.layers = {};
         this.elevationLayerIds = [];
