@@ -2,19 +2,10 @@ import * as THREE from 'three';
 import TileVS from './Shader/TileVS.glsl';
 import TileFS from './Shader/TileFS.glsl';
 import ShaderUtils from './Shader/ShaderUtils';
+import ShaderChunk from './Shader/ShaderChunk';
 import Capabilities from '../Core/System/Capabilities';
-import precision_qualifier from './Shader/Chunk/PrecisionQualifier.glsl';
-import project_pars_vertex from './Shader/Chunk/project_pars_vertex.glsl';
-import elevation_pars_vertex from './Shader/Chunk/elevation_pars_vertex.glsl';
-import elevation_vertex from './Shader/Chunk/elevation_vertex.glsl';
-import pitUV from './Shader/Chunk/pitUV.glsl';
 
-THREE.ShaderChunk['itowns.precision_qualifier'] = precision_qualifier;
-THREE.ShaderChunk['itowns.project_pars_vertex'] = project_pars_vertex;
-THREE.ShaderChunk['itowns.elevation_pars_vertex'] = elevation_pars_vertex;
-THREE.ShaderChunk['itowns.elevation_vertex'] = elevation_vertex;
-THREE.ShaderChunk['itowns.pitUV'] = pitUV;
-
+Object.assign(THREE.ShaderChunk, ShaderChunk);
 const identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
 const EMPTY_TEXTURE_ZOOM = -1;
 

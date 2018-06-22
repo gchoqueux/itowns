@@ -1,7 +1,7 @@
 #include <itowns.precision_qualifier>
 #include <itowns.pitUV>
 #include <logdepthbuf_pars_fragment>
-#include <fog_pars_fragment>
+#include <itowns.fog_pars_fragment>
 
 // BUG CHROME 50 UBUNTU 16.04
 // Lose context on compiling shader with too many IF STATEMENT
@@ -23,7 +23,6 @@ struct Layer {
 uniform Layer       colorLayers[NUM_FS_TEXTURES];
 uniform int         colorTextureCount;
 
-uniform float       fogDistance;
 uniform vec3        lightPosition;
 
 uniform vec3        diffuse;
@@ -156,10 +155,7 @@ void main() {
         gl_FragColor.rgb = mix(gl_FragColor.rgb, selectedColor, 0.5 );
     }
 
-    #if defined(USE_FOG)
-    float fogFactor = 1. - min(exp(-fogDepth/fogDistance), 1.);
-    gl_FragColor.rgb = mix(gl_FragColor.rgb, fogColor, fogFactor);
-    #endif
+    #include <itowns.fog_fragment>
 
     // Add lighting
     if(lightingEnabled) {
