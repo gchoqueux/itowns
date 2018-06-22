@@ -13,7 +13,7 @@ import CoordStars from '../Geographic/CoordStars';
 
 import Coordinates, { C, ellipsoidSizes } from '../Geographic/Coordinates';
 import { processTiledGeometryNode } from '../../Process/TiledNodeProcessing';
-import { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from '../../Process/LayeredMaterialNodeProcessing';
+import { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation, removeLayeredMaterialNodeLayer } from '../../Process/LayeredMaterialNodeProcessing';
 import { globeCulling, preGlobeUpdate, globeSubdivisionControl, globeSchemeTileWMTS, globeSchemeTile1 } from '../../Process/GlobeTileProcessing';
 import BuilderEllipsoidTile from './Globe/BuilderEllipsoidTile';
 import SubdivisionControl from '../../Process/SubdivisionControl';
@@ -312,17 +312,8 @@ GlobeView.prototype.addLayer = function addLayer(layer) {
 GlobeView.prototype.removeLayer = function removeLayer(layerId) {
     const layer = this.getLayers(l => l.id === layerId)[0];
     if (layer && layer.type === 'color' && this.wgs84TileLayer.detach(layer)) {
-        var cO = function cO(object) {
-            if (object.material && object.material.removeLayer) {
-                object.material.removeLayer(layerId);
-            }
-            if (object.removeLayer) {
-                object.removeLayer(layerId);
-            }
-        };
-
         for (const root of this.wgs84TileLayer.level0Nodes) {
-            root.traverse(cO);
+            root.traverse(removeLayeredMaterialNodeLayer(layerId));
         }
         const imageryLayers = this.getLayers(l => l.type === 'color');
         for (const color of imageryLayers) {

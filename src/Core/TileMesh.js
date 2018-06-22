@@ -27,7 +27,6 @@ class TileMesh extends Mesh {
 
         this.frustumCulled = false;
         this.updateGeometricError();
-        this.layerUpdateState = {};
     }
 
     updateMatrixWorld(force) {
@@ -50,12 +49,6 @@ class TileMesh extends Mesh {
         // The geometric error is calculated to have a correct texture display.
         // For the projection of a texture's texel to be less than or equal to one pixel
         this.geometricError = this.boundingSphere.radius / SIZE_TEXTURE_TILE;
-    }
-
-    removeLayer(idLayer) {
-        if (this.layerUpdateState && this.layerUpdateState[idLayer]) {
-            delete this.layerUpdateState[idLayer];
-        }
     }
 
     /**

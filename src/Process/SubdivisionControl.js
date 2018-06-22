@@ -7,13 +7,14 @@ export default {
     },
 
     hasEnoughTexturesToSubdivide: (context, layer, node) => {
+        const layerUpdateState = node.layerUpdateState || {};
         // Prevent subdivision if node is covered by at least one elevation layer
         // and if node doesn't have a elevation texture yet.
         for (const e of context.elevationLayers) {
             const nodeLayer = node.material.getElevationLayer();
             if (!e.frozen && e.ready && e.tileInsideLimit(node, e) && (!nodeLayer || nodeLayer.level < 0)) {
                 // no stop subdivision in the case of a loading error
-                if (node.layerUpdateState[e.id] && node.layerUpdateState[e.id].inError()) {
+                if (layerUpdateState[e.id] && layerUpdateState[e.id].inError()) {
                     continue;
                 }
                 return false;
@@ -26,7 +27,7 @@ export default {
                 continue;
             }
             // no stop subdivision in the case of a loading error
-            if (node.layerUpdateState[c.id] && node.layerUpdateState[c.id].inError()) {
+            if (layerUpdateState[c.id] && layerUpdateState[c.id].inError()) {
                 continue;
             }
             const nodeLayer = node.material.getLayer(c.id);

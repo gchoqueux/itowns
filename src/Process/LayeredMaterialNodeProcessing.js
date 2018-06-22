@@ -140,6 +140,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node) {
     let nodeLayer = material.getLayer(layer.id);
 
     // Initialisation
+    node.layerUpdateState = node.layerUpdateState || {};
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
 
@@ -313,6 +314,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
     let currentElevation = nodeLayer.level;
 
     // Init elevation layer, and inherit from parent if possible
+    node.layerUpdateState = node.layerUpdateState || {};
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
         initNodeElevationTextureFromParent(node, parent, layer);
@@ -415,4 +417,15 @@ export function updateLayeredMaterialNodeElevation(context, layer, node) {
                 }
             }
         });
+}
+
+export function removeLayeredMaterialNodeLayer(layerId) {
+    return function removeLayeredMaterialNodeLayer(node) {
+        if (node.material && node.material.removeLayer) {
+            node.material.removeLayer(layerId);
+        }
+        if (node.layerUpdateState && node.layerUpdateState[layerId]) {
+            delete node.layerUpdateState[layerId];
+        }
+    };
 }
