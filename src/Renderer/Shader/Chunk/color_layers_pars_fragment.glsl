@@ -10,7 +10,7 @@ uniform vec4        colorOffsetScales[NUM_FS_TEXTURES];
 uniform Layer       colorLayers[NUM_FS_TEXTURES];
 uniform int         colorTextureCount;
 
-vec3 uv_crs[NUM_CRS];
+vec3 uvs[NUM_CRS];
 
 float getBorderDistance(vec2 uv) {
     vec4 p4 = vec4(uv, 1. - uv);
@@ -48,7 +48,7 @@ vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer
     vec3 uv;
     #pragma unroll_loop
     for ( int i = 0; i < NUM_CRS; i ++ ) {
-        if ( i == layer.crs ) uv = uv_crs[ i ];
+        if ( i == layer.crs ) uv = uvs[ i ];
     }
 
     float borderDistance = getBorderDistance(uv.xy);

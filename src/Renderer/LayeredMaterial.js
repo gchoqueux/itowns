@@ -4,6 +4,7 @@ import TileFS from './Shader/TileFS.glsl';
 import ShaderUtils from './Shader/ShaderUtils';
 import ShaderChunk from './Shader/ShaderChunk';
 import Capabilities from '../Core/System/Capabilities';
+import RenderMode from './RenderMode';
 
 ShaderChunk.install(THREE.ShaderChunk, 'itowns.');
 
@@ -122,17 +123,6 @@ class LayeredMaterialLayer {
     }
 }
 
-function defineUniform(object, property, initValue) {
-    object.uniforms[property] = new THREE.Uniform(initValue);
-    Object.defineProperty(object, property, {
-        get: () => object.uniforms[property].value,
-        set: (value) => {
-            object.uniformsNeedUpdate |= object.uniforms[property].value != value;
-            object.uniforms[property].value = value;
-        },
-    });
-}
-
 function updateUniforms(material, fragmentShader) {
     const layerIds = fragmentShader ? material.colorLayerIds : material.elevationLayerIds;
     if (!layerIds.some(layerId => material.layers[layerId] && material.layers[layerId].needsUpdate)) {
@@ -171,6 +161,36 @@ function updateUniforms(material, fragmentShader) {
     material.uniformsNeedUpdate = true;
 }
 
+function setDefineProperty(object, property, PROPERTY, initValue, mapping) {
+    object.defines[PROPERTY] = initValue;
+    if (mapping) {
+        Object.keys(mapping).forEach((key) => {
+            object.defines[`${PROPERTY}_${key}`] = mapping[key];
+        });
+    }
+    Object.defineProperty(object, property, {
+        get: () => object.defines[PROPERTY],
+        set: (value) => {
+            if (object.defines[PROPERTY] != value) {
+                object.defines[PROPERTY] = value;
+                object.needsUpdate = true;
+            }
+        },
+    });
+}
+
+function setUniformProperty(object, property, initValue) {
+    object.uniforms[property] = new THREE.Uniform(initValue);
+    Object.defineProperty(object, property, {
+        get: () => object.uniforms[property].value,
+        set: (value) => {
+            if (object.uniforms[property].value != value) {
+                object.uniforms[property].value = value;
+                object.uniformsNeedUpdate = true;
+            }
+        },
+    });
+}
 
 class LayeredMaterial extends THREE.RawShaderMaterial {
     constructor(options = {}) {
@@ -189,15 +209,17 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         }
         this.defines.NUM_CRS = CRS_DEFINES.length;
 
+        setDefineProperty(this, 'mode', 'MODE', RenderMode.MODES.FINAL, RenderMode.MODES);
+
         if (__DEBUG__) {
             this.defines.DEBUG = 1;
             const outlineColors = [
                 new THREE.Vector3(1.0, 0.0, 0.0),
                 new THREE.Vector3(1.0, 0.5, 0.0),
             ];
-            defineUniform(this, 'showOutline', true);
-            defineUniform(this, 'outlineWidth', 0.008);
-            defineUniform(this, 'outlineColors', outlineColors);
+            setUniformProperty(this, 'showOutline', true);
+            setUniformProperty(this, 'outlineWidth', 0.008);
+            setUniformProperty(this, 'outlineColors', outlineColors);
         }
 
         if (options.useRgbaTextureElevation) {
@@ -223,19 +245,19 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.fragmentShader = ShaderUtils.unrollLoops(TileFS, this.defines);
 
         // Color uniforms
-        defineUniform(this, 'diffuse', new THREE.Color(0.04, 0.23, 0.35));
-        defineUniform(this, 'opacity', this.opacity);
+        setUniformProperty(this, 'diffuse', new THREE.Color(0.04, 0.23, 0.35));
+        setUniformProperty(this, 'opacity', this.opacity);
 
         // Lighting uniforms
-        defineUniform(this, 'lightingEnabled', false);
-        defineUniform(this, 'lightPosition', new THREE.Vector3(-0.5, 0.0, 1.0));
+        setUniformProperty(this, 'lightingEnabled', false);
+        setUniformProperty(this, 'lightPosition', new THREE.Vector3(-0.5, 0.0, 1.0));
 
         // Misc properties
-        defineUniform(this, 'fogDistance', 1000000000.0);
-        defineUniform(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
-        defineUniform(this, 'overlayAlpha', 0);
-        defineUniform(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
-        defineUniform(this, 'objectId', 0);
+        setUniformProperty(this, 'fogDistance', 1000000000.0);
+        setUniformProperty(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
+        setUniformProperty(this, 'overlayAlpha', 0);
+        setUniformProperty(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
+        setUniformProperty(this, 'objectId', 0);
 
         // LayeredMaterialLayers
         this.layers = {};

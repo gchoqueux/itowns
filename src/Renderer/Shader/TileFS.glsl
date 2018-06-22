@@ -14,11 +14,11 @@ varying vec3        vUv; // WGS84.x/PM.x, WGS84.y, PM.y
 void main() {
     #include <logdepthbuf_fragment>
 
-#if defined(MATTE_ID_MODE)
+#if MODE == MODE_ID
 
     #include <itowns.mode_id_fragment>
 
-#elif defined(DEPTH_MODE)
+#elif MODE == MODE_DEPTH
 
     #include <itowns.mode_depth_fragment>
 
@@ -26,8 +26,8 @@ void main() {
 
     gl_FragColor = vec4(diffuse, opacity);
 
-    uv_crs[CRS_WGS84] = vec3(vUv.xy, 0.);
-    uv_crs[CRS_PM]    = vec3(vUv.x, fract(vUv.z), floor(vUv.z));
+    uvs[CRS_WGS84] = vec3(vUv.xy, 0.);
+    uvs[CRS_PM]    = vec3(vUv.x, fract(vUv.z), floor(vUv.z));
 
     vec4 color;
     #pragma unroll_loop
@@ -40,7 +40,7 @@ void main() {
     if (showOutline) {
         #pragma unroll_loop
         for ( int i = 0; i < NUM_CRS; i ++ ) {
-            color = getOutlineColor( outlineColors[ i ], uv_crs[ i ].xy);
+            color = getOutlineColor( outlineColors[ i ], uvs[ i ].xy);
             gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
         }
     }

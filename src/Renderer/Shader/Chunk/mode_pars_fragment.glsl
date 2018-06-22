@@ -1,9 +1,9 @@
-#if defined(MATTE_ID_MODE)
+#if MODE == MODE_ID
 
 #include <packing>
 uniform int objectId;
 
-#elif defined(DEPTH_MODE)
+#elif MODE == MODE_DEPTH
 
 #include <packing>
 
