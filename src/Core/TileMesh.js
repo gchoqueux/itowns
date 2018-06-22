@@ -1,43 +1,59 @@
 import { Mesh, Sphere } from 'three';
-import LayeredMaterial from '../Renderer/LayeredMaterial';
 import { SIZE_TEXTURE_TILE } from '../Provider/OGCWebServiceHelper';
 
+/**
+ * A TileMesh is a THREE.Mesh with a geometricError and an OBB
+ * The objectId property of the material is the with the id of the TileMesh
+ * @constructor
+ * @param {TileGeometry} geometry - the tile geometry
+ * @param {THREE.Material} material - a THREE.Material compatible with THREE.Mesh
+ * @param {Extent} extent - the tile extent
+ * @param {?number} level - the tile level (default = 0)
+ */
 class TileMesh extends Mesh {
-    constructor(geometry, params) {
-        super();
+    constructor(geometry, material, extent, level = 0) {
+        super(geometry, material);
 
-        this.matrixAutoUpdate = false;
-        this.rotationAutoUpdate = false;
-
-        if (!params.extent) {
-            throw new Error('params.extent is mandatory to build a TileMesh');
+        if (!extent) {
+            throw new Error('extent is mandatory to build a TileMesh');
         }
+        this.extent = extent;
+        this.level = level;
+        this.material.objectId = this.id;
 
-        this.level = params.level || 0;
-        this.extent = params.extent;
-
-        this.geometry = geometry;
         this.obb = this.geometry.OBB.clone();
         this.boundingSphere = new Sphere();
         this.obb.box3D.getBoundingSphere(this.boundingSphere);
-
-        params.material = params.material || {};
-        params.material.objectId = this.id;
-        this.material = params.material.isMaterial ? params.material : new LayeredMaterial(params.material);
+        this.updateGeometricError();
 
         this.frustumCulled = false;
-        this.updateGeometricError();
+        this.matrixAutoUpdate = false;
+        this.rotationAutoUpdate = false;
     }
 
+    /**
+     * Update the global transform of the object and its children.
+     * Update the OBB of the object.
+     *
+     * @param {Boolean} force
+     */
     updateMatrixWorld(force) {
         super.updateMatrixWorld(force);
         this.obb.update();
     }
 
+    /**
+     * If specified, update the min and max elevation of the OBB
+     * and updates accordingly the bounding sphere and the geometric error
+     *
+     * @param {?number} min
+     * @param {?number} max
+     */
     setBBoxZ(min, max) {
         if (min == undefined && max == undefined) {
             return;
         }
+        // FIXME: Why the floors ? This is not conservative : the obb may be too short by almost 1m !
         if (Math.floor(min) !== Math.floor(this.obb.z.min) || Math.floor(max) !== Math.floor(this.obb.z.max)) {
             this.obb.updateZ(min, max);
             this.obb.box3D.getBoundingSphere(this.boundingSphere);
@@ -45,6 +61,9 @@ class TileMesh extends Mesh {
         }
     }
 
+    /**
+     * Update the geometric error based on the bounding sphere radius.
+     */
     updateGeometricError() {
         // The geometric error is calculated to have a correct texture display.
         // For the projection of a texture's texel to be less than or equal to one pixel

@@ -16,7 +16,6 @@ describe('updateLayeredMaterialNodeImagery', function () {
 
     const nodeLayer = { };
     const material = {
-        isMaterial: true,
         getLayer: () => nodeLayer,
     };
 
@@ -57,7 +56,7 @@ describe('updateLayeredMaterialNodeImagery', function () {
 
 
     it('hidden tile should not execute commands', () => {
-        const tile = new TileMesh(geom, { extent, material });
+        const tile = new TileMesh(geom, material, extent, 0);
         material.visible = false;
         nodeLayer.level = 0;
         tile.parent = { };
@@ -66,7 +65,7 @@ describe('updateLayeredMaterialNodeImagery', function () {
     });
 
     it('tile with best texture should not execute commands', () => {
-        const tile = new TileMesh(geom, { extent, material, level: 3 });
+        const tile = new TileMesh(geom, material, extent, 3);
         material.visible = true;
         nodeLayer.level = 3;
         tile.parent = { };
@@ -75,7 +74,7 @@ describe('updateLayeredMaterialNodeImagery', function () {
     });
 
     it('tile with downscaled texture should execute 1 command', () => {
-        const tile = new TileMesh(geom, { extent, material, level: 2 });
+        const tile = new TileMesh(geom, material, extent, 2);
         material.visible = true;
         nodeLayer.level = 1;
         tile.parent = { };
@@ -90,7 +89,7 @@ describe('updateLayeredMaterialNodeImagery', function () {
     });
 
     it('tile should not request texture with level > layer.zoom.max', () => {
-        const tile = new TileMesh(geom, { extent, material, level: 15 });
+        const tile = new TileMesh(geom, material, extent, 15);
         // Emulate a situation where tile inherited a level 1 texture
         material.visible = true;
         nodeLayer.level = 1;

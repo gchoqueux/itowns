@@ -9,6 +9,7 @@ import TileMesh from '../Core/TileMesh';
 import CancelledCommandException from '../Core/Scheduler/CancelledCommandException';
 import Cache from '../Core/Scheduler/Cache';
 import { requestNewTile } from '../Process/TiledNodeProcessing';
+import LayeredMaterial from '../Renderer/LayeredMaterial';
 
 function preprocessDataLayer(layer, view, scheduler) {
     if (!layer.schemeTile) {
@@ -73,14 +74,9 @@ function executeCommand(command) {
     }
 
     // build tile
-    const params = {
-        extent,
-        level,
-        material: layer.materialOptions,
-    };
-
     geometry._count++;
-    const tile = new TileMesh(geometry, params);
+    const material = new LayeredMaterial(layer.materialOptions);
+    const tile = new TileMesh(geometry, material, extent, level);
     tile.layer = layer;
     tile.layers.set(command.threejsLayer);
 
