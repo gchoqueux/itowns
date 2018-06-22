@@ -25,16 +25,15 @@ const CRS_DEFINES = [
     ['PM', 'WMTS:PM'],
 ];
 
-function defineLayerProperty(layer, publicName, initValue, layerNeedsUpdate) {
-    const privateName = `_${publicName}`;
-    layer[privateName] = initValue;
-    Object.defineProperty(layer, publicName, {
-        get: () => layer[privateName],
+function defineLayerProperty(layer, property, value, layerNeedsUpdate) {
+    let _value = value;
+    Object.defineProperty(layer, property, {
+        get: () => _value,
         set: (value) => {
-            if (layer[privateName] !== value) {
-                layer.needsUpdate |= layerNeedsUpdate(layer[privateName], value);
+            if (_value !== value) {
+                layer.needsUpdate |= layerNeedsUpdate(_value, value);
                 layer.material.uniformsNeedUpdate = true;
-                layer[privateName] = value;
+                _value = value;
                 layer.updateUniforms();
             }
         },
