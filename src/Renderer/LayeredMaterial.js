@@ -27,8 +27,9 @@ const CRS_DEFINES = [
     ['PM', 'WMTS:PM'],
 ];
 
-function defineLayerProperty(layer, property, value, layerNeedsUpdate) {
-    let _value = value;
+function defineLayerProperty(layer, property, initValue, defaultValue, layerNeedsUpdate) {
+    let _value = initValue !== undefined ? initValue : defaultValue;
+    layerNeedsUpdate = layerNeedsUpdate || (() => false);
     Object.defineProperty(layer, property, {
         get: () => _value,
         set: (value) => {
@@ -53,13 +54,14 @@ class LayeredMaterialLayer {
             console.error('Unkown crs:', crs);
         }
 
-        options.opacity = options.opacity !== undefined ? options.opacity : 1;
-        options.visible = options.visible !== undefined ? options.visible : true;
-        options.effect = options.effect !== undefined ? options.effect : 0;
-
-        defineLayerProperty(this, 'opacity', options.opacity, (x, y) => (x > 0) != (y > 0));
-        defineLayerProperty(this, 'visible', options.visible, () => true);
-        defineLayerProperty(this, 'effect', options.effect, () => false);
+        defineLayerProperty(this, 'opacity', options.opacity, 1, (x, y) => (x > 0) != (y > 0));
+        defineLayerProperty(this, 'visible', options.visible, true, () => true);
+        defineLayerProperty(this, 'effect', options.effect, 0);
+        defineLayerProperty(this, 'bias', options.bias, 0);
+        defineLayerProperty(this, 'scale', options.scale, 1);
+        defineLayerProperty(this, 'mode', options.mode, 0);
+        defineLayerProperty(this, 'zmin', options.zmin, 0);
+        defineLayerProperty(this, 'zmax', options.zmax, Infinity);
 
         this.textures = [];
         this.offsetScales = [];
@@ -161,13 +163,14 @@ function updateUniforms(material, fragmentShader) {
     material.uniformsNeedUpdate = true;
 }
 
-function setDefineProperty(object, property, PROPERTY, initValue, mapping) {
+function setDefineMapping(object, PROPERTY, mapping) {
+    Object.keys(mapping).forEach((key) => {
+        object.defines[`${PROPERTY}_${key}`] = mapping[key];
+    });
+}
+
+function setDefineProperty(object, property, PROPERTY, initValue) {
     object.defines[PROPERTY] = initValue;
-    if (mapping) {
-        Object.keys(mapping).forEach((key) => {
-            object.defines[`${PROPERTY}_${key}`] = mapping[key];
-        });
-    }
     Object.defineProperty(object, property, {
         get: () => object.defines[PROPERTY],
         set: (value) => {
@@ -192,6 +195,12 @@ function setUniformProperty(object, property, initValue) {
     });
 }
 
+const ELEVATION_MODES = {
+    RGBA: 0,
+    COLOR: 1,
+    DATA: 2,
+};
+
 class LayeredMaterial extends THREE.RawShaderMaterial {
     constructor(options = {}) {
         super({});
@@ -209,7 +218,9 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         }
         this.defines.NUM_CRS = CRS_DEFINES.length;
 
-        setDefineProperty(this, 'mode', 'MODE', RenderMode.MODES.FINAL, RenderMode.MODES);
+        setDefineMapping(this, 'ELEVATION', ELEVATION_MODES);
+        setDefineMapping(this, 'MODE', RenderMode.MODES);
+        setDefineProperty(this, 'mode', 'MODE', RenderMode.MODES.FINAL);
 
         if (__DEBUG__) {
             this.defines.DEBUG = 1;
@@ -220,20 +231,6 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
             setUniformProperty(this, 'showOutline', true);
             setUniformProperty(this, 'outlineWidth', 0.008);
             setUniformProperty(this, 'outlineColors', outlineColors);
-        }
-
-        if (options.useRgbaTextureElevation) {
-            delete options.useRgbaTextureElevation;
-            throw new Error('Restore this feature');
-        } else if (options.useColorTextureElevation) {
-            this.defines.COLOR_TEXTURE_ELEVATION = 1;
-            this.defines._minElevation = options.colorTextureElevationMinZ.toFixed(1);
-            this.defines._maxElevation = options.colorTextureElevationMaxZ.toFixed(1);
-            delete options.useColorTextureElevation;
-            delete options.colorTextureElevationMinZ;
-            delete options.colorTextureElevationMaxZ;
-        } else {
-            this.defines.DATA_TEXTURE_ELEVATION = 1;
         }
 
         if (Capabilities.isLogDepthBufferSupported()) {
@@ -282,12 +279,35 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.uniforms.colorOffsetScales = new THREE.Uniform(new Array(nbSamplers[1]).fill(identityOffsetScale));
         this.uniforms.colorTextureCount = new THREE.Uniform(0);
 
+
         // transitory setup with a single hard-coded elevation layer
-        this.elevationLayer = this.addLayer({
+        const elevation = {
             id: 'elevation',
             coords: [{ crs: () => 'WGS84' }],
-        });
-        this.elevationLayerIds[0] = this.elevationLayer.id;
+            scale: 1,
+            bias: 0,
+            mode: ELEVATION_MODES.DATA,
+            zmin: 0,
+            zmax: Infinity,
+        };
+        const pop = (property) => {
+            const value = options[property];
+            if (value !== undefined) delete options[property]; // so that setValues does not complain
+            return value;
+        };
+        if (pop('useRgbaTextureElevation')) {
+            elevation.mode = ELEVATION_MODES.RGBA;
+            elevation.zmax = 5000;
+            throw new Error('Restore this feature');
+        } else if (pop('useColorTextureElevation')) {
+            elevation.mode = ELEVATION_MODES.COLOR;
+            const zmin = pop('colorTextureElevationMinZ');
+            const zmax = pop('colorTextureElevationMaxZ');
+            elevation.scale = zmax - zmin;
+            elevation.bias = zmin;
+        }
+        this.elevationLayer = this.addLayer(elevation);
+        this.elevationLayerIds[0] = elevation.id;
 
         this.setValues(options);
     }

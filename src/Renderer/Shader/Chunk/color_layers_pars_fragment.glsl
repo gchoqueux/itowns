@@ -47,7 +47,7 @@ vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer
     if ( textureOffset >= colorTextureCount ) return vec4(0);
 
     vec3 uv;
-    #pragma unroll_loop
+    // #pragma unroll_loop
     for ( int i = 0; i < NUM_CRS; i ++ ) {
         if ( i == layer.crs ) uv = uvs[ i ];
     }
