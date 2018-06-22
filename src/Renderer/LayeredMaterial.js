@@ -233,7 +233,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         // Misc properties
         defineUniform(this, 'fogDistance', 1000000000.0);
         defineUniform(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
-        defineUniform(this, 'selected', false);
+        defineUniform(this, 'overlayAlpha', 0);
+        defineUniform(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
         defineUniform(this, 'objectId', 0);
 
         // LayeredMaterialLayers

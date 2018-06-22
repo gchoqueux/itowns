@@ -340,11 +340,13 @@ GlobeView.prototype.selectNodeAt = function selectNodeAt(mouse) {
 
     for (const n of this.wgs84TileLayer.level0Nodes) {
         n.traverse((node) => {
-            if (!node.material) return;
-            node.material.selected = node.id === selectedId;
-            if (node.material.selected) {
-                // eslint-disable-next-line no-console
-                console.info(node);
+            if (node.material) {
+                const selected = node.id === selectedId;
+                node.material.overlayAlpha = selected ? 0.5 : 0;
+                if (selected) {
+                    // eslint-disable-next-line no-console
+                    console.info(node);
+                }
             }
         });
     }
