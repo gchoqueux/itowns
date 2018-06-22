@@ -6,13 +6,21 @@ import fog_pars_fragment from './Chunk/fog_pars_fragment.glsl';
 import fog_fragment from './Chunk/fog_fragment.glsl';
 import pitUV from './Chunk/pitUV.glsl';
 
-const ShaderChunk = {};
-ShaderChunk['itowns.precision_qualifier'] = precision_qualifier;
-ShaderChunk['itowns.project_pars_vertex'] = project_pars_vertex;
-ShaderChunk['itowns.elevation_pars_vertex'] = elevation_pars_vertex;
-ShaderChunk['itowns.elevation_vertex'] = elevation_vertex;
-ShaderChunk['itowns.fog_pars_fragment'] = fog_pars_fragment;
-ShaderChunk['itowns.fog_fragment'] = fog_fragment;
-ShaderChunk['itowns.pitUV'] = pitUV;
+const ShaderChunk = {
+    precision_qualifier,
+    project_pars_vertex,
+    elevation_pars_vertex,
+    elevation_vertex,
+    fog_pars_fragment,
+    fog_fragment,
+    pitUV,
+};
+
+ShaderChunk.install = function install(target, path) {
+    if (!path) return Object.assign(target, this);
+    Object.keys(this).forEach((key) => {
+        target[path + key] = this[key];
+    });
+};
 
 export default ShaderChunk;

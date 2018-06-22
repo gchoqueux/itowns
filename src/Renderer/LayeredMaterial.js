@@ -5,7 +5,8 @@ import ShaderUtils from './Shader/ShaderUtils';
 import ShaderChunk from './Shader/ShaderChunk';
 import Capabilities from '../Core/System/Capabilities';
 
-Object.assign(THREE.ShaderChunk, ShaderChunk);
+ShaderChunk.install(THREE.ShaderChunk, 'itowns.');
+
 const identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
 const EMPTY_TEXTURE_ZOOM = -1;
 
