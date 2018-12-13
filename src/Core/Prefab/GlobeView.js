@@ -113,10 +113,10 @@ function GlobeView(viewerDiv, coordCarto, options = {}) {
 
     const tileLayer = new GlobeLayer('globe', options.object3d, options);
 
-    const sun = new THREE.DirectionalLight();
-    sun.position.set(-0.5, 0, 1);
-    sun.updateMatrixWorld(true);
-    tileLayer.object3d.add(sun);
+    // const sun = new THREE.DirectionalLight();
+    // sun.position.set(-0.5, 0, 1);
+    // sun.updateMatrixWorld(true);
+    // tileLayer.object3d.add(sun);
 
     this.addLayer(tileLayer);
 

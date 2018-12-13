@@ -192,7 +192,7 @@ function featureToLine(feature, options) {
 }
 
 const color = new THREE.Color();
-const material = new THREE.MeshBasicMaterial();
+const material = new THREE.MeshStandardMaterial();
 function featureToPolygon(feature, options) {
     const ptsIn = feature.vertices;
     const normals = feature.normals;
@@ -316,7 +316,9 @@ function featureToExtrudedPolygon(feature, options) {
 
     geom.setIndex(new THREE.BufferAttribute(new Uint16Array(indices), 1));
 
-    const mesh = new THREE.Mesh(geom, material);
+    const g = new THREE.Geometry().fromBufferGeometry(geom);
+    g.computeFlatVertexNormals();
+    const mesh = new THREE.Mesh(g, material);
     mesh.minAltitude = vertices.minAltitude;
     return mesh;
 }
@@ -352,6 +354,8 @@ function featureToMesh(feature, options) {
         case 'multipolygon': {
             if (options.extrude) {
                 mesh = featureToExtrudedPolygon(feature, options);
+                mesh.castShadow = true;
+                mesh.receiveShadow = true;
             } else {
                 mesh = featureToPolygon(feature, options);
             }

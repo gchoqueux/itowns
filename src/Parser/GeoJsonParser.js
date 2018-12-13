@@ -38,6 +38,8 @@ function readCoordinates(crsIn, crsOut, coordinates, extent, target, normals, si
     }
     target = target || new Array(coordinates.length);
     let z = 0;
+    // TODO: 1 is a default z value, makes this configurable
+    // Why the default value isn't 0?
     for (const pair of coordinates) {
         if (size == 3 && typeof pair[2] == 'number') {
             z = pair[2];

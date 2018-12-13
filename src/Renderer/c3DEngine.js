@@ -60,6 +60,9 @@ function c3DEngine(rendererOrDiv, options = {}) {
             alpha: options.alpha,
             logarithmicDepthBuffer: options.logarithmicDepthBuffer,
         });
+        this.renderer.shadowMap.enabled = true;
+        this.renderer.shadowMap.type = THREE.BasicShadowMap;
+        // this.renderer.shadowMap.type = THREE.PCFSoftShadowMap;
     } catch (ex) {
         console.error('Failed to create WebGLRenderer', ex);
         this.renderer = null;

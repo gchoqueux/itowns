@@ -1,0 +1,173 @@
+<html>
+    <head>
+        <title>INTERVIBILITY</title>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/loading_screen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/loading_screen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <div class="help" style="left: unset; right: 0;">
+            <p><b>Information Batiment</b></p>
+            <ul id="info">
+            </ul>
+        </div>
+        <script type="text/javascript">
+            // # Simple Globe viewer
+
+            // Define initial camera position
+            var positionOnGlobe = { longitude: 4.85089, latitude: 45.73001, altitude: 500 };
+            var meshes = [];
+            var linesBus = [];
+            var scaler;
+
+            // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+            var viewerDiv = document.getElementById('viewerDiv');
+
+            // Instanciate iTowns view*
+            var view = new itowns.GlobeView(viewerDiv, positionOnGlobe);
+            setupLoadingScreen(viewerDiv, view);
+            function addLayerCb(layer) {
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+
+            // Define projection that we will use (taken from https://epsg.io/3946, Proj4js section)
+            itowns.proj4.defs('EPSG:3946',
+                '+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+            itowns.proj4.defs('EPSG:2154',
+                '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+            // Add one imagery layer to the scene
+            // This layer is defined in a json file but it could be defined as a plain js
+            // object. See Layer* for more info.
+            itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ColorLayer('Ortho', config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            });
+
+            // Add two elevation layers.
+            // These will deform iTowns globe geometry to represent terrain elevation.
+            function addElevationLayerFromConfig(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ElevationLayer(config.id, config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+
+            function colorBuildings(properties) {
+                if (properties.id.indexOf('bati_remarquable') === 0) {
+                    return new itowns.THREE.Color(0x5555ff);
+                } else if (properties.id.indexOf('bati_industriel') === 0) {
+                    return new itowns.THREE.Color(0xff5555);
+                }
+                return new itowns.THREE.Color(0xeeeeee);
+            }
+
+            function altitudeBuildings(properties) {
+                return properties.z_min - properties.hauteur;
+            }
+
+            function extrudeBuildings(properties) {
+                return properties.hauteur;
+            }
+
+            function acceptFeature(properties) {
+                return !!properties.hauteur;
+            }
+
+            var wfsBuildingSource = new itowns.WFSSource({
+                url: 'http://wxs.ign.fr/3ht7xcw6f7nciopo16etuqp2/geoportail/wfs?',
+                version: '2.0.0',
+                typeName: 'BDTOPO_BDD_WLD_WGS84G:bati_remarquable,BDTOPO_BDD_WLD_WGS84G:bati_indifferencie,BDTOPO_BDD_WLD_WGS84G:bati_industriel',
+                projection: 'EPSG:4326',
+                ipr: 'IGN',
+                format: 'application/json',
+                zoom: { min: 14, max: 14 },
+                extent: {
+                    west: 4.568,
+                    east: 5.18,
+                    south: 45.437,
+                    north: 46.03,
+                },
+            });
+
+            var wfsBuildingLayer = new itowns.GeometryLayer('WFS Building', new itowns.THREE.Group(), {
+                update: itowns.FeatureProcessing.update,
+                convert: itowns.Feature2Mesh.convert({
+                    color: colorBuildings,
+                    altitude: altitudeBuildings,
+                    extrude: extrudeBuildings }),
+                filter: acceptFeature,
+                source: wfsBuildingSource
+            });
+            view.addLayer(wfsBuildingLayer);
+
+            var menuGlobe = new GuiTools('menuDiv', view);
+            // Listen for globe full initialisation event
+            view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+                // eslint-disable-next-line no-console
+                console.info('Globe initialized');
+            });
+            var d = new debug.Debug(view, menuGlobe.gui);
+            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
+
+            view.controls.setTilt(45, false);
+            view.controls.setHeading(180, false);
+
+            for (let layer of view.getLayers()) {
+                if (layer.id === 'WFS Building') {
+                    layer.whenReady.then( function _(layer) {
+                        var f= 2.0;
+                        console.log('f', f);
+                        var gui = debug.GeometryDebug.createGeometryDebugUI(menuGlobe.gui, view, layer);
+                        debug.GeometryDebug.addWireFrameCheckbox(gui, view, layer);
+                        const coord = new itowns.Coordinates('EPSG:4326', 4.8509153496042225, 45.729377542827464, 169).as(view.referenceCrs);
+                        const coord2 = new itowns.Coordinates('EPSG:4326', 4.850946845116811, 45.73067369481058, 167).as(view.referenceCrs);
+                        const sphere = new itowns.THREE.Mesh(new itowns.THREE.SphereGeometry( 2, 32, 32 ), new itowns.THREE.MeshBasicMaterial());
+                        coord.xyz(sphere.position);
+                        sphere.updateMatrixWorld();
+                        view.scene.add(sphere);
+                        var intensity = 0.05;
+                        var pointLight = new itowns.THREE.PointLight( 0xff0000, intensity, 300 );
+                        pointLight.castShadow = true;
+                        //Set up shadow properties for the light
+                        pointLight.shadow.mapSize.width = 2048 * f;// default
+                        pointLight.shadow.mapSize.height = 2048 * f; // default
+                        pointLight.shadow.camera.near = 10;
+                        pointLight.shadow.camera.far = 200;
+                        pointLight.shadow.bias = 0.01;
+                        pointLight.shadow.radius = 0.001;
+
+                        var light = new itowns.THREE.AmbientLight( 0x404040, 0.01 ); // soft white light
+                        view.scene.add( light );
+
+                        console.log('pointLight.shadow', pointLight.shadow);
+                        // pointLight.shadow.radius = 10;
+                        // coord.xyz(pointLight.position);
+                        pointLight.updateMatrixWorld();
+                        sphere.add(pointLight);
+                        const anim =() => {
+                            var time = performance.now() * 0.00005;
+                            sphere.position.lerpVectors(coord.xyz(), coord2.xyz(), Math.sin(time));
+                            sphere.updateMatrixWorld();
+                            view.notifyChange(sphere);
+                        };
+
+                        setInterval(anim,20)
+                    });
+                }
+            }
+        </script>
+    </body>
+</html>
