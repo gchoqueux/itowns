@@ -1,0 +1,173 @@
+<html>
+    <head>
+        <title>Itowns - globe 3dtiles intervibility</title>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/loading_screen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/loading_screen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <div class="help" style="left: unset; right: 0;">
+            <p><b>Information Batiment</b></p>
+            <ul id="info">
+            </ul>
+        </div>
+        <script type="text/javascript">
+            // # Simple Globe viewer
+
+            // Define initial camera position
+            // var positionOnGlobe = { longitude: 4.85, latitude: 45.76, altitude: 700 };
+            var positionOnGlobe = { longitude: 2.379016, latitude: 48.840330, altitude: 700 };
+            // var positionOnGlobe = { longitude: 2.379785, latitude: 48.832211, altitude: 700 };
+
+            var meshes = [];
+            var linesBus = [];
+            var scaler;
+
+            // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+            var viewerDiv = document.getElementById('viewerDiv');
+
+            // Instanciate iTowns GlobeView*
+            var view = new itowns.GlobeView(viewerDiv, positionOnGlobe);
+            setupLoadingScreen(viewerDiv, view);
+            function addLayerCb(layer) {
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+
+            // Add one imagery layer to the scene
+            // This layer is defined in a json file but it could be defined as a plain js
+            // object. See Layer* for more info.
+            itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ColorLayer('Ortho', config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            });
+
+            // Add two elevation layers.
+            // These will deform iTowns globe geometry to represent terrain elevation.
+            function addElevationLayerFromConfig(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ElevationLayer(config.id, config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+            var preUpdateGeo = itowns.pre3dTilesUpdate;
+            var container = new itowns.THREE.Group();
+
+            var $3dTilesBercy = new itowns.GeometryLayer('Bercy', container);
+            $3dTilesBercy.preUpdate = preUpdateGeo;
+            $3dTilesBercy.update = itowns.process3dTilesNode(
+                itowns.$3dTilesCulling,
+                itowns.$3dTilesSubdivisionControl
+            );
+            $3dTilesBercy.id = 'Bercy';
+            $3dTilesBercy.name = 'Bercy';
+
+
+//Ign2018/demo
+// mdp: Ign2018
+            $3dTilesBercy.url = 'https://itowns.ign.fr/demos/SCV-3DTiles/Cache3DTiles_SCV_301018/root.json';
+            $3dTilesBercy.protocol = '3d-tiles';
+            $3dTilesBercy.overrideMaterials = true;  // custom cesium shaders are not functional
+            $3dTilesBercy.type = 'geometry';
+            $3dTilesBercy.visible = true;
+            $3dTilesBercy.sseThreshold = 0.1;
+            $3dTilesBercy.overrideMaterials = false;
+            $3dTilesBercy.networkOptions = { credentials: 'include', crossOrigin: '' };
+            // $3dTilesBercy.networkOptions = { credentials: 'omit' };
+            // $3dTilesBercy.networkOptions = { crossOrigin: 'anonymous'};
+            itowns.View.prototype.addLayer.call(view, $3dTilesBercy);
+
+            var menuGlobe = new GuiTools('menuDiv', view);
+            // Listen for globe full initialisation event
+            view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+                // eslint-disable-next-line no-console
+                console.info('Globe initialized');
+                // view.controls.setTilt(45, true);
+            });
+            var d = new debug.Debug(view, menuGlobe.gui);
+            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
+
+            view.controls.setTilt(80, false);
+
+            for (let layer of view.getLayers()) {
+                if (layer.id === 'Bercy') {
+                    layer.whenReady.then( function _(layer) {
+                        var gui = debug.GeometryDebug.createGeometryDebugUI(menuGlobe.gui, view, layer);
+                        debug.GeometryDebug.addWireFrameCheckbox(gui, view, layer);
+
+                        // const coord = new itowns.Coordinates('EPSG:4326', 4.842318, 45.760015, 170).as(view.referenceCrs);
+                        // const coord = new itowns.Coordinates('EPSG:4326', 4.847280, 45.760328, 170).as(view.referenceCrs);
+                        // const coord2 = new itowns.Coordinates('EPSG:4326', 4.852051, 45.760624, 165).as(view.referenceCrs);
+                        // const coord = new itowns.Coordinates('EPSG:4326', 2.37387, 48.840786, 38).as(view.referenceCrs);
+                        // const coord2 = new itowns.Coordinates('EPSG:4326', 2.379304, 48.835953, 38).as(view.referenceCrs);
+                        // const coord = new itowns.Coordinates('EPSG:4326', 2.379785, 48.832211, 38).as(view.referenceCrs);
+                        // const coord2 = new itowns.Coordinates('EPSG:4326', 2.374125, 48.837209, 38).as(view.referenceCrs);
+                        const coord1 = new itowns.Coordinates('EPSG:4326', 2.378951, 48.840386, 35).as(view.referenceCrs);
+                        const coord2 = new itowns.Coordinates('EPSG:4326', 2.375832, 48.838795, 37).as(view.referenceCrs);
+                        const coord3 = new itowns.Coordinates('EPSG:4326', 2.373840, 48.840811, 35).as(view.referenceCrs);
+                        const sphere = new itowns.THREE.Mesh(new itowns.THREE.SphereGeometry( 5, 32, 32 ), new itowns.THREE.MeshBasicMaterial());
+                        coord1.xyz(sphere.position);
+                        sphere.updateMatrixWorld();
+                        view.scene.add(sphere);
+                        var intensity = 3;
+                        var pointLight = new itowns.THREE.PointLight( 0xff0000, intensity, 300 );
+                        pointLight.castShadow = true;
+                        //Set up shadow properties for the light
+                        pointLight.shadow.mapSize.width = 2048;// default
+                        pointLight.shadow.mapSize.height = 2048; // default
+                        pointLight.shadow.camera.near = 10;
+                        pointLight.shadow.camera.far = 400;
+                        pointLight.shadow.bias = 0.01;
+                        // pointLight.shadow.radius = 10;
+                        // coord.xyz(pointLight.position);
+                        pointLight.updateMatrixWorld();
+                        sphere.add(pointLight);
+
+                        // var light = new itowns.THREE.AmbientLight( 0x404040 ); // soft white light
+                        // view.scene.add( light );
+
+                        var directionalLight = new itowns.THREE.DirectionalLight( 0xffffff, 0.5 );
+                        // directionalLight.rotateX(Math.PI);
+                        // view.camera.camera3D.add(directionalLight);
+                        view.scene.add( directionalLight );
+                        coord1.xyz(directionalLight.position);
+                        directionalLight.lookAt(coord2.xyz());
+                        directionalLight.updateMatrixWorld();
+
+                        // POSITION
+                        var positionKF = new itowns.THREE.VectorKeyframeTrack( '.position', [ 0, 5, 10, 15, 20],
+                            [
+                            coord1._values[0], coord1._values[1], coord1._values[2],
+                            coord2._values[0], coord2._values[1], coord2._values[2],
+                            coord3._values[0], coord3._values[1], coord3._values[2],
+                            coord2._values[0], coord2._values[1], coord2._values[2],
+                            coord1._values[0], coord1._values[1], coord1._values[2]
+                            ] );
+                        var clip = new itowns.THREE.AnimationClip( 'Action', 20, [ positionKF] );
+                        var mixer = new itowns.THREE.AnimationMixer( sphere );
+                        var clipAction = mixer.clipAction( clip );
+                        clipAction.play();
+                        var clock = new itowns.THREE.Clock();
+
+                        setInterval(function(){
+                            mixer.update( clock.getDelta() );
+                            sphere.updateMatrixWorld();
+                            view.notifyChange(sphere);
+                        }, 30);
+                    });
+                }
+            }
+        </script>
+    </body>
+</html>

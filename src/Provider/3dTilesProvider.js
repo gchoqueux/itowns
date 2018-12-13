@@ -215,6 +215,11 @@ function executeCommand(command) {
             obj.material.transparent = layer.opacity < 1.0;
             obj.material.opacity = layer.opacity;
             obj.material.wireframe = layer.wireframe;
+            obj.material.shadowSide = THREE.DoubleSide;
+            obj.material.customDistanceMaterial = new THREE.MeshDistanceMaterial({
+                alphaMap: obj.material.alphaMap,
+                alphaTest: obj.material.alphaTest,
+            });
         }
     };
     if (path) {
@@ -247,6 +252,9 @@ function executeCommand(command) {
                             tile.batchTable = content.batchTable;
                         }
                         tile.add(content.object3d);
+                        content.object3d.castShadow = true;
+                        content.object3d.receiveShadow = true;
+                        content.object3d.traverse((o) => { o.castShadow = true; o.receiveShadow = true; });
                         tile.traverse(setLayer);
                         return tile;
                     });
