@@ -56,8 +56,12 @@ and open the template in the editor.
             console.info('Globe initialized');
             const c1 = new itowns.Coordinates('EPSG:4326', position.longitude + 0.01, position.latitude, 60);
             itowns.addCSS2DLabel(view, c1, 'css2d');
+
             const c2 = new itowns.Coordinates('EPSG:4326', position.longitude - 0.01, position.latitude, 200);
-            itowns.sprite3D(view, c2, 'css2d');
+            itowns.sprite3D(view, c2);
+
+            const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.01, 200);
+            itowns.spriteHtml2canvas(view, c3, 'sprite Html2canvas');
         });
 
         const d = new debug.Debug(view, menuGlobe.gui);
