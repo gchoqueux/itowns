@@ -136,7 +136,7 @@ class GlobeLayer extends TiledGeometryLayer {
         sinus = (distance - radius) * preSinus;
         zoom = Math.log(Math.PI / (2.0 * Math.asin(sinus))) / Math.log(2);
 
-        return isNaN(zoom) ? 0 : Math.round(zoom);
+        return isNaN(zoom) ? 0 : zoom;
     }
 
     computeDistanceCameraFromTileZoom(zoom, camera) {
