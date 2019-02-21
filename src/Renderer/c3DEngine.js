@@ -9,6 +9,9 @@
 import * as THREE from 'three';
 import Capabilities from 'Core/System/Capabilities';
 import { unpack1K } from 'Renderer/LayeredMaterial';
+import CSS2DRenderer from 'ThreeExtended/renderers/CSS2DRenderer';
+// import CSS3DRenderer from 'ThreeExtended/renderers/CSS3DRenderer';
+
 
 function c3DEngine(rendererOrDiv, options = {}) {
     const NOIE = !Capabilities.isInternetExplorer();
@@ -42,6 +45,7 @@ function c3DEngine(rendererOrDiv, options = {}) {
     this.renderView = function renderScene(view) {
         this.renderer.clear();
         this.renderer.render(view.scene, view.camera.camera3D);
+        this.labelRenderer.render(view.scene, view.camera.camera3D);
     }.bind(this);
 
     this.onWindowResize = function onWindowResize(w, h) {
@@ -49,16 +53,28 @@ function c3DEngine(rendererOrDiv, options = {}) {
         this.height = h;
         this.fullSizeRenderTarget.setSize(this.width, this.height);
         this.renderer.setSize(this.width, this.height);
+        this.labelRenderer.setSize(this.width, this.height);
     }.bind(this);
 
     // Create renderer
     try {
+        this.labelRenderer = new CSS2DRenderer();
+        this.labelRenderer.setSize(window.innerWidth, window.innerHeight);
+        this.labelRenderer.domElement.style.position = 'absolute';
+        this.labelRenderer.domElement.style.top = 0;
+        this.labelRenderer.domElement.style['pointer-events'] = 'none';
+        document.body.appendChild(this.labelRenderer.domElement);
+
         this.renderer = renderer || new THREE.WebGLRenderer({
             canvas: document.createElement('canvas'),
             antialias: options.antialias,
             alpha: options.alpha,
-            logarithmicDepthBuffer: options.logarithmicDepthBuffer,
+            logarithmicDepthBuffer: true,
         });
+
+        this.renderer.domElement.style.position = 'absolute';
+        this.renderer.domElement.style.zIndex = 0;
+        this.renderer.domElement.style.top = 0;
     } catch (ex) {
         console.error('Failed to create WebGLRenderer', ex);
         this.renderer = null;
