@@ -8,7 +8,7 @@ export { default as GlobeView, GLOBE_VIEW_EVENTS } from 'Core/Prefab/GlobeView';
 export { default as PlanarView } from 'Core/Prefab/PlanarView';
 export { addCSS2DLabel, sprite3D } from 'Core/Prefab/spriteCSS';
 export { spriteHtml2canvas } from 'Core/Prefab/sprite';
-export { default as createMapbox } from 'Core/Prefab/mapbox';
+export { default as createMapbox, colorMapBoxLayer } from 'Core/Prefab/mapbox';
 export { default as Fetcher } from 'Provider/Fetcher';
 export { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
 export { default as View } from 'Core/View';
@@ -31,6 +31,7 @@ export { default as FeaturesUtils } from 'Utils/FeaturesUtils';
 export { default as DEMUtils } from 'Utils/DEMUtils';
 export { default as CameraUtils } from 'Utils/CameraUtils';
 export { default as OrientationUtils } from 'Utils/OrientationUtils';
+export { default as SIGUtils } from 'Utils/SIGUtils';
 export { default as ShaderChunk } from 'Renderer/Shader/ShaderChunk';
 export { getMaxColorSamplerUnitsCount } from 'Renderer/LayeredMaterial';
 

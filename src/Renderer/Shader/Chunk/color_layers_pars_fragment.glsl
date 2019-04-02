@@ -9,6 +9,7 @@ uniform sampler2D   colorTextures[NUM_FS_TEXTURES];
 uniform vec4        colorOffsetScales[NUM_FS_TEXTURES];
 uniform Layer       colorLayers[NUM_FS_TEXTURES];
 uniform int         colorTextureCount;
+uniform vec3        diffuse;
 
 vec3 uvs[NUM_CRS];
 
@@ -32,12 +33,13 @@ vec4 applyLightColorToInvisibleEffect(vec4 color, float intensity) {
 
 #if defined(DEBUG)
 uniform bool showOutline;
-uniform vec3 outlineColors[NUM_CRS];
+uniform vec4 outlineColors[NUM_CRS];
 uniform float outlineWidth;
 
-vec4 getOutlineColor(vec3 outlineColor, vec2 uv) {
+vec4 getOutlineColor(vec4 outlineColor, vec2 uv) {
+    if (uv.x  < 0. || uv.y  < 0. || uv.x  > 1. || uv.y  > 1.) return vec4(0.);
     float alpha = 1. - clamp(getBorderDistance(uv) / outlineWidth, 0., 1.);
-    return vec4(outlineColor, alpha);
+    return vec4(outlineColor.xyz, alpha);
 }
 #endif
 
@@ -50,6 +52,8 @@ vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer
     for ( int i = 0; i < NUM_CRS; i ++ ) {
         if ( i == layer.crs ) uv = uvs[ i ];
     }
+    
+    if (uv.x  < 0. || uv.y  < 0. || uv.x  > 1. || uv.y  > 1.) return vec4(diffuse, layer.opacity);
 
     float borderDistance = getBorderDistance(uv.xy);
     if (textureOffset != layer.textureOffset + int(uv.z) || borderDistance < minBorderDistance ) return vec4(0);
@@ -62,6 +66,10 @@ vec4 getLayerColor(int textureOffset, sampler2D texture, vec4 offsetScale, Layer
             color.rgb /= color.a;
             color = applyWhiteToInvisibleEffect(color, layer.effect);
         }
+    }
+    
+    if (layer.crs == 2) {
+        color.rgb = mix(color.rgb, diffuse.rgb, 1.0 - clamp(borderDistance / outlineWidth * 0.3, 0., 1.));
     }
 
     color.a *= layer.opacity;

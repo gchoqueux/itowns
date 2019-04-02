@@ -23,6 +23,7 @@ export function unpack1K(color, factor) {
 export const CRS_DEFINES = [
     ['WGS84', 'WGS84G', 'TMS', 'EPSG:3946', 'EPSG:4326', 'WMTS:WGS84G'],
     ['PM', 'WMTS:PM', 'EPSG:3857'],
+    ['projection'],
 ];
 
 // Max sampler color count to LayeredMaterial
@@ -122,8 +123,10 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         if (__DEBUG__) {
             this.defines.DEBUG = 1;
             const outlineColors = [
-                new THREE.Vector3(1.0, 0.0, 0.0),
-                new THREE.Vector3(1.0, 0.5, 0.0),
+                // Fixme must be the same size of CRS_DEFINES
+                new THREE.Vector3(1.0, 0.0, 0.0, 1.0),
+                new THREE.Vector3(0.0, 0.0, 1.0, 1.0),
+                new THREE.Vector3(1.0, 0.5, 0.0, 1.0),
             ];
             setUniformProperty(this, 'showOutline', true);
             setUniformProperty(this, 'outlineWidth', 0.008);
@@ -153,6 +156,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         setUniformProperty(this, 'overlayAlpha', 0);
         setUniformProperty(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
         setUniformProperty(this, 'objectId', 0);
+        setUniformProperty(this, 'projectionImage', new THREE.Matrix4());
+        setUniformProperty(this, 'modelProjectionMatrix', new THREE.Matrix4());
 
         // > 0 produces gaps,
         // < 0 causes oversampling of textures

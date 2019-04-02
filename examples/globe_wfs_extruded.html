@@ -136,6 +136,7 @@
             }
 
             function acceptFeature(properties) {
+				// console.log('TCL: acceptFeature -> properties', properties);
                 return !!properties.hauteur;
             }
 
@@ -204,7 +205,7 @@
             function picking(event) {
                 if(view.controls.isPaused()) {
                     var htmlInfo = document.getElementById('info');
-                    var intersects = view.pickObjectsAt(event, 3, 'WFS Building');
+                    var intersects = view.pickObjectsAt(event, undefined, 'WFS Building');
                     var properties;
                     var info;
                     var batchId;

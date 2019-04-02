@@ -14,6 +14,38 @@ and open the template in the editor.
     <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
     <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
 </head>
+<div id='menuStyle'>
+    <input id='basic' type='radio' name='rtoggle' value='basic' checked='checked'>
+    <label for='basic'>basic</label>
+    <input id='streets' type='radio' name='rtoggle' value='streets'>
+    <label for='streets'>streets</label>
+    <input id='bright' type='radio' name='rtoggle' value='bright'>
+    <label for='bright'>bright</label>
+    <input id='light' type='radio' name='rtoggle' value='light'>
+    <label for='light'>light</label>
+    <input id='dark' type='radio' name='rtoggle' value='dark'>
+    <label for='dark'>dark</label>
+    <input id='satellite' type='radio' name='rtoggle' value='satellite'>
+    <label for='satellite'>satellite</label>
+</div>
+<div class='map-overlay top'>
+    <div class='map-overlay-inner'>
+        <fieldset>
+            <label>Select layer</label>
+            <select id='layer' name='layer'>
+                <option value='bati surfacique quelconque - Zoom 16,17,18'>Bati</option>
+                <option value='Routier a niveau - axe central - autoroute'>Autoroute</option>
+
+                <option value='water'>Water</option>
+                <option value='building'>Buildings</option>
+            </select>
+        </fieldset>
+        <fieldset>
+            <label>Choose a color</label>
+            <div id='swatches'></div>
+        </fieldset>
+    </div>
+</div>
 
 <body>
     <div id="viewerDiv" class="viewer"></div>
@@ -22,10 +54,15 @@ and open the template in the editor.
     <script src="../dist/debug.js"></script>
     <script type="text/javascript">
         /* global itowns,document,GuiTools, debug, window */
-        //  var position = { longitude: 2.351323, latitude: 48.856712, altitude: 25000 };
-            // nice 7.2564697265625, 7.261962890625, 43.695679697898825, 43.69965122967144
+        // Paris
+        var position = { longitude: 2.3565673828125, latitude: 48.85387260118349, altitude: 25000 };
 
-        var position = { longitude: 7.261962890625, latitude: 43.69965122967144, altitude: 25000 };
+        // nice 7.260589599609375, 43.70511165428543
+        // var position = { longitude: 7.2653961181640625, latitude: 43.70511165428543, altitude: 25000 };
+
+        // Alpes 6.735401409195709, 45.40366039102955,
+        // var position = { longitude: 6.735401409195709, latitude: 45.40366039102955, altitude: 25000 };
+
         // iTowns namespace defined here
         var viewerDiv = document.getElementById('viewerDiv');
         var view = new itowns.GlobeView(viewerDiv, position);
@@ -48,35 +85,101 @@ and open the template in the editor.
             view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
         }
 
-        // itowns.Fetcher.json('layers/JSONLayers/WORLD_DTM.json')
-        //     .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
-        // itowns.Fetcher.json('layers/JSONLayers/IGN_MNT_HIGHRES.json')
-        //     .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
+        itowns.Fetcher.json('layers/JSONLayers/WORLD_DTM.json')
+            .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
+        itowns.Fetcher.json('layers/JSONLayers/IGN_MNT_HIGHRES.json')
+            .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
 
         // eslint-disable-next-line prefer-arrow-callback
         view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function m() {
             // eslint-disable-next-line no-console
             console.info('Globe initialized');
-            const c1 = new itowns.Coordinates('EPSG:4326', position.longitude + 0.01, position.latitude, 60);
-            itowns.addCSS2DLabel(view, c1, 'css2d');
+            const c1 = new itowns.Coordinates('EPSG:4326', position.longitude + 0.0125, position.latitude - 0.0005, 20);
+            itowns.addCSS2DLabel(view, c1, 'Bastille');
 
-            const c2 = new itowns.Coordinates('EPSG:4326', position.longitude - 0.01, position.latitude, 200);
-            itowns.sprite3D(view, c2);
+            const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.001, 20);
+            itowns.addCSS2DLabel(view, c3, 'Jardin');
 
-            const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.01, 200);
-            itowns.spriteHtml2canvas(view, c3, 'sprite Html2canvas');
+            const map = itowns.createMapbox(view, c1);
+            map.showTileBoundaries = false;
 
-            // 2.28515625, 2.3291015625, 48.86471476180277, 48.8936153614802
-            // const c4 = new itowns.Coordinates('EPSG:4326', 2.3291015625, 48.8936153614802, 10);
-            // nice 7.2564697265625, 7.261962890625, 43.695679697898825, 43.69965122967144
-            const c4 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude, 10);
-            const map = itowns.createMapbox(view, c4);
-            view.controls.lookAtCoordinate({ coord: c4, range: 3600}, false);
+            view.controls.lookAtCoordinate({ coord: c1, range: 2900, time: 500 }).then(() => {
+                itowns.CameraUtils.stop(view, view.camera.camera3D);
+            });
+
+            const mapBoxLayer = new itowns.colorMapBoxLayer('mapbox', {
+                opacity: 0.85,
+                view,
+                c1,
+                map,
+                projection: 'projection',
+                source: {
+                    isSource: true,
+                    tileMatrixSet: 'projection',
+                    zoom: { min: 2, max: 20 },
+                    extentsInsideLimit: (extent) => {
+                        return extent.zoom >= mapBoxLayer.source.zoom.min && extent.zoom <= mapBoxLayer.source.zoom.max
+                    },
+                },
+            })
+
+            view.addLayer(mapBoxLayer).then(l => {
+                menuGlobe.addLayerGUI.bind(menuGlobe)(l);
+                l.projection = 'projection';
+            });
+
+            var layerList = document.getElementById('menuStyle');
+            var inputs = layerList.getElementsByTagName('input');
+
+            function switchLayer(layer) {
+                var layerId = layer.target.id;
+                map.setStyle('mapbox://styles/mapbox/' + layerId + '-v9');
+                mapBoxLayer.backgroundColor.set(map.getStyle().layers[0].paint['background-color']);
+
+                const back = () => {
+                    if (map.loaded()) {
+                        mapBoxLayer.backgroundColor.set(map.getStyle().layers[0].paint['background-color']);
+                        view.notifyChange(view.camera.camera3D, true);
+                        map.off('render', back);
+                    }
+                }
+
+                map.on('render', back);
+            }
+
+            for (var i = 0; i < inputs.length; i++) {
+                inputs[i].onclick = switchLayer;
+            }
+
+            var swatches = document.getElementById('swatches');
+            var layer = document.getElementById('layer');
+            var colors = [
+                '#ffffcc',
+                '#a1dab4',
+                '#41b6c4',
+                '#2c7fb8',
+                '#253494',
+                '#fed976',
+                '#feb24c',
+                '#fd8d3c',
+                '#f03b20',
+                '#bd0026'
+            ];
+
+            colors.forEach(function (color) {
+                var swatch = document.createElement('button');
+                swatch.style.backgroundColor = color;
+                swatch.addEventListener('click', function () {
+                    map.setPaintProperty(layer.value, 'fill-color', color);
+                });
+                swatches.appendChild(swatch);
+            });
+            window.map = map;
         });
-
         const d = new debug.Debug(view, menuGlobe.gui);
         debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
         window.view = view;
+
     </script>
 </body>
 

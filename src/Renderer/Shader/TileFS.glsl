@@ -9,9 +9,9 @@
 #endif
 #include <itowns/mode_pars_fragment>
 
-uniform vec3        diffuse;
 uniform float       opacity;
 varying vec3        vUv; // WGS84.x/PM.x, WGS84.y, PM.y
+varying vec4        vUv2;
 
 void main() {
     #include <logdepthbuf_fragment>
@@ -30,6 +30,12 @@ void main() {
 
     uvs[CRS_WGS84] = vec3(vUv.xy, 0.);
     uvs[CRS_PM]    = vec3(vUv.x, fract(vUv.z), floor(vUv.z));
+
+    if (vUv2.w > 0.0) {
+        uvs[CRS_projection] = vec3(vUv2.xy / vUv2.w * 0.5 + 0.5, 0.);
+    } else {
+        uvs[CRS_projection] = vec3(-1., -1., 0.);
+    }
 
     vec4 color;
     #pragma unroll_loop

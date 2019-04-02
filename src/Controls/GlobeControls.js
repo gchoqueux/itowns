@@ -130,6 +130,7 @@ export const CONTROL_EVENTS = {
     ORIENTATION_CHANGED: 'orientation-changed',
     RANGE_CHANGED: 'range-changed',
     CAMERA_TARGET_CHANGED: 'camera-target-changed',
+    CAMERA_CHANGED: 'camera-changed',
 };
 
 let previous;
@@ -314,6 +315,7 @@ function GlobeControls(view, targetCoordinate, range, globeRadius, options = {})
 
     const lastNormalizedIntersection = new THREE.Vector3();
     const normalizedIntersection = new THREE.Vector3();
+    const coordinate = new Coordinates('EPSG:4978', 0, 0, 0);
 
     const update = () => {
         // We compute distance between camera's bounding sphere and geometry's obb up face
@@ -440,6 +442,13 @@ function GlobeControls(view, targetCoordinate, range, globeRadius, options = {})
         // min(camera displacement, camera rotation in radians)^2 > EPS
         // using small-angle approximation cos(x/2) = 1 - x^2 / 8
         if (lastPosition.distanceToSquared(this.camera.position) > EPS || 8 * (1 - lastQuaternion.dot(this.camera.quaternion)) > EPS) {
+            this.dispatchEvent({
+                type: CONTROL_EVENTS.CAMERA_CHANGED,
+                range: spherical.radius,
+                coord: coordinate.set('EPSG:4978', cameraTarget.position.x, cameraTarget.position.y, cameraTarget.position.z).as('EPSG:4326'),
+                heading: THREE.Math.radToDeg(spherical.theta),
+            });
+
             view.notifyChange(this.camera);
 
             lastPosition.copy(this.camera.position);
