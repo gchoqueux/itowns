@@ -8,6 +8,7 @@ export { default as GlobeView, GLOBE_VIEW_EVENTS } from 'Core/Prefab/GlobeView';
 export { default as PlanarView } from 'Core/Prefab/PlanarView';
 export { addCSS2DLabel, sprite3D } from 'Core/Prefab/spriteCSS';
 export { spriteHtml2canvas } from 'Core/Prefab/sprite';
+export { default as createMapbox } from 'Core/Prefab/mapbox';
 export { default as Fetcher } from 'Provider/Fetcher';
 export { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
 export { default as View } from 'Core/View';

@@ -12,6 +12,7 @@ and open the template in the editor.
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="js/GUI/dat.gui/dat.gui.min.js"></script>
+    <link href='https://api.tiles.mapbox.com/mapbox-gl-js/v0.53.0/mapbox-gl.css' rel='stylesheet' />
 </head>
 
 <body>
@@ -21,8 +22,10 @@ and open the template in the editor.
     <script src="../dist/debug.js"></script>
     <script type="text/javascript">
         /* global itowns,document,GuiTools, debug, window */
-        var position = { longitude: 2.351323, latitude: 48.856712, altitude: 25000 };
+        //  var position = { longitude: 2.351323, latitude: 48.856712, altitude: 25000 };
+            // nice 7.2564697265625, 7.261962890625, 43.695679697898825, 43.69965122967144
 
+        var position = { longitude: 7.261962890625, latitude: 43.69965122967144, altitude: 25000 };
         // iTowns namespace defined here
         var viewerDiv = document.getElementById('viewerDiv');
         var view = new itowns.GlobeView(viewerDiv, position);
@@ -45,10 +48,10 @@ and open the template in the editor.
             view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
         }
 
-        itowns.Fetcher.json('layers/JSONLayers/WORLD_DTM.json')
-            .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
-        itowns.Fetcher.json('layers/JSONLayers/IGN_MNT_HIGHRES.json')
-            .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
+        // itowns.Fetcher.json('layers/JSONLayers/WORLD_DTM.json')
+        //     .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
+        // itowns.Fetcher.json('layers/JSONLayers/IGN_MNT_HIGHRES.json')
+        //     .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
 
         // eslint-disable-next-line prefer-arrow-callback
         view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function m() {
@@ -62,6 +65,13 @@ and open the template in the editor.
 
             const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.01, 200);
             itowns.spriteHtml2canvas(view, c3, 'sprite Html2canvas');
+
+            // 2.28515625, 2.3291015625, 48.86471476180277, 48.8936153614802
+            // const c4 = new itowns.Coordinates('EPSG:4326', 2.3291015625, 48.8936153614802, 10);
+            // nice 7.2564697265625, 7.261962890625, 43.695679697898825, 43.69965122967144
+            const c4 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude, 10);
+            const map = itowns.createMapbox(view, c4);
+            view.controls.lookAtCoordinate({ coord: c4, range: 3600}, false);
         });
 
         const d = new debug.Debug(view, menuGlobe.gui);

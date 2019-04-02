@@ -25,11 +25,9 @@ export function spriteHtml2canvas(view, position, message, div) {
         const height = material.map.image.height;
         const sprite = new THREE.Sprite(material);
         sprite.center.set(0.5, 0.0);
-        const ratio = view.mainLoop.gfxEngine.width / view.mainLoop.gfxEngine.height;
         const scale = 1 / view.mainLoop.gfxEngine.height / 1.859756098;
 
         sprite.scale.set(width * scale, height * scale, 1);
-        console.log(width);
         position.as(view.referenceCrs).xyz(sprite.position);
         view.scene.add(sprite);
         sprite.updateMatrixWorld(true);

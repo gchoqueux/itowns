@@ -25,6 +25,8 @@ body {
     margin-left: 0px;
 }
 
+#map {  padding: 0; position:absolute; top:0; bottom:0; width: 512px; height: 512px; right: 0; }
+
 @media (max-width: 600px) {
     #menuDiv {
         display: none;
