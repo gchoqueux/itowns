@@ -28,8 +28,8 @@ const error = (err, url, source) => {
     throw err;
 };
 
-function convertSourceData(data, extDest, layer) {
-    return layer.convert(data, extDest, layer);
+function convertSourceData(data, extDest, layer, view) {
+    return layer.convert(data, extDest, layer, view);
 }
 
 function parseSourceData(data, extSrc, extDest, layer) {
@@ -111,16 +111,16 @@ export default {
             if (!convertedSourceData) {
                 if (validedParsedData) {
                     // Convert
-                    convertedSourceData = convertSourceData(validedParsedData, extDest, layer);
+                    convertedSourceData = convertSourceData(validedParsedData, extDest, layer, command.view);
                 } else if (source.fetchedData) {
                     // Parse and convert
                     convertedSourceData = parseSourceData(source.fetchedData, extSource, extDest, layer)
-                        .then(parsedData => convertSourceData(parsedData, extDest, layer), err => error(err, url, source));
+                        .then(parsedData => convertSourceData(parsedData, extDest, layer, command.view), err => error(err, url, source));
                 } else {
                     // Fetch, parse and convert
                     convertedSourceData = fetchSourceData(url, layer)
                         .then(fetchedData => parseSourceData(fetchedData, extSource, extDest, layer), err => error(err, url, source))
-                        .then(parsedData => convertSourceData(parsedData, extDest, layer), err => error(err, url, source));
+                        .then(parsedData => convertSourceData(parsedData, extDest, layer, command.view), err => error(err, url, source));
                 }
                 // Put converted data in cache
                 Cache.set(tag, convertedSourceData, Cache.POLICIES.TEXTURE);

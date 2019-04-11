@@ -70,8 +70,8 @@ class ColorLayer extends Layer {
         return updateLayeredMaterialNodeImagery(context, this, node, parent);
     }
 
-    convert(data, extentDestination) {
-        return textureConverter.convert(data, extentDestination, this);
+    convert(data, extentDestination, layer, view) {
+        return textureConverter.convert(data, extentDestination, this, view);
     }
 
     /**

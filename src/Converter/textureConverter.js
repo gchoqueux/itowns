@@ -18,7 +18,7 @@ function textureColorLayer(texture, transparent) {
 }
 
 export default {
-    convert(data, extentDestination, layer) {
+    convert(data, extentDestination, layer, view) {
         let texture;
         if (data.isFeatureCollection) {
             const backgroundColor = (layer.backgroundLayer && layer.backgroundLayer.paint) ?
@@ -26,7 +26,7 @@ export default {
                 undefined;
 
             extentDestination.as(layer.projection, extentTexture);
-            texture = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor);
+            texture = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor, view);
             texture.parsedData = data;
             texture.coords = extentDestination;
         } else if (data.isTexture) {
