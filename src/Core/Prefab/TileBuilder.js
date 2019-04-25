@@ -3,6 +3,14 @@ import TileGeometry from 'Core/TileGeometry';
 import Cache from 'Core/Scheduler/Cache';
 import computeBuffers from 'Core/Prefab/computeBufferTileGeometry';
 
+import Wrapper from 'Core/Worker/Wrapper';
+import Worker from 'Core/Prefab/TileBuilder.worker';
+
+const wrapperComputeBuffers = new Wrapper(new Worker());
+const useWorker = true;
+const noWorkerComputeBuffer = p => Promise.resolve(computeBuffers(p));
+const workerComputeBuffers = useWorker ? wrapperComputeBuffers.oche.bind(wrapperComputeBuffers) : noWorkerComputeBuffer;
+
 const cacheBuffer = new Map();
 export default function newTileGeometry(builder, params) {
     const { sharableExtent, quaternion, position } = builder.computeSharableExtent(params.extent);
@@ -23,7 +31,7 @@ export default function newTileGeometry(builder, params) {
         let cachedBuffers = cacheBuffer.get(bufferKey);
         params.buildIndexAndWGS84 = !cachedBuffers;
         params.builder = builder;
-        return Promise.resolve(computeBuffers(params)).then((buffers) => {
+        return (params.noWorker ? noWorkerComputeBuffer : workerComputeBuffers)(params).then((buffers) => {
             if (!cachedBuffers) {
                 cachedBuffers = {};
                 cachedBuffers.index = new THREE.BufferAttribute(buffers.index, 1);

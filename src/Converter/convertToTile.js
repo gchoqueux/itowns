@@ -48,6 +48,7 @@ export default {
             level,
             segment: layer.options.segments || 16,
             disableSkirt: layer.disableSkirt,
+            noWorker: !parent,
         };
 
         return newTileGeometry(builder, paramsGeometry).then((result) => {

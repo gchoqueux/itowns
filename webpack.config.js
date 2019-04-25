@@ -48,7 +48,6 @@ module.exports = (env) => {
     return {
         context: path.resolve(__dirname),
         resolve: {
-            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
         entry: {
             itowns: ['@babel/polyfill', 'url-polyfill', 'whatwg-fetch', './src/MainBundle.js'],
@@ -79,6 +78,22 @@ module.exports = (env) => {
                     test: /\.js$/,
                     include,
                     use: babelLoaderOptions,
+                },
+                {
+                    test: /\.worker\.js$/,
+                    include: [
+                        path.resolve(__dirname, 'src'),
+                        path.resolve(__dirname, 'test'),
+                        path.resolve(__dirname, 'utils'),
+                    ],
+                    // loader: 'worker!babel?presets[]=es2015',
+                    loader: 'worker-loader',
+                    options: { inline: true },
+                    // use: [
+                    //       { loader: 'worker-loader' },
+                    //       { loader: 'babel-loader' },
+                    // ],
+                    // loader: 'babel!worker',
                 },
             ],
         },
