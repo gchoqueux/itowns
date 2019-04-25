@@ -51,6 +51,7 @@ module.exports = {
         filename: '[name].js',
         library: '[name]',
         libraryTarget: 'umd',
+        globalObject: 'this',
         umdNamedDefine: true,
     },
     optimization: {
@@ -75,6 +76,22 @@ module.exports = {
                         loader: 'babel-loader',
                         options: babelConf,
                     }],
+            },
+            {
+                test: /\.worker\.js$/,
+                include: [
+                    path.resolve(__dirname, 'src'),
+                    path.resolve(__dirname, 'test'),
+                    path.resolve(__dirname, 'utils'),
+                ],
+                // loader: 'worker!babel?presets[]=es2015',
+                loader: 'worker-loader',
+                options: { inline: true },
+                // use: [
+                //       { loader: 'worker-loader' },
+                //       { loader: 'babel-loader' },
+                // ],
+                // loader: 'babel!worker',
             },
         ],
     },
