@@ -111,9 +111,9 @@ function readPBF(file, options) {
     // Only if the layer.origin is top
     const y = options.isInverted ? extentSource.row : (1 << z) - extentSource.row - 1;
 
-    options.buildExtent = true;
+    options.buildExtent = false;
     options.mergeFeatures = true;
-    options.withAltitude = false;
+    options.withAltitude = true;
     options.withNormal = false;
 
     const features = new FeatureCollection('EPSG:3857', options);
@@ -149,7 +149,7 @@ function readPBF(file, options) {
                     styleCache.set(layerStyle.id, properties.style);
                 }
                 const feature = features.getFeatureByType(vtFeature.type - 1);
-                vtFeatureToFeatureGeometry(vtFeature, feature);
+                vtFeatureToFeatureGeometry(vtFeature, feature, true);
             }
         }
     });

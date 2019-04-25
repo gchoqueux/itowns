@@ -2,6 +2,9 @@ import * as THREE from 'three';
 import { FEATURE_TYPES } from 'Core/Feature';
 import Extent from 'Core/Geographic/Extent';
 import Coordinates from 'Core/Geographic/Coordinates';
+import CRS from 'Core/Geographic/Crs';
+
+import Feature2Mesh from 'Converter/Feature2Mesh';
 
 const _extent = new Extent('EPSG:4326', [0, 0, 0, 0]);
 
@@ -124,49 +127,140 @@ const dimension = new THREE.Vector2();
 const scale = new THREE.Vector2();
 const extentTransformed = new Extent('EPSG:4326', 0, 0, 0, 0);
 
+const textureRenderTarget = new THREE.WebGLRenderTarget(256, 256, { format: THREE.RGBAFormat });
+textureRenderTarget.depthBuffer = false;
+textureRenderTarget.stencilBuffer = false;
+const sceneTexture = new THREE.Scene();
+const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 1000);
+camera.position.set(0, 0, 100);
+camera.lookAt(new THREE.Vector3());
+const start = new THREE.Vector2();
+const webgl = true;
+let globalBackgroundColor;
+
+const convert = Feature2Mesh.convert({
+    color: (properties) => {
+        const style = properties.style;
+        return style.fill.color || style.stroke.color || globalBackgroundColor;
+    },
+    altitude: 0,
+});
+
 export default {
     // backgroundColor is a THREE.Color to specify a color to fill the texture
     // with, given there is no feature passed in parameter
-    createTextureFromFeature(collection, extent, sizeTexture, style, backgroundColor) {
+    createTextureFromFeature(collection, extent, sizeTexture, style, backgroundColor, view) {
         let texture;
-
         if (collection) {
-            // A texture is instancied drawn canvas
-            // origin and dimension are used to transform the feature's coordinates to canvas's space
-            extent.dimensions(dimension);
-            const c = document.createElement('canvas');
+            if (webgl) {
+                if (!collection.mesh) {
+                    globalBackgroundColor =  backgroundColor;
+                    collection.mesh = convert(collection);
+                    if (!collection.mesh) {
+                        const data = new Uint8Array(3);
+                        data[0] = backgroundColor.r * 255;
+                        data[1] = backgroundColor.g * 255;
+                        data[2] = backgroundColor.b * 255;
+                        texture = new THREE.DataTexture(data, 1, 1, THREE.RGBFormat);
+                        texture.needsUpdate = true;
+                        return texture;
+                    }
+                    collection.mesh.position.sub(collection.translation);
+                    collection.mesh.scale.divide(collection.scale);
+                }
+                if (collection.mesh) {
+                    sceneTexture.add(collection.mesh);
+                    const renderer = view.mainLoop.gfxEngine.renderer;
+                    const current = renderer.getRenderTarget();
+                    const center = extent.center();
+                    if (CRS.isMetricUnit(center.crs)) {
+                        camera.position.set(center.x(), center.y(), 500);
+                    } else {
+                        camera.position.set(center.longitude(), center.latitude(), 500);
+                    }
+                    extent.dimensions(dimension);
+                    camera.lookAt(new THREE.Vector3(camera.position.x, camera.position.y, 0));
+                    camera.rotateZ(-Math.PI * 0.5);
+                    camera.left = -dimension.x * 0.5;
+                    camera.right = dimension.x * 0.5;
+                    camera.top = dimension.y * 0.5;
+                    camera.bottom = -dimension.y * 0.5;
+                    camera.updateProjectionMatrix();
+                    camera.updateMatrixWorld(true);
+                    renderer.setRenderTarget(textureRenderTarget);
 
-            coord.crs = extent.crs;
+                    const gl = renderer.context;
+                    const featureTexture = new THREE.DataTexture(null, 256, 256);
 
-            c.width = sizeTexture;
-            c.height = sizeTexture;
-            const ctx = c.getContext('2d');
-            if (backgroundColor) {
-                ctx.fillStyle = backgroundColor.getStyle();
-                ctx.fillRect(0, 0, sizeTexture, sizeTexture);
+                    featureTexture.needsUpdate = true;
+                    featureTexture.generateMipmaps = false;
+                    featureTexture.magFilter = THREE.LinearFilter;
+                    featureTexture.minFilter = THREE.LinearFilter;
+
+                    const webglTexture = gl.createTexture();
+                    const properties = renderer.properties.get(featureTexture);
+                    properties.__webglTexture = webglTexture;
+                    properties.__webglInit = true;
+
+                    gl.bindTexture(gl.TEXTURE_2D, webglTexture);
+                    const clearAlpha = renderer.getClearAlpha();
+                    const clearColor = renderer.getClearColor();
+
+                    if (backgroundColor) {
+                        renderer.setClearColor(backgroundColor, 1.0);
+                    } else {
+                        renderer.setClearAlpha(0);
+                    }
+                    renderer.clear();
+                    renderer.render(sceneTexture, camera);
+                    renderer.copyFramebufferToTexture(start, featureTexture);
+                    renderer.setClearAlpha(1);
+                    renderer.setRenderTarget(current);
+                    gl.bindTexture(gl.TEXTURE_2D, null);
+
+                    sceneTexture.remove(collection.mesh);
+                    renderer.setClearAlpha(clearAlpha);
+                    renderer.setClearColor(clearColor);
+                    return featureTexture;
+                }
+            } else {
+                // A texture is instancied drawn canvas
+                // origin and dimension are used to transform the feature's coordinates to canvas's space
+                extent.dimensions(dimension);
+                const c = document.createElement('canvas');
+
+                coord.crs = extent.crs;
+
+                c.width = sizeTexture;
+                c.height = sizeTexture;
+                const ctx = c.getContext('2d');
+                if (backgroundColor) {
+                    ctx.fillStyle = backgroundColor.getStyle();
+                    ctx.fillRect(0, 0, sizeTexture, sizeTexture);
+                }
+                ctx.globalCompositeOperation = style.globalCompositeOperation || 'source-over';
+                ctx.imageSmoothingEnabled = false;
+
+                const ex = collection.crs == extent.crs ? extent : extent.as(collection.crs, _extent);
+                const t = collection.translation;
+                const s = collection.scale;
+                extentTransformed.transformedCopy(t, s, ex);
+
+                scale.set(ctx.canvas.width, ctx.canvas.width).divide(dimension);
+                origin.set(extent.west, extent.south).add(t).multiply(scale).negate();
+                ctx.setTransform(scale.x / s.x, 0, 0, scale.y / s.y, origin.x, origin.y);
+
+                // to scale line width and radius circle
+                const invCtxScale = s.x / scale.x;
+
+                // Draw the canvas
+                for (const feature of collection.features) {
+                    drawFeature(ctx, feature, extentTransformed, style, invCtxScale);
+                }
+
+                texture = new THREE.CanvasTexture(c);
+                texture.flipY = false;
             }
-            ctx.globalCompositeOperation = style.globalCompositeOperation || 'source-over';
-            ctx.imageSmoothingEnabled = false;
-
-            const ex = collection.crs == extent.crs ? extent : extent.as(collection.crs, _extent);
-            const t = collection.translation;
-            const s = collection.scale;
-            extentTransformed.transformedCopy(t, s, ex);
-
-            scale.set(ctx.canvas.width, ctx.canvas.width).divide(dimension);
-            origin.set(extent.west, extent.south).add(t).multiply(scale).negate();
-            ctx.setTransform(scale.x / s.x, 0, 0, scale.y / s.y, origin.x, origin.y);
-
-            // to scale line width and radius circle
-            const invCtxScale = s.x / scale.x;
-
-            // Draw the canvas
-            for (const feature of collection.features) {
-                drawFeature(ctx, feature, extentTransformed, style, invCtxScale);
-            }
-
-            texture = new THREE.CanvasTexture(c);
-            texture.flipY = false;
         } else if (backgroundColor) {
             const data = new Uint8Array(3);
             data[0] = backgroundColor.r * 255;
