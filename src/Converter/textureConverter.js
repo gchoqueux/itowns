@@ -19,32 +19,36 @@ function textureColorLayer(texture, transparent) {
 
 export default {
     convert(data, extentDestination, layer, view) {
-        let texture;
+        let promise;
         if (data.isFeatureCollection) {
             const backgroundColor = (layer.backgroundLayer && layer.backgroundLayer.paint) ?
                 new THREE.Color(layer.backgroundLayer.paint['background-color']) :
                 undefined;
 
             extentDestination.as(layer.projection, extentTexture);
-            texture = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor, view);
-            texture.parsedData = data;
-            texture.coords = extentDestination;
+            promise = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor, view).then((texture) => {
+                texture.parsedData = data;
+                texture.coords = extentDestination;
+                return texture;
+            });
         } else if (data.isTexture) {
-            texture = data;
+            promise =  Promise.resolve(data);
         } else {
             throw (new Error('Data type is not supported to convert into texture'));
         }
 
-        if (layer.isColorLayer) {
-            return textureColorLayer(texture, layer.transparent);
-        } else if (layer.isElevationLayer) {
-            if (texture.flipY) {
-                // DataTexture default to false, so make sure other Texture types
-                // do the same (eg image texture)
-                // See UV construction for more details
-                texture.flipY = false;
+        return promise.then((texture) => {
+            if (layer.isColorLayer) {
+                return textureColorLayer(texture, layer.transparent);
+            } else if (layer.isElevationLayer) {
+                if (texture.flipY) {
+                    // DataTexture default to false, so make sure other Texture types
+                    // do the same (eg image texture)
+                    // See UV construction for more details
+                    texture.flipY = false;
+                }
+                return textureLayer(texture);
             }
-            return textureLayer(texture);
-        }
+        });
     },
 };

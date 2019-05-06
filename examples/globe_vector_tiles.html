@@ -94,7 +94,9 @@
                     // fx: 2.5,
                 });
 
-                return view.addLayer(mvtLayer);
+                return view.addLayer(mvtLayer).then(l => {
+                    l.__style = style;
+                });
             }));
 
             var menuGlobe = new GuiTools('menuDiv', view, 300);
