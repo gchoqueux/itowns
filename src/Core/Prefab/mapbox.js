@@ -103,7 +103,8 @@ export default function createMapbox(view, coord) {
     const map = new mapboxgl.Map({
         container: 'map', // container id
         // style: 'styleIGN.json',
-        style: 'mapbox://styles/mapbox/dark-v9',
+        style: 'style_itowns_modif.json',
+        // style: 'mapbox://styles/mapbox/dark-v9',
         // style: 'mapbox://styles/mapbox/basic-v9',
         center: [coord.longitude(), coord.latitude()],
         // bounds,
