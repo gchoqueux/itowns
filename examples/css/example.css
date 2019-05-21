@@ -170,23 +170,24 @@ outline: none;
 
 .label{
     overflow: hidden;
-    color: #aaa;
+    color: #fff;
     font-family: sans-serif;
     padding: 5px;
     font-size: 18px;
     background: rgba( 0, 0, 0, 0.0 );
-    text-shadow: 1.5px 0 0 #0003, -1.5px 0 0 #0003, 0 1.5px 0 #0003, 0 -1.5px 0 #0003, 1.5px 1.5px #0003, -1.5px -1.5px 0 #0003, 1.5px -1.5px 0 #0003, -1.5px 1.5px 0 #0003;
+    /* text-shadow: 1.5px 0 0 #0003, -1.5px 0 0 #0003, 0 1.5px 0 #0003, 0 -1.5px 0 #0003, 1.5px 1.5px #0003, -1.5px -1.5px 0 #0003, 1.5px -1.5px 0 #0003, -1.5px 1.5px 0 #0003; */
 }
 
 .trans {
     transform: translate(0%, -50%); /* décalage de 50% de sa propre taille */
 }
+
 .vl {
     background: linear-gradient(to right, 
 	                              transparent 0%, 
 	                              transparent calc(50% - 0.8px), 
-	                              #aaa calc(50% - 0.8px), 
-	                              #aaa calc(50% + 0.8px), 
+	                              #fff calc(50% - 0.8px), 
+	                              #fff calc(50% + 0.8px), 
 	                              transparent calc(50% + 0.8px), 
 	                              transparent 100%); 
     height: 80px;

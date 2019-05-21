@@ -94,12 +94,12 @@ and open the template in the editor.
         view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function m() {
             // eslint-disable-next-line no-console
             console.info('Globe initialized');
-            const c1 = new itowns.Coordinates('EPSG:4326', position.longitude + 0.0125, position.latitude - 0.0005, 20);
+            const c1 = new itowns.Coordinates('EPSG:4326', position.longitude + 0.0125, position.latitude - 0.0005, 45);
             itowns.addCSS2DLabel(view, c1, 'Bastille');
 
-            const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.001, 20);
+            const c3 = new itowns.Coordinates('EPSG:4326', position.longitude, position.latitude + 0.001, 45);
             itowns.addCSS2DLabel(view, c3, 'Jardin');
-
+			
             const map = itowns.createMapbox(view, c1);
             map.showTileBoundaries = false;
 

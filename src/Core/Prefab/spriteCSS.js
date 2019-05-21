@@ -1,6 +1,9 @@
 import * as THREE from 'three';
 import { CSS2DObject } from 'ThreeExtended/renderers/CSS2DRenderer';
+import { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
 // import { CSS3DObject } from 'ThreeExtended/renderers/CSS3DRenderer';
+
+const lines = [];
 
 export function addCSS2DLabel(view, position, text) {
     const placeMark = document.createElement('div');
@@ -13,12 +16,14 @@ export function addCSS2DLabel(view, position, text) {
     const labelDiv = document.createElement('div');
     labelDiv.className = 'label';
     labelDiv.textContent = text;
-    labelDiv.style.marginTop = '-1em';
+    // labelDiv.style.marginTop = '-1em';
     trans.appendChild(labelDiv);
 
     const divLine = document.createElement('div');
     divLine.className = 'vl';
+    divLine.style.height = '10px';
     trans.appendChild(divLine);
+    lines.push(divLine);
 
     // create css2dObject
     const label = new CSS2DObject(placeMark);
@@ -27,6 +32,16 @@ export function addCSS2DLabel(view, position, text) {
     view.scene.add(label);
     label.updateMatrixWorld(true);
     view.notifyChange();
+
+    if (lines.length === 1) {
+        view.addFrameRequester(MAIN_LOOP_EVENTS.BEFORE_RENDER, () => {
+            lines.forEach((line) => {
+                line.style.height = `${80 * Math.cos(view.controls.getTilt() * Math.PI / 180)}px`;
+            });
+        });
+    }
+
+    return { divLine, label };
 }
 
 export function sprite3D(view, position) {
