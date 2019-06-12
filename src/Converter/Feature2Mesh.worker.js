@@ -7,7 +7,13 @@ let backgroundLayer;
 const convert = Feature2Mesh.convert({
     color: (properties) => {
         const style = properties.style;
-        return style.fill.color || style.stroke.color || backgroundLayer;
+        if (style.fill.color) {
+            return new THREE.Color().set(style.fill.color);
+        } else if (style.stroke.color) {
+            return new THREE.Color().set(style.stroke.color);
+        } else {
+            return backgroundLayer;
+        }
     },
     altitude: 0,
 });

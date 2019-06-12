@@ -179,11 +179,7 @@ export default {
                     const renderer = view.mainLoop.gfxEngine.renderer;
                     const current = renderer.getRenderTarget();
                     const center = extent.center();
-                    if (CRS.isMetricUnit(center.crs)) {
-                        camera.position.set(center.x(), center.y(), 500);
-                    } else {
-                        camera.position.set(center.longitude(), center.latitude(), 500);
-                    }
+                    camera.position.set(center.x, center.y, 500);
                     extent.dimensions(dimension);
                     camera.left = -dimension.x * 0.5;
                     camera.right = dimension.x * 0.5;
