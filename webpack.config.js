@@ -48,6 +48,7 @@ module.exports = (env) => {
     return {
         context: path.resolve(__dirname),
         resolve: {
+            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
         entry: {
             itowns: ['@babel/polyfill', 'url-polyfill', 'whatwg-fetch', './src/MainBundle.js'],
@@ -59,6 +60,7 @@ module.exports = (env) => {
             filename: '[name].js',
             library: '[name]',
             libraryTarget: 'umd',
+            globalObject: 'this',
             umdNamedDefine: true,
         },
         optimization: {

@@ -49,6 +49,7 @@ function parseSourceData(data, extSrc, extDest, layer) {
         mergeFeatures: layer.mergeFeatures === undefined ? true : layer.mergeFeatures,
         withNormal: layer.isGeometryLayer,
         withAltitude: layer.isGeometryLayer,
+        style: layer.__style,
     };
 
     data.coords = extSrc;

@@ -132,6 +132,7 @@ textureRenderTarget.depthBuffer = false;
 textureRenderTarget.stencilBuffer = false;
 const sceneTexture = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 1, 1000);
+camera.up.set(0, 1, 0);
 camera.position.set(0, 0, 100);
 camera.lookAt(new THREE.Vector3());
 const start = new THREE.Vector2();
@@ -151,12 +152,16 @@ export default {
     // with, given there is no feature passed in parameter
     createTextureFromFeature(collection, extent, sizeTexture, style, backgroundColor, view) {
         let texture;
+        extent = extent.clone();
         if (collection) {
             if (webgl) {
                 if (!collection.mesh) {
+                    let resolve;
+                    collection.mesh = new Promise((r) => { resolve = r; });
+
                     globalBackgroundColor =  backgroundColor;
-                    collection.mesh = convert(collection);
-                    if (!collection.mesh) {
+                    const mesh = convert(collection);
+                    if (!mesh) {
                         const data = new Uint8Array(3);
                         data[0] = backgroundColor.r * 255;
                         data[1] = backgroundColor.g * 255;
@@ -165,22 +170,17 @@ export default {
                         texture.needsUpdate = true;
                         return texture;
                     }
-                    collection.mesh.position.sub(collection.translation);
-                    collection.mesh.scale.divide(collection.scale);
+                    mesh.position.sub(collection.translation);
+                    mesh.scale.divide(collection.scale);
+                    resolve(mesh);
                 }
-                if (collection.mesh) {
-                    sceneTexture.add(collection.mesh);
+                return collection.mesh.then((mesh) => {
+                    sceneTexture.add(mesh);
                     const renderer = view.mainLoop.gfxEngine.renderer;
                     const current = renderer.getRenderTarget();
                     const center = extent.center();
-                    if (CRS.isMetricUnit(center.crs)) {
-                        camera.position.set(center.x(), center.y(), 500);
-                    } else {
-                        camera.position.set(center.longitude(), center.latitude(), 500);
-                    }
+                    camera.position.set(center.x, center.y, 500);
                     extent.dimensions(dimension);
-                    camera.lookAt(new THREE.Vector3(camera.position.x, camera.position.y, 0));
-                    camera.rotateZ(-Math.PI * 0.5);
                     camera.left = -dimension.x * 0.5;
                     camera.right = dimension.x * 0.5;
                     camera.top = dimension.y * 0.5;
@@ -218,11 +218,11 @@ export default {
                     renderer.setRenderTarget(current);
                     gl.bindTexture(gl.TEXTURE_2D, null);
 
-                    sceneTexture.remove(collection.mesh);
+                    sceneTexture.remove(mesh);
                     renderer.setClearAlpha(clearAlpha);
                     renderer.setClearColor(clearColor);
                     return featureTexture;
-                }
+                });
             } else {
                 // A texture is instancied drawn canvas
                 // origin and dimension are used to transform the feature's coordinates to canvas's space
@@ -272,6 +272,6 @@ export default {
             texture = new THREE.Texture();
         }
 
-        return texture;
+        return Promise.resolve(texture);
     },
 };

@@ -65,8 +65,8 @@
 
                 function isValidData(data, extentDestination) {
                     // re-use the same vector tiles by interval 4
-                    var z = extentDestination.zoom - 2;
-                    return extentDestination.zoom, z - z % 4 == data.extent.zoom - 2;
+                    var z = extentDestination.zoom;
+                    return extentDestination.zoom, z - z % 4 == data.extent.zoom;
                 }
                 
                 var mvtSource = new itowns.TMSSource({
@@ -94,7 +94,9 @@
                     projection: 'EPSG:3857',
                 });
 
-                view.addLayer(mvtLayer);
+                return view.addLayer(mvtLayer).then(l => {
+                    l.__style = style;
+                });
             });
 
             // Request redraw
