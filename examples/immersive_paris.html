@@ -39,6 +39,7 @@
                 handleCollision: false,
                 // Change the subdisvision threshold to get better performances and avoid requesting many unnecessary tiles
                 sseSubdivisionThreshold: 10,
+                maxSubdivisionLevel: 3,
             });
 
             // create Immersive control
@@ -124,6 +125,11 @@
 
                 // when oriented image layer is ready..
                 view.addLayer(olayer, view.tileLayer).then(function addWfsLayer(orientedImageLayer) {
+                    // eslint-disable-next-line no-debugger
+                    // debugger;
+                    // console.log('view.tileLayer', view.tileLayer);
+                    view.tileLayer.materialOptions = { orientedImageMaterial: orientedImageLayer.material };
+                    view.tileLayer.maxSubdivisionLevel = 18;
 
                     // prepare WFS source for the buildings
                     var wfsBuildingSource = new itowns.WFSSource({

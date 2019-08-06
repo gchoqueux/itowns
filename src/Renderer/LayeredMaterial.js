@@ -96,9 +96,10 @@ let nbSamplers;
 const fragmentShader = [];
 class LayeredMaterial extends THREE.RawShaderMaterial {
     constructor(options = {}, crsCount) {
-        super(options);
-
-        nbSamplers = nbSamplers || [samplersElevationCount, getMaxColorSamplerUnitsCount()];
+        const oiMaterial = options.orientedImageMaterial;
+        super();
+        const subTexture = oiMaterial ? oiMaterial.defines.ORIENTED_IMAGES_COUNT : 0;
+        nbSamplers = nbSamplers || [samplersElevationCount, getMaxColorSamplerUnitsCount() - subTexture];
 
         this.defines.NUM_VS_TEXTURES = nbSamplers[0];
         this.defines.NUM_FS_TEXTURES = nbSamplers[1];
@@ -126,9 +127,6 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
             this.defines.USE_LOGDEPTHBUF_EXT = 1;
         }
 
-        this.vertexShader = TileVS;
-        fragmentShader[crsCount] = fragmentShader[crsCount] || ShaderUtils.unrollLoops(TileFS, this.defines);
-        this.fragmentShader = fragmentShader[crsCount];
 
         // Color uniforms
         setUniformProperty(this, 'diffuse', new THREE.Color(0.04, 0.23, 0.35));
@@ -150,6 +148,26 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         // = 0 causes sampling artefacts due to bad estimation of texture-uv gradients
         // best is a small negative number
         setUniformProperty(this, 'minBorderDistance', -0.01);
+
+        if (oiMaterial) {
+            this.uniforms.projectiveTextureAlphaBorder = oiMaterial.uniforms.projectiveTextureAlphaBorder;
+            this.uniforms.projectiveTextureDistortion = oiMaterial.uniforms.projectiveTextureDistortion;
+            this.uniforms.projectiveTextureMatrix = oiMaterial.uniforms.projectiveTextureMatrix;
+            this.uniforms.projectiveTexture = oiMaterial.uniforms.projectiveTexture;
+            this.uniforms.mask = oiMaterial.uniforms.mask;
+            this.uniforms.boostLight = oiMaterial.uniforms.boostLight;
+            this.defines.ORIENTED_IMAGES_COUNT = oiMaterial.defines.ORIENTED_IMAGES_COUNT;
+            this.defines.USE_DISTORTION = oiMaterial.defines.USE_DISTORTION;
+            this.defines.DEBUG_ALPHA_BORDER = oiMaterial.defines.DEBUG_ALPHA_BORDER;
+            this.defines.USE_TEXTURES_PROJECTIVE = true;
+            fragmentShader[crsCount] = ShaderUtils.unrollLoops(TileFS, this.defines);
+            this.fragmentShader = fragmentShader[crsCount];
+            this.vertexShader = ShaderUtils.unrollLoops(TileVS, this.defines);
+        } else {
+            fragmentShader[crsCount] = fragmentShader[crsCount] || ShaderUtils.unrollLoops(TileFS, this.defines);
+            this.fragmentShader = fragmentShader[crsCount];
+            this.vertexShader = TileVS;
+        }
 
         // LayeredMaterialLayers
         this.layers = [];
