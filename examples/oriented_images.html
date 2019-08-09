@@ -31,6 +31,7 @@
         <script src="../dist/itowns.js"></script>
         <script src="../dist/debug.js"></script>
         <script type="text/javascript">
+            /* eslint-disable */
             // Define initial camera position.
             // Note that camera initial position will be overwritten by picture position later
             var dummyPositionOnGlobe = { longitude: 0, latitude: 0, altitude: 10000000 };
@@ -40,8 +41,9 @@
 
             // Instanciate iTowns GlobeView*
             var view = new itowns.GlobeView(viewerDiv, dummyPositionOnGlobe, {
-                sseSubdivisionThreshold: 6,
-                noControls: true,
+                // sseSubdivisionThreshold: 6,
+                maxSubdivisionLevel: 3,
+                // noControls: true,
             });
 
             var pictureInfos;
@@ -75,7 +77,7 @@
                     latitude: 45.9228208442959,
                     height: 4680.55588294683,
                     longitude: 6.83256920100156,
-                    azimuth: 526.3900321920207,
+                    azimuth: 524.3900321920207,
                     roll: 2.1876227239518276,
                     tilt: -11.668910605126001,
                     image: 'http://www.itowns-project.org/itowns-sample-data/images/MontBlanc/MontBlanc.jpg',
@@ -109,6 +111,10 @@
                 opacity: 1,
             };
 
+            const oiCamera = new itowns.OrientedImageCamera(
+                new itowns.THREE.Vector2().fromArray(pictureInfos.camera.size),
+                pictureInfos.camera.focal);
+
             function parseAircraftConventionOrientationToMatrix(panoramic) {
                 var euler = new itowns.THREE.Euler(
                     itowns.THREE.Math.degToRad(panoramic.tilt),
@@ -137,14 +143,27 @@
             setupViewCameraDecomposing(view, camera);
 
             // open view camera FOV of 10° to see landscape around the picture.
-            view.camera.camera3D.fov += 10;
-            view.camera.camera3D.updateProjectionMatrix();
+            const cameraView = view.camera.camera3D;
+            cameraView.fov += 10;
+            cameraView.updateProjectionMatrix();
+            oiCamera.position.copy(cameraView.position);
+            oiCamera.quaternion.copy(cameraView.quaternion);
+            oiCamera.updateMatrixWorld();
+            const map = new itowns.THREE.TextureLoader().load(pictureInfos.panoramic.image);
+            const oiMaterial = new itowns.OrientedImageMaterial([oiCamera]);
+            oiMaterial.setTextures([map], new itowns.THREE.Object3D());
+
+            // view.tileLayer.materialOptions = { orientedImageMaterial: oiMaterial };
+            view.tileLayer.maxSubdivisionLevel = 18;
+            view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.BEFORE_RENDER, () => {
+                oiMaterial.updateUniforms(view.camera.camera3D);
+            });
+
+            plane.material = oiMaterial;
+            oiMaterial.transparent = true;
 
             // uncomment to debug camera
             // addCameraHelper(view, camera);
-
-            // eslint-disable-next-line no-new
-            new itowns.FirstPersonControls(view);
 
             /* global itowns, document, GuiTools, view, promises */
             var menuGlobe = new GuiTools('menuDiv', view);

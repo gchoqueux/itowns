@@ -16,6 +16,7 @@ export { $3dTilesExtensions, $3dTilesAbstractExtension } from 'Provider/3dTilesP
 export { default as FeatureProcessing } from 'Process/FeatureProcessing';
 export { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';
 export { default as OrientedImageCamera } from 'Renderer/OrientedImageCamera';
+export { default as OrientedImageMaterial } from 'Renderer/OrientedImageMaterial';
 export { default as PointsMaterial } from 'Renderer/PointsMaterial';
 export { default as PointCloudProcessing } from 'Process/PointCloudProcessing';
 export { default as FlyControls } from 'Controls/FlyControls';

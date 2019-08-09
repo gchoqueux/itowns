@@ -9,22 +9,6 @@ function placeObjectFromCoordinate(object, coord) {
     object.lookAt(coord.geodesicNormal.clone().add(object.position));
 }
 
-function createTexturedPlane(textureUrl, opacity) {
-    var texture;
-    var geometry;
-    var material;
-
-    texture = new itowns.THREE.TextureLoader().load(textureUrl);
-    geometry = new itowns.THREE.PlaneGeometry(1, 1, 32);
-    material = new itowns.THREE.MeshBasicMaterial({
-        map: texture,
-        color: 0xffffff,
-        transparent: true,
-        opacity: opacity,
-    });
-    return new itowns.THREE.Mesh(geometry, material);
-}
-
 function transformTexturedPlane(camera, distance, plane) {
     var Yreel = 2 * Math.tan(itowns.THREE.Math.degToRad(camera.fov / 2)) * distance;
     var Xreel = camera.aspect * Yreel;
@@ -82,7 +66,7 @@ function initCamera(view, image, coord, EnhToOrientationUp, EnhToOrientationLook
 // eslint-disable-next-line no-unused-vars
 function setupPictureFromCamera(camera, imageUrl, opacity, distance) {
     // create a textured plane, representing the picture.
-    var plane = createTexturedPlane(imageUrl, opacity);
+    var plane = new itowns.THREE.Mesh(new itowns.THREE.PlaneGeometry(1, 1));
     camera.add(plane);
 
     transformTexturedPlane(camera, distance, plane);
