@@ -1,0 +1,167 @@
+<html>
+    <head>
+        <title>Itowns - Globe + vector-tiles</title>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <div id="debug" width="400" height="300"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script src="https://goessner.net/download/prj/jsonxml/xml2json.js"></script>
+        <script>
+            // # Simple Globe viewer + a vector tile layer
+
+            // Define initial camera position
+            var positionOnGlobe = { longitude: 2.59, latitude: 48.7, altitude: 7000 };
+
+            var promises = [];
+
+            // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+            var viewerDiv = document.getElementById('viewerDiv');
+
+            // Instanciate iTowns GlobeView*
+            var view = new itowns.GlobeView(viewerDiv, positionOnGlobe);
+
+            // define pole texture
+            view.tileLayer.noTextureColor = new itowns.THREE.Color(0x95c1e1);
+            var menuGlobe = new GuiTools('menuDiv', view, 300);
+
+            promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ColorLayer('opensm', config);
+                return view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }));
+
+            // // Add two elevation layers.
+            // // These will deform iTowns globe geometry to represent terrain elevation.
+            function addElevationLayerFromConfig(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ElevationLayer(config.id, config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+            // itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+            // ERROR ON style file.json rename BATI_94 to BATI_D94
+            // const sources = ['Enseignement', 'PARCELLES', 'BATI_D94'];
+            // const sources = ['Enseignement', 'PARCELLES'];
+            // const sources = ['BATI_D94'];
+            const sources = ['PARCELLES'];
+
+            // Add a vector tile layer
+            for (const source of sources) {
+                const baseUrl = `https://vectortiles.ign.fr/rok4server/1.0.0/${source}`
+                promises.push(Promise.all([
+                    itowns.Fetcher.json('style_itowns.json'),
+                    itowns.Fetcher.json(`${baseUrl}/metadata.json`),
+                    itowns.Fetcher.xml(`${baseUrl}/`)]).then(function (result) {
+                    var style = result[0];
+                    var metadata = result[1];
+                    const tileset = JSON.parse((xml2json(result[2])).replace('undefined', '')).TileMap.TileSets.TileSet;
+                    const tileMatrixSetLimits = {};
+                    for (const t of tileset) {
+                        const zoom = t['@href'].replace(`${baseUrl}/`,'');
+                        tileMatrixSetLimits[`${zoom}`] = {
+                            minTileRow: t['@minrow'],
+                            maxTileRow: t['@maxrow'],
+                            minTileCol: t['@mincol'],
+                            maxTileCol: t['@maxcol'],
+                        }
+                    }
+
+                    const arrayLimits = Object.keys(tileMatrixSetLimits);
+                    const size = arrayLimits.length;
+                    const maxZoom = Number(arrayLimits[size - 1]);
+                    const minZoom = maxZoom - size + 1;
+
+                    var bounds = metadata.bounds;
+                    var extent = new itowns.Extent('EPSG:4326', bounds[0], bounds[2], bounds[1], bounds[3]).as('EPSG:3857');
+                    var urlTiles = style.sources[source].tiles[0];
+                    if (source === 'BATI_D94') {
+                        urlTiles = 'https://vectortiles.ign.fr/rok4server/1.0.0/BATI_D94/{z}/{x}/{y}.pbf';
+                    }
+
+                    urlTiles = urlTiles.replace(/\{/g, '${');
+                    var supportedLayers = [];
+                    var backgroundLayer;
+
+                    style.layers.forEach(function(layer) {
+                        if (layer.type === 'background') {
+                            backgroundLayer = layer;
+                        } else if (layer.source === source) {
+                            supportedLayers.push(layer);
+                        }
+                    });
+
+                    const inc = 5;
+                    function isValidData(data, extentDestination) {
+                        // eslint-disable-next-line no-debugger
+                        // debugger;
+                        const zoom = extentDestination.zoom;
+                        const zoomData = data.extent.zoom ;
+                        if (zoomData >= minZoom && extentDestination.zoom < 10) {
+                            return true;
+                        } else {
+                            return zoom > maxZoom;
+                        }
+                    }
+
+                    var mvtLayer;
+
+                    var mvtSource = new itowns.TMSSource({
+                        url: urlTiles,
+                        format: 'application/x-protobuf;type=mapbox-vector',
+                        attribution: {
+                            name: 'OpenStreetMap',
+                            url: 'http://www.openstreetmap.org/',
+                        },
+                        networkOptions: {
+                            crossOrigin: "anonymous"
+                        },
+                        tileMatrixSetLimits,
+                        zoom: {
+                            min: 6,
+                            max: 20,
+                        },
+                        tileMatrixSet: 'PM',
+                        projection: 'EPSG:3857',
+                        extent,
+                        isInverted: true,
+                    });
+
+                    var mvtLayer = new itowns.ColorLayer(source, {
+                        projection: 'EPSG:3857',
+                        isValidData: isValidData,
+                        source: mvtSource,
+                        filter: supportedLayers,
+                        backgroundLayer,
+                    });
+
+                    return view.addLayer(mvtLayer).then((l) => {
+                        l.noTextureParentOutsideLimit = true;
+                        menuGlobe.addLayerGUI.bind(menuGlobe);
+                    });
+                }));
+            }
+
+            // Listen for globe full initialisation event
+            view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+                Promise.all(promises).then(function () {
+                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'Ortho', 0);
+                }).catch(console.error);
+            });
+
+            view.controls.setTilt(45, false);
+
+            const d = new debug.Debug(view, menuGlobe.gui);
+            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
+        </script>
+    </body>
+</html>
