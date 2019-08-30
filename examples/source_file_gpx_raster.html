@@ -12,6 +12,7 @@
         <div id="viewerDiv" class="viewer"></div>
         <script src="js/GUI/GuiTools.js"></script>
         <script src="../dist/itowns.js"></script>
+        <script src="../dist/debug.js"></script>
         <script src="js/GUI/LoadingScreen.js"></script>
         <script src="js/plugins/FeatureToolTip.js"></script>
         <script type="text/javascript">
@@ -84,6 +85,9 @@
             view.addEventListener(itowns.VIEW_EVENTS.LAYERS_INITIALIZED, function _() {
                 Promise.all(promises).then(new FeatureToolTip(view));
             });
+
+            const d = new debug.Debug(view, menuGlobe.gui);
+            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
         </script>
     </body>
 </html>
