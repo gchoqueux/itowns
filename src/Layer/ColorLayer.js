@@ -1,6 +1,6 @@
 import Layer from 'Layer/Layer';
 import { updateLayeredMaterialNodeImagery, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
-import textureConverter from 'Converter/textureConverter';
+import TextureConverter from 'Converter/textureConverter';
 import Style from 'Core/Style';
 
 /**
@@ -22,7 +22,7 @@ import Style from 'Core/Style';
  * ColorLayer. Default is true. You should not change this, as it is used
  * internally for optimisation.
  */
-class ColorLayer extends Layer {
+export default class ColorLayer extends Layer {
     /**
      * A simple layer, usually managing a texture to display on a view. For example,
      * it can be an aerial view of the ground or a simple transparent layer with the
@@ -71,7 +71,7 @@ class ColorLayer extends Layer {
     }
 
     convert(data, extentDestination) {
-        return textureConverter.convert(data, extentDestination, this);
+        return TextureConverter.convert(data, extentDestination, this);
     }
 
     /**
@@ -84,4 +84,7 @@ class ColorLayer extends Layer {
     }
 }
 
-export default ColorLayer;
+ColorLayer.prototype.convert.type = TextureConverter.convert.type;
+
+
+

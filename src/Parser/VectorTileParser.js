@@ -164,7 +164,7 @@ function readPBF(file, options) {
 /**
  * @module VectorTileParser
  */
-export default {
+export default class VectorTileParser {
     /**
      * Parse a vector tile file and return a [Feature]{@link module:GeoJsonParser.Feature}
      * or an array of Features. While multiple formats of vector tile are
@@ -191,7 +191,9 @@ export default {
      * @return {Promise} A Promise resolving with a Feature or an array a
      * Features.
      */
-    parse(file, options) {
+    static parse(file, options) {
         return Promise.resolve(readPBF(file, options));
-    },
-};
+    }
+}
+
+VectorTileParser.parse.type = ['ArrayBuffer'];

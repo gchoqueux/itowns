@@ -39,7 +39,7 @@ import GeoJsonParser from 'Parser/GeoJsonParser';
  *
  * @module ShapefileParser
  */
-export default {
+export default class ShapefileParser {
     /**
      * Parse a bunch of Shapefile files and return a [FeatureCollection]{@link
      * module:GeoJsonParser~FeatureCollection}.
@@ -58,7 +58,7 @@ export default {
      * @return {Promise} A promise resolving with a [FeatureCollection]{@link
      * module:GeoJsonParser~FeatureCollection}.
      */
-    parse(data, options = {}) {
+    static parse(data, options = {}) {
         let result;
 
         // If a zip is present, don't read anything else
@@ -73,6 +73,8 @@ export default {
 
         options.crsIn = data.prj ? proj4(data.prj).oProj.datumName : undefined;
 
-        return Promise.resolve(result).then(res => GeoJsonParser.parse(res, options));
-    },
-};
+        return GeoJsonParser.parse(result, options);
+    }
+}
+
+ShapefileParser.parse.type = ['???'];
