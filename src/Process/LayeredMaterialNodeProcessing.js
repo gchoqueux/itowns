@@ -2,11 +2,12 @@ import { chooseNextLevelToFetch } from 'Layer/LayerUpdateStrategy';
 import LayerUpdateState from 'Layer/LayerUpdateState';
 import { computeMinMaxElevation } from 'Parser/XbilParser';
 import handlingError from 'Process/handlerNodeError';
+import { HeaderCommand } from 'Core/Command';
 
 export const SIZE_TEXTURE_TILE = 256;
 export const SIZE_DIAGONAL_TEXTURE = Math.pow(2 * (SIZE_TEXTURE_TILE * SIZE_TEXTURE_TILE), 0.5);
 
-function materialCommandQueuePriorityFunction(material) {
+function queuePriority(material) {
     // We know that 'node' is visible because commands can only be
     // issued for visible nodes.
     // TODO: need priorization of displayed nodes
@@ -14,7 +15,7 @@ function materialCommandQueuePriorityFunction(material) {
     return material.visible ? 100 : 10;
 }
 
-function refinementCommandCancellationFn(cmd) {
+function cmdCancellation(cmd) {
     if (!cmd.requester.parent || !cmd.requester.material) {
         return true;
     }
@@ -29,25 +30,12 @@ function refinementCommandCancellationFn(cmd) {
     return !cmd.requester.material.visible;
 }
 
-function buildCommand(view, layer, extentsSource, extentsDestination, requester, parsedData) {
-    return {
-        view,
-        layer,
-        extentsSource,
-        extentsDestination,
-        requester,
-        parsedData,
-        priority: materialCommandQueuePriorityFunction(requester.material),
-        earlyDropFunction: refinementCommandCancellationFn,
-    };
-}
-
 export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     const material = node.material;
     if (!parent || !material) {
         return;
     }
-    const extentsDestination = node.getExtentsByProjection(layer.projection);
+    const extentsRaster = node.getExtentsByProjection(layer.projection);
 
     let nodeLayer = material.getLayer(layer.id);
 
@@ -55,7 +43,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
 
-        if (!layer.source.extentsInsideLimit(extentsDestination)) {
+        if (!layer.source.extentsInsideLimit(extentsRaster)) {
             // we also need to check that tile's parent doesn't have a texture for this layer,
             // because even if this tile is outside of the layer, it could inherit it's
             // parent texture
@@ -75,7 +63,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
             nodeLayer = material.addLayer(layer);
             // Init the new MaterialLayer by parent
             const parentLayer = parent.material && parent.material.getLayer(layer.id);
-            nodeLayer.initFromParent(parentLayer, extentsDestination);
+            nodeLayer.initFromParent(parentLayer, extentsRaster);
         }
 
         // Proposed new process, two separate processes:
@@ -108,7 +96,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
         return;
     }
 
-    if (nodeLayer.level >= extentsDestination[0].zoom) {
+    if (nodeLayer.level >= extentsRaster[0].zoom) {
         // default decision method
         node.layerUpdateState[layer.id].noMoreUpdatePossible();
         return;
@@ -120,7 +108,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     }
 
     const failureParams = node.layerUpdateState[layer.id].failureParams;
-    const destinationLevel = extentsDestination[0].zoom || node.level;
+    const destinationLevel = extentsRaster[0].zoom || node.level;
     const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, destinationLevel, nodeLayer.level, layer, failureParams);
 
     if (targetLevel <= nodeLayer.level || targetLevel > destinationLevel) {
@@ -128,29 +116,30 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     }
 
     // Get equivalent of extent destination in source
-    const extentsSource = [];
-    for (const extentDestination of extentsDestination) {
-        const extentSource = extentDestination.tiledExtentParent(targetLevel);
+    const headerCommand = new HeaderCommand(context.view, layer, node, queuePriority(node.material), cmdCancellation);
+
+    const parsedData = nodeLayer.textures.map(t => t.parsedData);
+    for (let i = 0, max = extentsRaster.length; i < max; i++) {
+        const extentSource = extentsRaster[i].tiledExtentParent(targetLevel);
         if (!layer.source.extentInsideLimit(extentSource)) {
             // Retry extentInsideLimit because you must check with the targetLevel
             // if the first test extentInsideLimit returns that it is out of limits
             // and the node inherits from its parent, then it'll still make a command to fetch texture.
             // node.layerUpdateState[layer.id].noMoreUpdatePossible();
             // return;
-            extentsSource.push(extentSource);
+            headerCommand.add({ convert: [parsedData[i], extentsRaster[i]] });
         } else {
-            extentsSource.push(extentSource);
+            // fetch data on extent
+            headerCommand.add({ fetch: [extentSource], parse: [extentsRaster[i]], convert: [extentsRaster[i]] });
         }
     }
 
     node.layerUpdateState[layer.id].newTry();
-    const parsedData = nodeLayer.textures.map(t => t.parsedData);
-    const command = buildCommand(context.view, layer, extentsSource, extentsDestination, node, parsedData);
 
-    return context.scheduler.execute(command).then(
+    return context.scheduler.execute(headerCommand).then(
         (result) => {
             // TODO: Handle error : result is undefined in provider. throw error
-            const pitchs = extentsDestination.map((ext, i) => ext.offsetToParent(extentsSource[i], nodeLayer.offsetScales[i]));
+            const pitchs = extentsRaster.map((ext, i) => ext.offsetToParent(result[i].coords, nodeLayer.offsetScales[i]));
             nodeLayer.setTextures(result, pitchs);
             node.layerUpdateState[layer.id].success();
         },
@@ -170,7 +159,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
     // Elevation is currently handled differently from color layers.
     // This is caused by a LayeredMaterial limitation: only 1 elevation texture
     // can be used (where a tile can have N textures x M layers)
-    const extentsDestination = node.getExtentsByProjection(layer.projection);
+    const extentsRaster = node.getExtentsByProjection(layer.projection);
     // Init elevation layer, and inherit from parent if possible
     let nodeLayer = material.getElevationLayer();
     if (!nodeLayer) {
@@ -181,12 +170,12 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
         node.layerUpdateState[layer.id] = new LayerUpdateState();
 
         const parentLayer = parent.material && parent.material.getLayer(layer.id);
-        nodeLayer.initFromParent(parentLayer, extentsDestination);
+        nodeLayer.initFromParent(parentLayer, extentsRaster);
 
         // If the texture resolution has a poor precision for this node, we don't
         // extract min-max from the texture (too few information), we instead chose
         // to use parent's min-max.
-        const useMinMaxFromParent = extentsDestination[0].zoom - nodeLayer.zoom > 6;
+        const useMinMaxFromParent = extentsRaster[0].zoom - nodeLayer.zoom > 6;
         if (nodeLayer.textures[0]) {
             if (!useMinMaxFromParent) {
                 const { min, max } = computeMinMaxElevation(
@@ -213,27 +202,28 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
         return;
     }
 
-    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, extentsDestination[0].zoom, nodeLayer.level, layer);
+    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, extentsRaster[0].zoom, nodeLayer.level, layer);
 
-    if (targetLevel <= nodeLayer.level || targetLevel > extentsDestination[0].zoom) {
+    if (targetLevel <= nodeLayer.level || targetLevel > extentsRaster[0].zoom) {
         node.layerUpdateState[layer.id].noMoreUpdatePossible();
         return Promise.resolve();
     }
 
-    const extentsSource = [];
-    for (const nodeExtent of extentsDestination) {
-        const extentSource = nodeExtent.tiledExtentParent(targetLevel);
+
+    const headerCommand = new HeaderCommand(context.view, layer, node, queuePriority(node.material), cmdCancellation);
+
+    for (const extentRaster of extentsRaster) {
+        const extentSource = extentRaster.tiledExtentParent(targetLevel);
         if (!layer.source.extentInsideLimit(extentSource)) {
             node.layerUpdateState[layer.id].noMoreUpdatePossible();
             return;
         }
-        extentsSource.push(extentSource);
+        headerCommand.add({ fetch: [extentSource], parse: [extentRaster], convert: [extentRaster] });
     }
 
     node.layerUpdateState[layer.id].newTry();
-    const command = buildCommand(context.view, layer, extentsSource, extentsDestination, node);
 
-    return context.scheduler.execute(command).then(
+    return context.scheduler.execute(headerCommand).then(
         (textures) => {
             // Do not apply the new texture if its level is < than the current
             // one.  This is only needed for elevation layers, because we may
@@ -244,7 +234,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
             }
             const elevation = {
                 texture: textures[0],
-                pitch: extentsDestination[0].offsetToParent(textures[0].coords, nodeLayer.offsetScales[0]),
+                pitch: extentsRaster[0].offsetToParent(textures[0].coords, nodeLayer.offsetScales[0]),
             };
 
             node.layerUpdateState[layer.id].success();
