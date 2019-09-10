@@ -75,7 +75,7 @@ class TMSSource extends Source {
         this.format = this.format || 'image/png';
         this.url = source.url;
         this.projection = CRS.formatToTms(source.projection);
-        this.tileMatrixSetLimits = source.tileMatrixSetLimits;
+        this.tileMatrixSetLimits = source.tileMatrixSetLimits || {};
 
         if (!this.zoom) {
             if (this.tileMatrixSetLimits) {
@@ -98,20 +98,21 @@ class TMSSource extends Source {
         return URLBuilder.xyz(extent, this);
     }
 
-    handlingError(err) {
-        console.warn(`err ${this.url}`, err);
+    handlingError(err, url, type = '') {
+        console.warn(`Error ${type} ${this.url}`, err);
     }
 
     extentInsideLimit(extent) {
         // This layer provides data starting at level = layer.source.zoom.min
         // (the zoom.max property is used when building the url to make
         //  sure we don't use invalid levels)
+        const tmsl = this.tileMatrixSetLimits[extent.zoom];
         return extent.zoom >= this.zoom.min && extent.zoom <= this.zoom.max &&
-                (this.tileMatrixSetLimits == undefined ||
-                (extent.row >= this.tileMatrixSetLimits[extent.zoom].minTileRow &&
-                    extent.row <= this.tileMatrixSetLimits[extent.zoom].maxTileRow &&
-                    extent.col >= this.tileMatrixSetLimits[extent.zoom].minTileCol &&
-                    extent.col <= this.tileMatrixSetLimits[extent.zoom].maxTileCol));
+                (tmsl == undefined ||
+                    (extent.row >= tmsl.minTileRow &&
+                    extent.row <= tmsl.maxTileRow &&
+                    extent.col >= tmsl.minTileCol &&
+                    extent.col <= tmsl.maxTileCol));
     }
 }
 

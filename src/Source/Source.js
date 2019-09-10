@@ -154,11 +154,11 @@ class Source {
      */
     extentsInsideLimit(extents) {
         for (const extent of extents) {
-            if (!this.extentInsideLimit(extent)) {
-                return false;
+            if (this.extentInsideLimit(extent)) {
+                return true;
             }
         }
-        return true;
+        return false;
     }
 
     onParsedFile(parsedFile) {

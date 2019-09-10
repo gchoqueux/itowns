@@ -79,7 +79,7 @@ export default {
                 } else {
                     // Fetch, parse and convert
                     convertedSourceData = fetchSourceData(extSource, layer)
-                        .then(fetchedData => parseSourceData(fetchedData, extDest, layer), err => error(err, source))
+                        .then(fetchedData => parseSourceData(fetchedData, extDest, layer), err => (parsedData[i] ? parsedData[i] : error(err, source)))
                         .then(parsedData => layer.convert(parsedData, extDest, layer), err => error(err, source));
                 }
                 // Put converted data in cache
