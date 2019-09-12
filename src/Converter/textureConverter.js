@@ -18,8 +18,8 @@ function textureColorLayer(texture, transparent) {
     return textureLayer(texture);
 }
 
-export default {
-    convert(data, extentDestination, layer) {
+export default class TextureConverter {
+    static convert(data, extentDestination, layer) {
         let texture;
         if (data.isFeatureCollection) {
             const backgroundColor = (layer.backgroundLayer && layer.backgroundLayer.paint) ?
@@ -30,10 +30,8 @@ export default {
             texture = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor);
             texture.parsedData = data;
             texture.coords = extentDestination;
-        } else if (data.isTexture) {
-            texture = data;
         } else {
-            throw (new Error('Data type is not supported to convert into texture'));
+            texture = data;
         }
 
         if (layer.isColorLayer) {
@@ -47,5 +45,7 @@ export default {
             }
             return textureLayer(texture);
         }
-    },
-};
+    }
+}
+
+TextureConverter.convert.type = ['FeatureCollection', 'Texture'];

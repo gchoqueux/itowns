@@ -169,24 +169,23 @@ function jsonFeaturesToFeatures(crsIn, crsOut, jsonFeatures, filteringExtent, op
  *
  * @module GeoJsonParser
  */
-export default {
-    /**
-     * @typedef {Object} GeoJsonParserOptions
-     * @property {string} crsOut - The CRS to convert the input coordinates
-     * to.
-     * @property {string} crsIn - Override the data CRS.
-     * @property {Extent} [filteringExtent] - Optional filter to reject
-     * features outside of this extent.
-     * @property {boolean} [buildExtent=false] - If true the geometry will
-     * have an extent property containing the area covered by the geom
-     * @property {function} [filter] - Filter function to remove features
-     * @property {boolean} [mergeFeatures=true] - If true all geometries are merged by type and multi-type
-     * @property {boolean} [withNormal=true] - If true each coordinate normal is computed
-     * @property {boolean} [withAltitude=true] - If true each coordinate altitude is kept
-     * @property {boolean} [overrideAltitudeInToZero=false] - If true, the altitude of the source data isn't taken into account for 3D geometry convertions.
-     * the altitude will be override to 0. This can be useful if you don't have a DEM or provide a new one when converting (with Layer.convert).
-     */
-
+/**
+ * @typedef {Object} GeoJsonParserOptions
+ * @property {string} crsOut - The CRS to convert the input coordinates
+ * to.
+ * @property {string} crsIn - Override the data CRS.
+ * @property {Extent} [filteringExtent] - Optional filter to reject
+ * features outside of this extent.
+ * @property {boolean} [buildExtent=false] - If true the geometry will
+ * have an extent property containing the area covered by the geom
+ * @property {function} [filter] - Filter function to remove features
+ * @property {boolean} [mergeFeatures=true] - If true all geometries are merged by type and multi-type
+ * @property {boolean} [withNormal=true] - If true each coordinate normal is computed
+ * @property {boolean} [withAltitude=true] - If true each coordinate altitude is kept
+ * @property {boolean} [overrideAltitudeInToZero=false] - If true, the altitude of the source data isn't taken into account for 3D geometry convertions.
+ * the altitude will be override to 0. This can be useful if you don't have a DEM or provide a new one when converting (with Layer.convert).
+ */
+export default class GeoJsonParser {
     /**
      * Parse a GeoJSON file content and return a [FeatureCollection]{@link FeatureCollection}.
      *
@@ -196,7 +195,8 @@ export default {
      *
      * @return {Promise} A promise resolving with a [FeatureCollection]{@link FeatureCollection}.
      */
-    parse(json, options = {}) {
+    static parse(json, options = {}) {
+        // super.parse();
         const crsOut = options.crsOut;
         const filteringExtent = options.filteringExtent;
         if (typeof (json) === 'string') {
@@ -216,5 +216,7 @@ export default {
             default:
                 throw new Error(`Unsupported GeoJSON type: '${json.type}`);
         }
-    },
-};
+    }
+}
+
+GeoJsonParser.parse.type = ['Object'];

@@ -8,7 +8,7 @@ import GeoJsonParser from 'Parser/GeoJsonParser';
  *
  * @module KMLParser
  */
-export default {
+export default class KMLParser {
     /**
      * Parse a KML file content and return a [FeatureCollection]{@link
      * module:GeoJsonParser~FeatureCollection}.
@@ -19,7 +19,10 @@ export default {
      * @return {Promise} A promise resolving with a [FeatureCollection]{@link
      * module:GeoJsonParser~FeatureCollection}.
      */
-    parse(kml, options) {
+    static parse(kml, options) {
         return GeoJsonParser.parse(togeojson.kml(kml), options);
-    },
-};
+    }
+}
+
+KMLParser.parse.type = ['XMLDocument'];
+

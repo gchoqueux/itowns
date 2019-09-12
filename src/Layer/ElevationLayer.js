@@ -1,6 +1,6 @@
 import Layer from 'Layer/Layer';
 import { updateLayeredMaterialNodeElevation, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
-import textureConverter from 'Converter/textureConverter';
+import TextureConverter from 'Converter/textureConverter';
 
 /**
  * @property {boolean} isElevationLayer - Used to checkout whether this layer is
@@ -66,7 +66,7 @@ class ElevationLayer extends Layer {
     }
 
     convert(data, extentDestination) {
-        return textureConverter.convert(data, extentDestination, this);
+        return TextureConverter.convert(data, extentDestination, this);
     }
 
     /**
@@ -80,3 +80,6 @@ class ElevationLayer extends Layer {
 }
 
 export default ElevationLayer;
+
+ElevationLayer.prototype.convert.type = TextureConverter.convert.type;
+
