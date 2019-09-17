@@ -1,16 +1,5 @@
 import Cache from 'Core/Scheduler/Cache';
 
-// function isValidData(data, extentDestination, validFn) {
-//     if (data && (!validFn || validFn(data, extentDestination))) {
-//         return data;
-//     }
-// }
-
-// const error = (err, url, source, type) => {
-//     source.handlingError(err, url, type);
-//     throw err;
-// };
-
 export default {
     executeCommand(command) {
         const promises = [];

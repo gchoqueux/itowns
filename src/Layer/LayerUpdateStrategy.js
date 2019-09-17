@@ -48,7 +48,7 @@ function _dichotomy(nodeLevel, currentLevel, options = {}) {
 
 export function chooseNextLevelToFetch(strategy, node, nodeLevel = node.level, currentLevel, layer, failureParams) {
     let nextLevelToFetch;
-    const maxZoom = layer.source.zoom ? layer.source.zoom.max : Infinity;
+    // const maxZoom = layer.source.zoom ? layer.source.zoom.max : Infinity;
     if (failureParams) {
         nextLevelToFetch = _dichotomy(failureParams.targetLevel, currentLevel, layer.source);
     } else {
@@ -69,5 +69,5 @@ export function chooseNextLevelToFetch(strategy, node, nodeLevel = node.level, c
                 nextLevelToFetch = _minimizeNetworkTraffic(node, nodeLevel, currentLevel);
         }
     }
-    return Math.min(nextLevelToFetch, maxZoom);
+    return nextLevelToFetch;
 }

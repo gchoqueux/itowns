@@ -138,6 +138,10 @@ class Layer extends THREE.EventDispatcher {
     delete() {
         console.warn('Function delete doesn\'t exist for this layer');
     }
+
+    isValidData() {
+        return false;
+    }
 }
 
 export default Layer;

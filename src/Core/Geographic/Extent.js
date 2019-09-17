@@ -89,7 +89,7 @@ class Extent {
             this.south = 0;
             this.north = 0;
         }
-
+        this.isExtent = true;
         this.set(v0, v1, v2, v3);
     }
 

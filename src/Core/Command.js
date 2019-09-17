@@ -23,7 +23,6 @@ function convert(input, layer, extent) {
 
 function fetch(input, layer) {
     return layer.source.fetcher(layer.source.urlFromExtent(input), layer.source.networkOptions).then((fet) => {
-        // only  for vector tile
         fet.coords = input;
         return fet;
     });
@@ -37,10 +36,14 @@ class Job {
         this._error = e;
     }
     error(e) {
-        this._error(e);
+        console.error(`on ${this.name}`);
+        this._error(e, `Command job error on ${this.name}`);
     }
     run(input, params, layer, type) {
         return type.includes(input.constructor.name) ? this._f(input, layer, ...params) : input;
+    }
+    get name() {
+        return this._f.name;
     }
 }
 
@@ -50,16 +53,19 @@ class Command {
     constructor(layer, params, source = layer.source) {
         this.params = params;
         this.layer = layer;
-        const nFn = Object.entries(params)[0][0];
+        const entries = Object.entries(params);
+        const nFn = entries[0][0];
+        this.chain = entries.map(entry => jobs.find(job => job.name == entry[0]));
+
         const input = params[nFn].shift();
-        this.chain = jobs.slice(jobs.findIndex(a => a._f.name == nFn));
-        this.tag = `${source.uid}-${input.toString('-')}`;
-        this.type = [fetch.type, layer.source.parser.type, layer.convert.type];
+        const start = jobs.findIndex(a => a._f.name == nFn);
+        const tagExtent = input.isExtent ? input : params[nFn][0];
+        this.tag = `${source.uid}-${tagExtent.toString('-')}`;
+        this.type = [fetch.type, layer.source.parser.type, layer.convert.type].slice(start);
         this.input = () => Promise.resolve(source.parsedData || source.fetchedData || input);
-        return this;
     }
     execute() {
-        return this.chain.reduce((chain, job, i) => chain.then(input => job.run(input, this.params[job._f.name], this.layer, this.type[i]), job.error.bind(job)), this.input());
+        return this.chain.reduce((chain, job, i) => chain.then(input => job.run(input, this.params[job.name], this.layer, this.type[i]), job.error.bind(job)), this.input());
     }
 }
 
@@ -75,6 +81,8 @@ export class HeaderCommand {
         this.priority = priority;
     }
     add(params) {
-        this.commands.push(new Command(this.layer, params));
+        const command = new Command(this.layer, params);
+        this.commands.push(command);
+        return command;
     }
 }

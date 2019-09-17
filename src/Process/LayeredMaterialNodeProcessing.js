@@ -119,18 +119,23 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     const headerCommand = new HeaderCommand(context.view, layer, node, queuePriority(node.material), cmdCancellation);
 
     // TODO
-    // const parsedData = nodeLayer.textures.map(t => t.parsedData);
+    const parsedData = nodeLayer.textures.map(t => t.parsedData);
     for (let i = 0, max = extentsRaster.length; i < max; i++) {
         const extentSource = extentsRaster[i].tiledExtentParent(targetLevel);
         if (!layer.source.extentInsideLimit(extentSource)) {
             // Retry extentInsideLimit because you must check with the targetLevel
             // if the first test extentInsideLimit returns that it is out of limits
             // and the node inherits from its parent, then it'll still make a command to fetch texture.
-            node.layerUpdateState[layer.id].noMoreUpdatePossible();
-            return;
-        }
+            // node.layerUpdateState[layer.id].noMoreUpdatePossible();
+            // return;
+            // eslint-disable-next-line no-debugger
+            headerCommand.add({ convert: [parsedData[i], extentsRaster[i]] });
+        } else if (parsedData[i] && layer.isValidData(parsedData[i], extentsRaster[i])) {
         // fetch data on extent
-        headerCommand.add({ fetch: [extentSource], parse: [extentsRaster[i]], convert: [extentsRaster[i]] });
+            headerCommand.add({ convert: [parsedData[i], extentsRaster[i]] });
+        } else {
+            headerCommand.add({ fetch: [extentSource], parse: [extentsRaster[i]], convert: [extentsRaster[i]] });
+        }
     }
 
     node.layerUpdateState[layer.id].newTry();
