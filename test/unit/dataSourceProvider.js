@@ -1,3 +1,5 @@
+import Renderer from './mock';
+
 import * as THREE from 'three';
 import assert from 'assert';
 import { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';

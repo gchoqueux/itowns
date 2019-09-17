@@ -1,5 +1,35 @@
 import fetch from 'node-fetch';
 
+global.fetch = fetch;
+global.fetch.Promise = Promise;
+
+// Mock document object for Mocha.
+global.document = {
+    createElement: () => ({
+        addEventListener: () => {},
+        getContext: () => ({
+            fillRect: () => { },
+            moveTo: () => { },
+            lineTo: () => { },
+            beginPath: () => { },
+            stroke: () => { },
+            fill: () => { },
+            arc: () => { },
+            setTransform: () => { },
+            canvas: {
+                width: 256,
+                height: 256,
+            },
+        }),
+    }),
+    createElementNS: () => ({
+        createSVGMatrix: () => { },
+    }),
+};
+
+global.Event = () => {};
+global.requestAnimationFrame = () => {};
+
 class Renderer {
     constructor() {
         const events = new Map();
@@ -37,40 +67,10 @@ class Renderer {
         this.capabilities = {
             logarithmicDepthBuffer: true,
         };
-        this.debug = {};
-        global.fetch = fetch;
-        global.fetch.Promise = Promise;
-
-        // Mock document object for Mocha.
-        global.document = {
-            createElement: () => ({
-                addEventListener: () => {},
-                getContext: () => ({
-                    fillRect: () => { },
-                    moveTo: () => { },
-                    lineTo: () => { },
-                    beginPath: () => { },
-                    stroke: () => { },
-                    fill: () => { },
-                    arc: () => { },
-                    setTransform: () => { },
-                    canvas: {
-                        width: 256,
-                        height: 256,
-                    },
-                }),
-            }),
-            createElementNS: () => ({
-                createSVGMatrix: () => { },
-            }),
-        };
-
         global.window = {
             addEventListener,
         };
-
-        global.Event = () => {};
-        global.requestAnimationFrame = () => {};
+        this.debug = {};
     }
     setClearColor() {}
     getRenderTarget() {}
