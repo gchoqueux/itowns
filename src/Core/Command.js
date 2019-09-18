@@ -1,11 +1,12 @@
 
-function parse(input, layer, extDest) {
+function parse(input, layer, extentFiltering) {
     const options = {
         buildExtent: layer.source.isFileSource || !layer.isGeometryLayer,
         crsIn: layer.source.projection,
         crsOut: layer.projection || layer.source.projection,
         // TODO: error in filtering vector tile, filteringExtent: extentDestination.as(layer.projection),
-        filteringExtent: !layer.source.isFileSource && layer.isGeometryLayer ? extDest.as(layer.source.projection) : undefined,
+        // extentFiltering could be a filtering in convert
+        filteringExtent: !layer.source.isFileSource && layer.isGeometryLayer ? extentFiltering.as(layer.source.projection) : undefined,
         overrideAltitudeInToZero: layer.overrideAltitudeInToZero,
         filter: layer.filter,
         isInverted: layer.source.isInverted,
@@ -22,6 +23,7 @@ function convert(input, layer, extent) {
 }
 
 function fetch(input, layer) {
+    if (input.constructor.name == 'FeatureCollection') { return input; }
     return layer.source.fetcher(layer.source.urlFromExtent(input), layer.source.networkOptions).then((fet) => {
         fet.coords = input;
         return fet;
@@ -47,7 +49,7 @@ class Job {
     }
 }
 
-const jobs = [new Job(fetch), new Job(parse), new Job(convert)];
+const jobs = { fetch: new Job(fetch), parse: new Job(parse), convert: new Job(convert) };
 
 class Command {
     constructor(layer, params, source = layer.source) {
@@ -55,17 +57,18 @@ class Command {
         this.layer = layer;
         const entries = Object.entries(params);
         const nFn = entries[0][0];
-        this.chain = entries.map(entry => jobs.find(job => job.name == entry[0]));
+
+        // build jobs chain
+        this.chain = entries.map(e => jobs[e[0]]);
 
         const input = params[nFn].shift();
-        const start = jobs.findIndex(a => a._f.name == nFn);
         const tagExtent = input.isExtent ? input : params[nFn][0];
         this.tag = `${source.uid}-${tagExtent.toString('-')}`;
-        this.type = [fetch.type, layer.source.parser.type, layer.convert.type].slice(start);
+        this.type = { fetch: fetch.type, parse: layer.source.parser.type, convert: layer.convert.type };
         this.input = () => Promise.resolve(source.parsedData || source.fetchedData || input);
     }
     execute() {
-        return this.chain.reduce((chain, job, i) => chain.then(input => job.run(input, this.params[job.name], this.layer, this.type[i]), job.error.bind(job)), this.input());
+        return this.chain.reduce((chain, job) => chain.then(input => job.run(input, this.params[job.name], this.layer, this.type[job.name]), job.error.bind(job)), this.input());
     }
 }
 
