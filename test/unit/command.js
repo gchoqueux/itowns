@@ -57,7 +57,7 @@ describe('command', function () {
     //     });
     // });
 
-    it('fetch', (done) => {
+    it('fetch geoson', (done) => {
         const source = new FileSource({
             url: urlJsonAriege,
             projection: 'EPSG:4326',
@@ -68,6 +68,7 @@ describe('command', function () {
         const layer = new ColorLayer('test', { source, projection: 'EPSG:4326' });
         const command = new Command(layer, { fetch: [extent] });
         command.execute().then((r) => {
+            assert.equal(r.type, 'Feature');
             done();
         });
     });
