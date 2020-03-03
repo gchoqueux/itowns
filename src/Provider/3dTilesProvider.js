@@ -1,5 +1,6 @@
 import * as THREE from 'three';
 import B3dmParser from 'Parser/B3dmParser';
+import I3dmParser from 'Parser/I3dmParser';
 import PntsParser from 'Parser/PntsParser';
 import Fetcher from 'Provider/Fetcher';
 import utf8Decoder from 'Utils/Utf8Decoder';
@@ -14,6 +15,22 @@ function b3dmToMesh(data, layer, url) {
         opacity: layer.opacity,
     };
     return B3dmParser.parse(data, options).then((result) => {
+        const batchTable = result.batchTable;
+        const object3d = result.gltf.scene;
+        return { batchTable, object3d };
+    });
+}
+
+function i3dmToMesh(data, layer, url) {
+    const urlBase = THREE.LoaderUtils.extractUrlBase(url);
+    const options = {
+        gltfUpAxis: layer.asset.gltfUpAxis,
+        urlBase,
+        overrideMaterials: layer.overrideMaterials,
+        doNotPatchMaterial: layer.doNotPatchMaterial,
+        opacity: layer.opacity,
+    };
+    return I3dmParser.parse(data, options).then((result) => {
         const batchTable = result.batchTable;
         const object3d = result.gltf.scene;
         return { batchTable, object3d };
@@ -60,6 +77,12 @@ export function configureTile(tile, layer, metadata, parent) {
     tile.updateMatrixWorld();
 }
 
+const supportedFormats = {
+    b3dm: b3dmToMesh,
+    i3dm: i3dmToMesh,
+    pnts: pntsParse,
+};
+
 function executeCommand(command) {
     const layer = command.layer;
     const metadata = command.metadata;
@@ -82,10 +105,6 @@ function executeCommand(command) {
     if (path) {
         // Check if we have relative or absolute url (with tileset's lopocs for example)
         const url = path.startsWith('http') ? path : metadata.baseURL + path;
-        const supportedFormats = {
-            b3dm: b3dmToMesh,
-            pnts: pntsParse,
-        };
         return Fetcher.arrayBuffer(url, layer.networkOptions).then((result) => {
             if (result !== undefined) {
                 let func;
@@ -96,6 +115,8 @@ function executeCommand(command) {
                     layer.tileIndex.extendTileset(result, metadata.tileId, newPrefix);
                 } else if (magic == 'b3dm') {
                     func = supportedFormats.b3dm;
+                } else if (magic == 'i3dm') {
+                    func = supportedFormats.i3dm;
                 } else if (magic == 'pnts') {
                     func = supportedFormats.pnts;
                 } else {
