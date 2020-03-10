@@ -1,7 +1,7 @@
 import { Vector2, Vector3 } from 'three';
 import Protobuf from 'pbf';
 import { VectorTile } from '@mapbox/vector-tile';
-import { globalExtentTMS } from 'Core/Geographic/Extent';
+import Extent, { globalExtentTMS } from 'Core/Geographic/Extent';
 import { FeatureCollection, FEATURE_TYPES } from 'Core/Feature';
 import { featureFilter } from '@mapbox/mapbox-gl-style-spec';
 import Style from 'Core/Style';
@@ -143,6 +143,11 @@ function readPBF(file, options) {
             const vtFeature = sourceLayer.feature(i);
             const layers = layersSource.filter(l => l.filterExpression({ zoom: z }, vtFeature) && (!l.minzoom || l.minzoom <= z) && (!l.maxzoom || l.maxzoom >= z));
             let feature;
+            if (z === 14 && x === 8299 && y === 5636 && layers.length) {
+                // eslint-disable-next-line no-debugger
+                debugger;
+                console.log('layer', layers[0].id);
+            }
             for (const layer of layers) {
                 const tag = `${layer.sourceUid}_${layer.id}_zoom_${z}`;
                 // Fix doens't pass instance of properties
@@ -168,6 +173,12 @@ function readPBF(file, options) {
             }
         }
     });
+
+    if (z === 14 && x === 8299 && y === 5636) {
+        features.es = new Extent('WMTS:PM', 14, 5636, 8299);
+        // eslint-disable-next-line no-debugger
+        // debugger;
+    }
 
     features.removeEmptyFeature();
     // TODO verify if is needed to updateExtent for previous features.

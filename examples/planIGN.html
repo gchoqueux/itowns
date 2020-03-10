@@ -41,11 +41,14 @@
             view.getLayerById('atmosphere').fog.enable = false;
 
             var mvtSource = new itowns.VectorTilesSource({
-                style: 'http://plan-ign1.ign.fr:8081/wxs/1.0.0/VECTOR.PLANIGNV2/metadata.json',
-                // style: 'https://vectortiles.ign.fr/demonstrateur/styles/planign.json',
+                // style: 'http://plan-ign1.ign.fr:8081/wxs/1.0.0/VECTOR.PLANIGNV2/metadata.json',
+                style: 'https://vectortiles.ign.fr/demonstrateur/styles/planign.json',
+                // style: 'https://qlf-wxs.ign.fr/qa5ei2epi5jyoi9n6mode4hl/static/vectorTiles/styles/PLAN.IGN/plan.json',
                 sprite: 'https://vectortiles.ign.fr/demonstrateur/sprite/PlanIgn',
                 // to do move to layer
-                filter: function (layer) { return ['fill', 'line'].includes(layer.type)},
+                filter: function (layer) {
+                    return ['fill', 'line'].includes(layer.type);
+                },
                 zoom: {
                     // Pourquoi il n'y pas de zoom 0 et 1
                     min: 2,
