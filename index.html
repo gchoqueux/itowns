@@ -1,9 +1,4 @@
-<!DOCTYPE html>
-<!--
-To change this license header, choose License Headers in Project Properties.
-To change this template file, choose Tools | Templates
-and open the template in the editor.
--->
+
 <html>
     <head>
         <title>Globe</title>
@@ -18,67 +13,108 @@ and open the template in the editor.
         <script src="dist/itowns.js"></script>
         <script src="dist/debug.js"></script>
         <script type="text/javascript">
-            /* global itowns,document,GuiTools, debug, window */
-            var placement = {
-                coord: new itowns.Coordinates('EPSG:4326', 2.351323, 48.856712),
-                range: 25000000,
-            }
+            var epsgStr = 'EPSG:3785'
+            var maxLevel = 17
 
-            // iTowns namespace defined here
-            var viewerDiv = document.getElementById('viewerDiv');
-            var view = new itowns.GlobeView(viewerDiv, placement);
-            var menuGlobe = new GuiTools('menuDiv', view);
+            // var bbox = [ 1200978.58991277, 8382390.26904445, 1203424.57481807, 8384836.25394975]
+            // var extent = new itowns.Extent(
+            //     epsgStr,
+            //     bbox[0], bbox[2], bbox[1], bbox[3]
+            // );
 
-            function createWMTSSourceFromConfig(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                return config;
-            }
+            var extent = new itowns.Extent(
+                'EPSG:3857',
+                -20026376.39, 20026376.39,
+                -20048966.10, 20048966.10);
+            //var serverUrl = 'http://localhost:8000'
+            var serverUrl = 'https://gis.iconiqlabs.com'
+            var imagineryLayerName = 'BlomURBEX:ORTHO'
+            var imagineryUrl = serverUrl + '/wmtsproxy/wmts/www.blomurbex.com_v02_WMTSService_usertoken=f09a79758ffcb07ab2fdc8c54ff57b54_BlomURBEX_ORTHO__null_image_jpeg_EPSG_3785-EPSG_3785_image_jpeg'
+            var imagineryFormat = 'image/jpeg'
+            var imagineryStyle = 'default'
 
-            function addColorLayerFromConfig(config) {
-                var layer = new itowns.ColorLayer(config.id, config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            }
+            var elevationUrl = serverUrl + '/wmtsproxy/elevation/Oslo_test_terrain_EPSG_3785.obj'
+            var elevationFormat = 'image/jpeg'
 
-            itowns.Fetcher.json('examples/layers/JSONLayers/Ortho.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Region.json')
-                .then(function _(config) {
-                    config.source = new itowns.WMSSource(config.source);
-                    return config;
-                }).then(addColorLayerFromConfig);
-
-            itowns.Fetcher.json('examples/layers/JSONLayers/Cada.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Administrative.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Transport.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Railways.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Denomination.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-
-            function addElevationLayerFromConfig(config) {
-                var layer = new itowns.ElevationLayer(config.id, config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            }
-
-            itowns.Fetcher.json('examples/layers/JSONLayers/WORLD_DTM.json')
-                .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/IGN_MNT_HIGHRES.json')
-                .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
-
-            const atmosphere = view.getLayerById('atmosphere');
-            menuGlobe.addGUI('RealisticLighting', false, function (v) {
-                atmosphere.setRealisticOn(v);
-                view.notifyChange(atmosphere);
+            // Add a WMS imagery source
+            var wmtsImagerySource = new itowns.WMTSSource({
+               // extent: extent,
+                name: imagineryLayerName,
+                projection: epsgStr,
+                tileMatrixSet: epsgStr,
+                url: imagineryUrl,
+                format: imagineryFormat,
+                style: imagineryStyle,
             });
 
-            // eslint-disable-next-line prefer-arrow-callback
-            view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function m() {
-                // eslint-disable-next-line no-console
-                console.info('Globe initialized');
+
+            // Add a WMS elevation source
+            var wmsElevationSource = new itowns.WMTSSource({
+               // extent: extent,
+                url: elevationUrl,
+                name: 'elevation',
+                projection: epsgStr,
+                tileMatrixSet: epsgStr,
+                width: 256,
+                format: elevationFormat,
             });
 
-            const d = new debug.Debug(view, menuGlobe.gui);
-            debug.createTileDebugUI(menuGlobe.gui, view, view.tileLayer, d);
-            window.view = view;
+            // Define projection that we will use (taken from https://epsg.io/25832, Proj4js section)
+            itowns.proj4.defs(epsgStr);
+            /* global itowns, setupLoadingScreen, GuiTools, debug */
+            // # Planar (EPSG:3946) viewer
 
+            var viewerDiv;
+            var view;
+            var p;
+            var menuGlobe;
+            var d;
+
+
+            // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
+            viewerDiv = document.getElementById('viewerDiv');
+
+            // Instanciate PlanarView*
+            view = new itowns.PlanarView(viewerDiv, extent, { maxSubdivisionLevel: maxLevel });
+
+            wmtsImagerySource.networkOptions.crossOrigin = "omit";
+
+            // Add a WMTS imagery layer
+            var wmtsImageryLayer = new itowns.ColorLayer('wmts_imagery', {
+                updateStrategy: {
+                    type: itowns.STRATEGY_DICHOTOMY,
+                    options: {},
+                },
+                source: wmtsImagerySource,
+
+            });
+            view.addLayer(wmtsImageryLayer);
+
+
+            // Add a WMS elevation layer
+            var wmsElevationLayer = new itowns.ElevationLayer('wms_elevation', {
+                useColorTextureElevation: true,
+                colorTextureElevationMinZ: 144,
+                colorTextureElevationMaxZ: 622,
+                source: wmsElevationSource,
+            });
+
+            view.addLayer(wmsElevationLayer);
+
+
+            // // instanciate controls
+            // eslint-disable-next-line no-new
+            new itowns.PlanarControls(view, {});
+
+            // Request redraw
+            view.notifyChange();
+
+            if (view.isDebugMode) {
+                menuGlobe = new GuiTools('menuDiv', view);
+                menuGlobe.addImageryLayersGUI(view.getLayers(function gui(l) { return l.isColorLayer; }));
+               // menuGlobe.addElevationLayerGUI(wmsElevationLayer);
+                debug.createTileDebugUI(menuGlobe.gui, view);
+            }
         </script>
     </body>
 </html>
