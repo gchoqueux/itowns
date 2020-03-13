@@ -4,6 +4,7 @@ import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
 import handlingError from 'Process/handlerNodeError';
 import Coordinates from 'Core/Geographic/Coordinates';
 import Extent from 'Core/Geographic/Extent';
+import NodeFeature from 'Core/NodeFeature';
 
 const _extent = new Extent('EPSG:4326', 0, 0, 0, 0);
 const coord = new Coordinates('EPSG:4326', 0, 0, 0);
@@ -60,6 +61,11 @@ export default {
             node.layerUpdateState[layer.id] = new LayerUpdateState();
         }
 
+        if (!node.features) {
+            node.features = [];
+        }
+
+
         if (!node.layerUpdateState[layer.id].canTryUpdate()) {
             return;
         }
@@ -73,6 +79,9 @@ export default {
         const extentsDestination = node.getExtentsByProjection(layer.source.projection) || [node.extent];
 
         extentsDestination.forEach((e) => { e.zoom = node.level; });
+        if (!node.features[layer.id]) {
+            node.features[layer.id] = new NodeFeature(extentsDestination[0], layer);
+        }
 
         const extentsSource = [];
         for (const extentDest of extentsDestination) {
@@ -89,15 +98,14 @@ export default {
 
         const command = {
             layer,
-            extentsSource,
             view: context.view,
             threejsLayer: layer.threejsLayer,
             requester: node,
+            nodeLayer: node.features[layer.id],
         };
-
         return context.scheduler.execute(command).then((result) => {
             // if request return empty json, WFSProvider.getFeatures return undefined
-            result = result[0];
+            // result = result[0];
             if (result) {
                 // special case for FileSource, as it is not tiled and we need
                 // to attach it to the correct node

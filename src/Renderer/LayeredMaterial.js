@@ -222,11 +222,11 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         }
     }
 
-    addLayer(layer) {
+    addLayer(layer, extents) {
         if (layer.id in this.layers) {
             console.warn('The "{layer.id}" layer was already present in the material, overwritting.');
         }
-        const lml = new MaterialLayer(this, layer);
+        const lml = new MaterialLayer(this, layer, extents);
         this.layers.push(lml);
         if (layer.isColorLayer) {
             this.setSequence(layer.parent.colorLayersOrder);

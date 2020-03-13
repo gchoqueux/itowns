@@ -127,8 +127,15 @@ class FileSource extends Source {
 
         this.isFileSource = true;
 
-        this.fetchedData = source.fetchedData;
-        this.parsedData = source.parsedData;
+        if (source.fetchedData) {
+            this.fetcher = () => Promise.resolve(source.fetchedData);
+        }
+
+        if (source.parsedData) {
+            this.fetcher = () => Promise.resolve();
+            this.parser = () => Promise.resolve(source.parsedData);
+        }
+
         this.zoom = source.zoom || { min: 5, max: 21 };
     }
 

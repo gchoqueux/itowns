@@ -2,10 +2,13 @@ import * as THREE from 'three';
 import { ELEVATION_MODES } from 'Renderer/LayeredMaterial';
 import { checkNodeElevationTextureValidity, insertSignificantValuesFromParent } from 'Parser/XbilParser';
 import CRS from 'Core/Geographic/Crs';
+import { Node } from 'Core/NodeFeature';
 
 export const EMPTY_TEXTURE_ZOOM = -1;
+const emptyTexture = new THREE.Texture();
+emptyTexture.extent = { zoom: EMPTY_TEXTURE_ZOOM };
 
-const pitch = new THREE.Vector4();
+const pitch = new THREE.Vector4(0, 0, 1, 1);
 
 function defineLayerProperty(layer, property, initValue, defaultValue) {
     let _value = initValue !== undefined ? initValue : defaultValue;
@@ -19,10 +22,11 @@ function defineLayerProperty(layer, property, initValue, defaultValue) {
     });
 }
 
-class MaterialLayer {
-    constructor(material, layer) {
-        this.id = layer.id;
-        this.textureOffset = 0; // will be updated in updateUniforms()
+class MaterialLayer extends Node {
+    constructor(material, layer, extents) {
+        super(extents, layer);
+        this.extents = extents;
+        this.id = layer.id; // TODO remove me
         this.crs = layer.parent.tileMatrixSets.indexOf(CRS.formatToTms(layer.projection));
         if (this.crs == -1) {
             console.error('Unknown crs:', layer.projection);
@@ -82,27 +86,35 @@ class MaterialLayer {
         defineLayerProperty(this, 'zmin', layer.zmin, defaultEle.zmin);
         defineLayerProperty(this, 'zmax', layer.zmax, defaultEle.zmax);
 
-        this.textures = [];
-        this.offsetScales = [];
-        this.level = EMPTY_TEXTURE_ZOOM;
+        this.textures = new Array(this.extents.length).fill(emptyTexture);
+        this.offsetScales = new Array(this.extents.length).fill().map(() => new THREE.Vector4());
         this.material = material;
+
+        // move to Layer, All parameters are constant
+        this.opt.buildExtent = true;
+        this.opt.crsIn = this.source.projection;
+        this.opt.crsOut = this.layer.projection;
+        // Sprites: Use with ColorLayer move to color layer
+        this.opt.sprites = this.layer.sprites || this.source.sprites;
+        // move default value to layer
+        this.opt.symbolToCircle = this.layer.symbolToCircle || false;
     }
 
-    initFromParent(parent, extents) {
+    initFromParent(parent) {
         if (parent && parent.level > this.level) {
             let index = 0;
-            for (const c of extents) {
+            for (const c of this.extents) {
                 for (const texture of parent.textures) {
                     if (c.isInside(texture.extent)) {
-                        this.setTexture(index++, texture, c.offsetToParent(texture.extent));
+                        this.setTexture(index++, texture);
                         break;
                     }
                 }
             }
 
             if (__DEBUG__) {
-                if (index != extents.length) {
-                    console.error(`non-coherent result ${index} vs ${extents.length}.`, extents);
+                if (index != this.extents.length) {
+                    console.error(`non-coherent result ${index} vs ${this.extents.length}.`, this.extents);
                 }
             }
         }
@@ -111,38 +123,47 @@ class MaterialLayer {
     replaceNoDataValueFromParent(parent, nodatavalue) {
         const dataElevation = this.textures[0].image.data;
         const parentTexture = parent && parent.textures[0];
-        if (dataElevation && parentTexture && !checkNodeElevationTextureValidity(dataElevation, nodatavalue)) {
+        if (dataElevation && parentTexture && parentTexture.extent.zoom > -1 && !checkNodeElevationTextureValidity(dataElevation, nodatavalue)) {
             const extent = this.textures[0].extent;
             extent.offsetToParent(parentTexture.extent, pitch);
             insertSignificantValuesFromParent(dataElevation, parentTexture.image.data, nodatavalue, pitch);
         }
     }
 
+    get level() {
+        return this.textures.some(t => t.extent.zoom == EMPTY_TEXTURE_ZOOM) ?
+            EMPTY_TEXTURE_ZOOM : this.textures[0].extent.zoom;
+    }
+
     dispose() {
         // TODO: WARNING  verify if textures to dispose aren't attached with ancestor
-        for (const texture of this.textures) {
-            if (texture.isTexture) {
-                texture.dispose();
+        for (var i = this.textures.length - 1; i >= 0; i--) {
+            this.textures[i].dispose();
+            this.textures[i] = emptyTexture;
+        }
+    }
+
+    setTexture(index, texture) {
+        this.textures[index].dispose();
+        this.textures[index] = texture;
+        this.extents[index].offsetToParent(texture.extent, this.offsetScales[index]);
+        this.material.layersNeedUpdate = true;
+    }
+
+    // maybe force zoom to load in MaterialLayer properties
+    load() {
+        const p = [];
+        for (let i = 0, max = this.extents.length; i < max; i++) {
+            const extent = this.extents[i];
+            if (this.source.extentInsideLimit(extent)) {
+                p.push(this.source.fetchFromExtent(extent)
+                    .then(f => this.source.parser(f, this.opt))
+                    .then(p => this.layer.convert(p, extent, this.layer))
+                    .then(texture => this.setTexture(i, texture)));
             }
         }
-        this.level = EMPTY_TEXTURE_ZOOM;
-        this.textures = [];
-        this.offsetScales = [];
-        this.material.layersNeedUpdate = true;
-    }
 
-    setTexture(index, texture, offsetScale) {
-        this.level = (texture && (index == 0)) ? texture.extent.zoom : this.level;
-        this.textures[index] = texture || null;
-        this.offsetScales[index] = offsetScale;
-        this.material.layersNeedUpdate = true;
-    }
-
-    setTextures(textures, pitchs) {
-        this.dispose(false);
-        for (let i = 0, il = textures.length; i < il; ++i) {
-            this.setTexture(i, textures[i], pitchs[i]);
-        }
+        return Promise.all(p);
     }
 }
 

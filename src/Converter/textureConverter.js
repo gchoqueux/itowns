@@ -30,12 +30,14 @@ export default {
             extentDestination.as(CRS.formatToEPSG(layer.projection), extentTexture);
             texture = Feature2Texture.createTextureFromFeature(data, extentTexture, 256, layer.style, backgroundColor);
             texture.parsedData = data;
-            texture.extent = extentDestination;
         } else if (data.isTexture) {
             texture = data;
         } else {
             throw (new Error('Data type is not supported to convert into texture'));
         }
+
+        // duplicated
+        // texture.extent = extentDestination;
 
         if (layer.isColorLayer) {
             return textureColorLayer(texture, layer.transparent);

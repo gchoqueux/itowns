@@ -40,20 +40,14 @@
 
             setupLoadingScreen(viewerDiv, view);
 
-            promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ColorLayer('Ortho', config);
-                return view.addLayer(layer);
-            }));
-
-            // Add a vector tile layer
-            function inter(z) {
-                return z - (z % 5);
-            }
+            // promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ColorLayer('Ortho', config);
+            //     return view.addLayer(layer);
+            // }));
 
             function isValidData(data, extentDestination) {
-                const isValid = inter(extentDestination.zoom) == inter(data.extent.zoom);
-                return isValid;
+                return false;
             }
 
             var mvtSource = new itowns.VectorTilesSource({
@@ -74,7 +68,6 @@
             var mvtLayer = new itowns.ColorLayer('MVT', {
                 isValidData: isValidData,
                 source: mvtSource,
-                fx: 2.5,
             });
 
             view.addLayer(mvtLayer);
@@ -84,7 +77,7 @@
             view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 Promise.all(promises).then(function () {
                     menuGlobe.addImageryLayersGUI(view.getLayers(function (l) { return l.isColorLayer; }));
-                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'Ortho', 0);
+                    // itowns.ColorLayersOrdering.moveLayerToIndex(view, 'Ortho', 0);
                 }).catch(console.error);
             });
 
