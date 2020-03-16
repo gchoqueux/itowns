@@ -118,6 +118,7 @@ class AbstractMaterialLayer extends Node {
 class MaterialLayer extends AbstractMaterialLayer {
     constructor(material, layer, extents) {
         super(material, layer, extents.length);
+        // Lors de la creation on pourrait verifier si les extents existes dans la sources....
         this.extents = extents;
     }
 
