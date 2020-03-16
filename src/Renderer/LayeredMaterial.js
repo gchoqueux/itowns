@@ -178,7 +178,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
     }
 
     updateLayersUniforms() {
-        const colorlayers = this.layers.filter(l => this.colorLayerIds.includes(l.id) && l.visible && l.opacity > 0);
+        const colorlayers = this.layers.filter(l => this.colorLayerIds.includes(l.layer.id) && l.visible && l.opacity > 0);
         colorlayers.sort((a, b) => this.colorLayerIds.indexOf(a.id) - this.colorLayerIds.indexOf(b.id));
         updateLayersUniforms(this.getUniformByType('color'), colorlayers, this.defines.NUM_FS_TEXTURES);
 
@@ -237,15 +237,15 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
     }
 
     getLayer(id) {
-        return this.layers.find(l => l.id === id);
+        return this.layers.find(l => l.layer.id === id);
     }
 
     getLayers(ids) {
-        return this.layers.filter(l => ids.includes(l.id));
+        return this.layers.filter(l => ids.includes(l.layer.id));
     }
 
     getElevationLayer() {
-        return this.layers.find(l => l.id === this.elevationLayerIds[0]);
+        return this.layers.find(l => l.layer.id === this.elevationLayerIds[0]);
     }
 
     setElevationScale(scale) {

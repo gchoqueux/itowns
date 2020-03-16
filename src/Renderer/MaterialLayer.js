@@ -26,7 +26,6 @@ class MaterialLayer extends Node {
     constructor(material, layer, extents) {
         super(extents, layer);
         this.extents = extents;
-        this.id = layer.id; // TODO remove me
         this.crs = layer.parent.tileMatrixSets.indexOf(CRS.formatToTms(layer.projection));
         if (this.crs == -1) {
             console.error('Unknown crs:', layer.projection);
