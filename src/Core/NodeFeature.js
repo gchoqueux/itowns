@@ -1,5 +1,5 @@
 export class Node {
-    constructor(extent, layer) {
+    constructor(layer) {
         this.layer = layer;
         this.source = layer.source;
         this.opt = {
@@ -14,7 +14,7 @@ export class Node {
 
 class NodeFeature extends Node {
     constructor(extent, layer) {
-        super(extent, layer);
+        super(layer);
         this.extent = extent;
 
         this.opt.buildExtent = this.source.isFileSource !== undefined;

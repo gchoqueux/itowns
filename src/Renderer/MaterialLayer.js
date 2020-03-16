@@ -22,10 +22,11 @@ function defineLayerProperty(layer, property, initValue, defaultValue) {
     });
 }
 
-class MaterialLayer extends Node {
-    constructor(material, layer, extents) {
-        super(extents, layer);
-        this.extents = extents;
+
+class AbstractMaterialLayer extends Node {
+    constructor(material, layer, size) {
+        super(layer);
+        // move to mesh
         this.crs = layer.parent.tileMatrixSets.indexOf(CRS.formatToTms(layer.projection));
         if (this.crs == -1) {
             console.error('Unknown crs:', layer.projection);
@@ -85,8 +86,8 @@ class MaterialLayer extends Node {
         defineLayerProperty(this, 'zmin', layer.zmin, defaultEle.zmin);
         defineLayerProperty(this, 'zmax', layer.zmax, defaultEle.zmax);
 
-        this.textures = new Array(this.extents.length).fill(emptyTexture);
-        this.offsetScales = new Array(this.extents.length).fill().map(() => new THREE.Vector4());
+        this.textures = new Array(size).fill(emptyTexture);
+        this.offsetScales = new Array(size).fill().map(() => new THREE.Vector4());
         this.material = material;
 
         // move to Layer, All parameters are constant
@@ -97,6 +98,28 @@ class MaterialLayer extends Node {
         this.opt.sprites = this.layer.sprites || this.source.sprites;
         // move default value to layer
         this.opt.symbolToCircle = this.layer.symbolToCircle || false;
+    }
+
+    dispose() {
+        // TODO: WARNING  verify if textures to dispose aren't attached with ancestor
+        for (var i = this.textures.length - 1; i >= 0; i--) {
+            this.textures[i].dispose();
+            this.textures[i] = emptyTexture;
+        }
+    }
+
+    setTexture(index, texture) {
+        this.textures[index].dispose();
+        this.textures[index] = texture;
+        this.extents[index].offsetToParent(texture.extent, this.offsetScales[index]);
+        this.material.layersNeedUpdate = true;
+    }
+}
+
+class MaterialLayer extends AbstractMaterialLayer {
+    constructor(material, layer, extents) {
+        super(material, layer, extents.length);
+        this.extents = extents;
     }
 
     initFromParent(parent) {
@@ -134,22 +157,6 @@ class MaterialLayer extends Node {
             EMPTY_TEXTURE_ZOOM : this.textures[0].extent.zoom;
     }
 
-    dispose() {
-        // TODO: WARNING  verify if textures to dispose aren't attached with ancestor
-        for (var i = this.textures.length - 1; i >= 0; i--) {
-            this.textures[i].dispose();
-            this.textures[i] = emptyTexture;
-        }
-    }
-
-    setTexture(index, texture) {
-        this.textures[index].dispose();
-        this.textures[index] = texture;
-        this.extents[index].offsetToParent(texture.extent, this.offsetScales[index]);
-        this.material.layersNeedUpdate = true;
-    }
-
-    // maybe force zoom to load in MaterialLayer properties
     load() {
         const p = [];
         for (let i = 0, max = this.extents.length; i < max; i++) {
