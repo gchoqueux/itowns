@@ -111,7 +111,6 @@ class AbstractMaterialLayer extends Node {
     setTexture(index, texture) {
         this.textures[index].dispose();
         this.textures[index] = texture;
-        this.extents[index].offsetToParent(texture.extent, this.offsetScales[index]);
         this.material.layersNeedUpdate = true;
     }
 }
@@ -125,9 +124,10 @@ class MaterialLayer extends AbstractMaterialLayer {
     initFromParent(parent) {
         if (parent && parent.level > this.level) {
             let index = 0;
-            for (const c of this.extents) {
+            for (const extent of this.extents) {
                 for (const texture of parent.textures) {
-                    if (c.isInside(texture.extent)) {
+                    if (extent.isInside(texture.extent)) {
+                        extent.offsetToParent(texture.extent, this.offsetScales[index]);
                         this.setTexture(index++, texture);
                         break;
                     }
@@ -165,7 +165,10 @@ class MaterialLayer extends AbstractMaterialLayer {
                 p.push(this.source.fetchFromExtent(extent)
                     .then(f => this.source.parser(f, this.opt))
                     .then(p => this.layer.convert(p, extent, this.layer))
-                    .then(texture => this.setTexture(i, texture)));
+                    .then((texture) => {
+                        extent.offsetToParent(texture.extent, this.offsetScales[i]);
+                        this.setTexture(i, texture);
+                    }));
             }
         }
 
