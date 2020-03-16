@@ -158,16 +158,16 @@ class MaterialLayer extends AbstractMaterialLayer {
             EMPTY_TEXTURE_ZOOM : this.textures[0].extent.zoom;
     }
 
-    load() {
+    load(zoom) {
         const p = [];
         for (let i = 0, max = this.extents.length; i < max; i++) {
-            const extent = this.extents[i];
+            const extent = this.extents[i].tiledExtentParent(zoom);
             if (this.source.extentInsideLimit(extent)) {
                 p.push(this.source.fetchFromExtent(extent)
                     .then(f => this.source.parser(f, this.opt))
                     .then(p => this.layer.convert(p, extent, this.layer))
                     .then((texture) => {
-                        extent.offsetToParent(texture.extent, this.offsetScales[i]);
+                        this.extents[i].offsetToParent(texture.extent, this.offsetScales[i]);
                         this.setTexture(i, texture);
                     }));
             }

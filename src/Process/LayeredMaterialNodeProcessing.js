@@ -29,7 +29,7 @@ function refinementCommandCancellationFn(cmd) {
     return !cmd.requester.material.visible;
 }
 
-function buildCommand(view, layer, requester, nodeLayer) {
+function buildCommand(view, layer, requester, nodeLayer, targetLevel) {
     return {
         view,
         layer,
@@ -37,6 +37,7 @@ function buildCommand(view, layer, requester, nodeLayer) {
         priority: materialCommandQueuePriorityFunction(requester.material),
         earlyDropFunction: refinementCommandCancellationFn,
         nodeLayer,
+        targetLevel,
     };
 }
 
@@ -126,7 +127,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     }
 
     node.layerUpdateState[layer.id].newTry();
-    const command = buildCommand(context.view, layer, node, nodeLayer);
+    const command = buildCommand(context.view, layer, node, nodeLayer, targetLevel);
 
     return context.scheduler.execute(command).then(
         () => {
@@ -207,7 +208,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
     //
 
     node.layerUpdateState[layer.id].newTry();
-    const command = buildCommand(context.view, layer, node, nodeLayer);
+    const command = buildCommand(context.view, layer, node, nodeLayer, targetLevel);
 
     return context.scheduler.execute(command).then(
         (textures) => {
