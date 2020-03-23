@@ -1,16 +1,17 @@
 import * as THREE from 'three';
+import { Node } from 'Core/NodeFeature';
 
 // Create an A(xis)A(ligned)B(ounding)B(ox) for the child `childIndex` of one aabb.
 // (PotreeConverter protocol builds implicit octree hierarchy by applying the same
 // subdivision algo recursively)
 const dHalfLength = new THREE.Vector3();
 
-class PotreeNode {
+class PotreeNode extends Node {
     constructor(numPoints = 0, childrenBitField = 0, layer) {
+        super(layer);
         this.numPoints = numPoints;
         this.childrenBitField = childrenBitField;
         this.children = [];
-        this.layer = layer;
         this.name = '';
         this.bbox = new THREE.Box3();
         this.sse = -1;
@@ -85,7 +86,7 @@ class PotreeNode {
     }
 
     get url() {
-        return `${this.baseurl}/r${this.name}.${this.layer.source.extension}`;
+        return `${this.baseurl}/r${this.name}.${this.source.extension}`;
     }
 
     load() {
@@ -94,12 +95,12 @@ class PotreeNode {
             this.loadOctree();
         }
 
-        return this.layer.source.fetcher(this.url, this.layer.source.networkOptions).then(this.layer.source.parse);
+        return this.source.fetcher(this.url, this.source.networkOptions).then(this.source.parse);
     }
 
     loadOctree() {
-        const octreeUrl = `${this.baseurl}/r${this.name}.${this.layer.source.extensionOctree}`;
-        return this.layer.source.fetcher(octreeUrl, this.layer.source.networkOptions).then((blob) => {
+        const octreeUrl = `${this.baseurl}/r${this.name}.${this.source.extensionOctree}`;
+        return this.source.fetcher(octreeUrl, this.source.networkOptions).then((blob) => {
             const view = new DataView(blob);
             const stack = [];
             let offset = 0;
