@@ -145,6 +145,10 @@ class FileSource extends Source {
         return this.url;
     }
 
+    fetchFromExtent() {
+        return this.fetcher(this.urlFromExtent(), this.networkOptions);
+    }
+
     onParsedFile(parsedFile) {
         this.parsedData = parsedFile;
         this.extent = parsedFile.extent;

@@ -145,6 +145,13 @@ class WFSSource extends Source {
         }
     }
 
+    fetchFromExtent(extent) {
+        return this.fetcher(this.urlFromExtent(extent), this.networkOptions).then((f) => {
+            f.extent = extent;
+            return f;
+        });
+    }
+
     urlFromExtent(extent) {
         return URLBuilder.bbox(extent, this);
     }
