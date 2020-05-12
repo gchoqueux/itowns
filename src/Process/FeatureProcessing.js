@@ -3,6 +3,8 @@ import LayerUpdateState from 'Layer/LayerUpdateState';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
 import handlingError from 'Process/handlerNodeError';
 import Coordinates from 'Core/Geographic/Coordinates';
+import NodeFeature from 'Core/NodeFeature';
+
 
 const coord = new Coordinates('EPSG:4326', 0, 0, 0);
 const mat4 = new THREE.Matrix4();
@@ -14,29 +16,7 @@ function applyMatrix4(obj, mat4) {
     obj.children.forEach(c => applyMatrix4(c, mat4));
 }
 
-function assignLayer(object, layer) {
-    if (object) {
-        object.layer = layer;
-        if (object.material) {
-            object.material.transparent = layer.opacity < 1.0;
-            object.material.opacity = layer.opacity;
-            object.material.wireframe = layer.wireframe;
-
-            if (layer.size) {
-                object.material.size = layer.size;
-            }
-            if (layer.linewidth) {
-                object.material.linewidth = layer.linewidth;
-            }
-        }
-        object.layers.set(layer.threejsLayer);
-        for (const c of object.children) {
-            assignLayer(c, layer);
-        }
-        return object;
-    }
-}
-
+// Replace in FeatureNode
 function extentInsideSource(extent, source) {
     return !source.extentInsideLimit(extent) ||
         (source.isFileSource && !extent.isPointInside(source.extent.center(coord)));
@@ -49,58 +29,41 @@ export default {
             ObjectRemovalHelper.removeChildrenAndCleanupRecursively(layer, node);
             return;
         }
+
         if (!node.visible) {
             return;
         }
 
         if (node.layerUpdateState[layer.id] === undefined) {
             node.layerUpdateState[layer.id] = new LayerUpdateState();
-        }
-
-        if (!node.layerUpdateState[layer.id].canTryUpdate()) {
+        } else if (!node.layerUpdateState[layer.id].canTryUpdate()) {
             return;
         }
 
-        const features = node.children.filter(n => n.layer == layer);
+        const extents = node.getExtentsByProjection(layer.source.projection) || [node.extent.as(layer.source.projection)];
 
-        if (features.length > 0) {
-            return features;
-        }
-
-        const extentsDestination = node.getExtentsByProjection(layer.source.projection) || [node.extent];
-
-        const extentsSource = [];
-        for (const extentDest of extentsDestination) {
-            const ext = layer.source.projection == extentDest.crs ? extentDest : extentDest.as(layer.source.projection);
-            ext.zoom = extentDest.zoom;
-            if (extentInsideSource(ext, layer.source)) {
+        for (const extent of extents) {
+            if (extentInsideSource(extent, layer.source)) {
                 node.layerUpdateState[layer.id].noMoreUpdatePossible();
                 return;
             }
-            extentsSource.push(extentDest);
         }
 
         node.layerUpdateState[layer.id].newTry();
 
         const command = {
             layer,
-            extentsSource,
             view: context.view,
             threejsLayer: layer.threejsLayer,
             requester: node,
+            nodeLayer: new NodeFeature(layer, extents[0]),
         };
 
         return context.scheduler.execute(command).then((result) => {
             // if request return empty json, WFSProvider.getFeatures return undefined
-            result = result[0];
+            // result = result[0];
             if (result) {
-                const isApplied = !result.layer;
-                assignLayer(result, layer);
-                // call onMeshCreated callback if needed
-                if (layer.onMeshCreated) {
-                    layer.onMeshCreated(result);
-                }
-                node.layerUpdateState[layer.id].success();
+                node.layerUpdateState[layer.id].noMoreUpdatePossible();
                 if (!node.parent) {
                     ObjectRemovalHelper.removeChildrenAndCleanupRecursively(layer, result);
                     return;
@@ -108,7 +71,8 @@ export default {
                 // We don't use node.matrixWorld here, because feature coordinates are
                 // expressed in crs coordinates (which may be different than world coordinates,
                 // if node's layer is attached to an Object with a non-identity transformation)
-                if (isApplied) {
+                if (!result.isApplied) {
+                    result.isApplied = true;
                     // NOTE: now data source provider use cache on Mesh
                     // TODO move transform in feature2Mesh
                     mat4.copy(node.matrixWorld).getInverse(mat4).elements[14] -= result.minAltitude;
@@ -118,9 +82,8 @@ export default {
                 if (result.minAltitude) {
                     result.position.z = result.minAltitude;
                 }
-                result.layer = layer;
                 node.add(result);
-                node.updateMatrixWorld();
+                result.updateMatrixWorld();
             } else {
                 node.layerUpdateState[layer.id].failure(1, true);
             }

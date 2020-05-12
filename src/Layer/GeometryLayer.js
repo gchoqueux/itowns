@@ -121,6 +121,12 @@ class GeometryLayer extends Layer {
 
         this.attachedLayers = [];
         this.visible = config.visible == undefined ? true : config.visible;
+
+        this.sourceToLayer.buildExtent = this.source && this.source.isFileSource !== undefined;
+        this.sourceToLayer.overrideAltitudeInToZero = this.overrideAltitudeInToZero;
+        this.sourceToLayer.mergeFeatures = this.mergeFeatures === undefined ? true : this.mergeFeatures;
+        this.sourceToLayer.withNormal = true;
+        this.sourceToLayer.withAltitude = true;
     }
 
     // Attached layers expect to receive the visual representation of a
