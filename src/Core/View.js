@@ -755,7 +755,7 @@ class View extends THREE.EventDispatcher {
 
                     precision = CRS.isMetricUnit(texture.parsedData.crs) ? precisions.M : precisions.D;
 
-                    result[materialLayer.id] = result[materialLayer.id].concat(
+                    result[materialLayer.layer.id] = result[materialLayer.layer.id].concat(
                         FeaturesUtils.filterFeaturesUnderCoordinate(coordinates, texture.parsedData, precision));
                 }
             }

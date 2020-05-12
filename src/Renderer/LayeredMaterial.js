@@ -4,7 +4,6 @@ import TileFS from 'Renderer/Shader/TileFS.glsl';
 import ShaderUtils from 'Renderer/Shader/ShaderUtils';
 import Capabilities from 'Core/System/Capabilities';
 import RenderMode from 'Renderer/RenderMode';
-import MaterialLayer from 'Renderer/MaterialLayer';
 
 const identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
 
@@ -178,6 +177,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
                 }
             },
         });
+
+        this.layersNeedUpdate = false;
     }
 
     getUniformByType(type) {
@@ -190,7 +191,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
     }
 
     updateLayersUniforms() {
-        const colorlayers = this.layers.filter(l => this.colorLayerIds.includes(l.id) && l.visible && l.opacity > 0);
+        const colorlayers = this.layers.filter(l => this.colorLayerIds.includes(l.layer.id) && l.visible && l.opacity > 0);
         colorlayers.sort((a, b) => this.colorLayerIds.indexOf(a.id) - this.colorLayerIds.indexOf(b.id));
         updateLayersUniforms(this.getUniformByType('color'), colorlayers, this.defines.NUM_FS_TEXTURES);
 
@@ -215,8 +216,8 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         this.layersNeedUpdate = true;
     }
 
-    setSequenceElevation(layerId) {
-        this.elevationLayerIds[0] = layerId;
+    setSequenceElevation(sequence) {
+        this.elevationLayerIds = sequence;
         this.layersNeedUpdate = true;
     }
 
@@ -234,36 +235,31 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
         }
     }
 
-    addLayer(layer) {
+    addLayer(layer, extents) {
         if (layer.id in this.layers) {
-            console.warn('The "{layer.id}" layer was already present in the material, overwritting.');
+            console.warn(`The ${layer.id} layer was already present in the material, overwritting.`);
         }
-        const lml = new MaterialLayer(this, layer);
+        const lml = layer.newNodeLayer(this, extents);
         this.layers.push(lml);
-        if (layer.isColorLayer) {
-            this.setSequence(layer.parent.colorLayersOrder);
-        } else {
-            this.setSequenceElevation(layer.id);
-        }
         return lml;
     }
 
     getLayer(id) {
-        return this.layers.find(l => l.id === id);
+        return this.layers.find(l => l.layer.id === id);
     }
 
     getLayers(ids) {
-        return this.layers.filter(l => ids.includes(l.id));
+        return this.layers.filter(l => ids.includes(l.layer.id));
     }
 
     getElevationLayer() {
-        return this.layers.find(l => l.id === this.elevationLayerIds[0]);
+        const elevationLayers = this.layers.filter(l => l.layer.isElevationLayer && l.level > -1).sort((a, b) => b.layer.source.zoom.max - a.layer.source.zoom.max);
+        return elevationLayers[0];
     }
 
     setElevationScale(scale) {
-        if (this.elevationLayerIds.length) {
-            this.getElevationLayer().scale = scale;
-        }
+        const elevationLayers = this.layers.filter(l => l.layer.isElevationLayer);
+        elevationLayers.forEach((l) => { l.scale = scale; });
     }
 }
 

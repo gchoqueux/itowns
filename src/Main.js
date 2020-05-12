@@ -13,7 +13,7 @@ export { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
 export { default as View } from 'Core/View';
 export { VIEW_EVENTS } from 'Core/View';
 export { default as FeatureProcessing } from 'Process/FeatureProcessing';
-export { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';
+export { updateRasterNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
 export { default as OrientedImageCamera } from 'Renderer/OrientedImageCamera';
 export { default as PointsMaterial } from 'Renderer/PointsMaterial';
 export { default as FlyControls } from 'Controls/FlyControls';

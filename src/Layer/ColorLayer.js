@@ -1,7 +1,9 @@
 import Layer from 'Layer/Layer';
-import { updateLayeredMaterialNodeImagery, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
+import { updateRasterNodeLayer, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
 import textureConverter from 'Converter/textureConverter';
 import Style from 'Core/Style';
+import RasterColorNodeLayer from 'Renderer/MaterialLayer';
+
 
 /**
  * Fires when the visiblity of the layer has changed.
@@ -63,11 +65,17 @@ class ColorLayer extends Layer {
         this.defineLayerProperty('opacity', 1.0);
         this.defineLayerProperty('sequence', 0);
         this.transparent = config.transparent || (this.opacity < 1.0);
-        this.noTextureParentOutsideLimit = config.source ? config.source.isFileSource : false;
+
+        this.sourceToLayer.buildExtent = true;
+        this.sourceToLayer.sprites = this.sprites || this.source.sprites;
+        this.sourceToLayer.symbolToCircle = this.symbolToCircle || false;
+        this.sourceToLayer.filter = this.filter || this.source.filter;
+        this.sourceToLayer.layers = this.source.layers;
+        this.sourceToLayer.isInverted = this.source.isInverted; // Use with VT only??
     }
 
     update(context, layer, node, parent) {
-        return updateLayeredMaterialNodeImagery(context, this, node, parent);
+        return updateRasterNodeLayer(context, this, node, parent);
     }
 
     convert(data, extentDestination) {
@@ -81,6 +89,21 @@ class ColorLayer extends Layer {
         for (const root of this.parent.level0Nodes) {
             root.traverse(removeLayeredMaterialNodeLayer(this.id));
         }
+    }
+
+    getDataFromCache(extent) {
+        return this.cache.get(extent.toString('-'));
+    }
+
+    setDataToCache(data, extent) {
+        this.cache.set(extent.toString('-'), data);
+        return data;
+    }
+
+    newNodeLayer(material, extents) {
+        const nodeLayer = new RasterColorNodeLayer(material, this, extents);
+        material.setSequence(this.parent.colorLayersOrder);
+        return nodeLayer;
     }
 }
 

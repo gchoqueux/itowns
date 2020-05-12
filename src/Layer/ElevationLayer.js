@@ -1,6 +1,7 @@
 import Layer from 'Layer/Layer';
-import { updateLayeredMaterialNodeElevation, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
+import { updateRasterNodeLayer, removeLayeredMaterialNodeLayer } from 'Process/LayeredMaterialNodeProcessing';
 import textureConverter from 'Converter/textureConverter';
+import { RasterElevationNodeLayer } from 'Renderer/MaterialLayer';
 
 /**
  * @property {boolean} isElevationLayer - Used to checkout whether this layer is
@@ -51,7 +52,7 @@ class ElevationLayer extends Layer {
         if (this.useColorTextureElevation) {
             baseScale = this.colorTextureElevationMaxZ - this.colorTextureElevationMinZ;
         }
-
+        this.visible = true;
         this.defineLayerProperty('scale', this.scale || 1.0, (self) => {
             self.parent.object3d.traverse((obj) => {
                 if (obj.layer == self.parent && obj.material) {
@@ -63,7 +64,7 @@ class ElevationLayer extends Layer {
     }
 
     update(context, layer, node, parent) {
-        return updateLayeredMaterialNodeElevation(context, this, node, parent);
+        return updateRasterNodeLayer(context, this, node, parent);
     }
 
     convert(data, extentDestination) {
@@ -77,6 +78,22 @@ class ElevationLayer extends Layer {
         for (const root of this.parent.level0Nodes) {
             root.traverse(removeLayeredMaterialNodeLayer(this.id));
         }
+    }
+
+    getDataFromCache(extent) {
+        return this.cache.get(extent.toString('-'));
+    }
+
+    setDataToCache(data, extent) {
+        this.cache.set(extent.toString('-'), data);
+        return data;
+    }
+
+    newNodeLayer(material, extents) {
+        const nodeLayer = new RasterElevationNodeLayer(material, this, extents);
+        material.setSequenceElevation(this.parent.elevationLayersOrder);
+        nodeLayer.addEventListener('texture', () => material.dispatchEvent({ type: 'elevation', node: nodeLayer }));
+        return nodeLayer;
     }
 }
 

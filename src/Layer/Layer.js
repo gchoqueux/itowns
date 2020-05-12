@@ -80,6 +80,8 @@ class Layer extends THREE.EventDispatcher {
 
         this.defineLayerProperty('frozen', false);
 
+        this.cache = new Map();
+
         this.info = new InfoLayer(this);
 
         this.source = this.source || new Source({ url: 'none' });
@@ -101,6 +103,11 @@ class Layer extends THREE.EventDispatcher {
         });
 
         this._promises.push(this.source.whenReady);
+
+        this.sourceToLayer = {
+            crsIn: this.source ? this.source.projection : this.projection,
+            crsOut: this.projection || (this.source && this.source.projection),
+        };
     }
 
     addInitializationStep() {
@@ -222,6 +229,12 @@ export const ImageryLayers = {
     getColorLayersIdOrderedBySequence: function getColorLayersIdOrderedBySequence(imageryLayers) {
         const copy = Array.from(imageryLayers);
         copy.sort((a, b) => a.sequence - b.sequence);
+        return copy.map(l => l.id);
+    },
+
+    getElevationLayersIdOrderedBySequence: function getElevationLayersIdOrderedBySequence(elevationLayers) {
+        const copy = Array.from(elevationLayers);
+        copy.sort((a, b) => a.source.zoom.max - b.source.zoom.max);
         return copy.map(l => l.id);
     },
 };

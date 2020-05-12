@@ -130,9 +130,19 @@ class FileSource extends Source {
         this.fetchedData = source.fetchedData;
         this.parsedData = source.parsedData;
 
+        if (source.fetchedData) {
+            this.fetcher = () => Promise.resolve(source.fetchedData);
+        }
+
+        if (source.parsedData) {
+            this.fetcher = () => Promise.resolve();
+            this.parser = () => Promise.resolve(source.parsedData);
+        }
+
         if (!this.fetchedData && !this.parsedData) {
             this.whenReady = this.fetcher(this.urlFromExtent(), this.networkOptions).then((f) => {
                 this.fetchedData = f;
+                this.fetcher = () => Promise.resolve(source.fetchedData);
             });
         }
 
@@ -151,6 +161,7 @@ class FileSource extends Source {
 
     onParsedFile(parsedFile) {
         this.parsedData = parsedFile;
+        this.parser = () => Promise.resolve(this.parsedData);
         this.extent = parsedFile.extent;
         return parsedFile;
     }

@@ -11,13 +11,6 @@ export const STRATEGY_GROUP = 1;
 export const STRATEGY_PROGRESSIVE = 2;
 export const STRATEGY_DICHOTOMY = 3;
 
-function _minimizeNetworkTraffic(node, nodeLevel, currentLevel) {
-    if (node.pendingSubdivision) {
-        return currentLevel;
-    }
-    return nodeLevel;
-}
-
 // Maps nodeLevel to groups defined in layer's options
 // eg with groups = [3, 7, 12]:
 //     * nodeLevel = 2 -> 3
@@ -46,27 +39,29 @@ function _dichotomy(nodeLevel, currentLevel, options = {}) {
         Math.ceil((currentLevel + nodeLevel) / 2));
 }
 
-export function chooseNextLevelToFetch(strategy, node, nodeLevel = node.level, currentLevel, layer, failureParams) {
+export function chooseNextLevelToFetch(nodeLayer, failureParams) {
+    const layer = nodeLayer.layer;
+    const nodeLevel = nodeLayer.extents[0].zoom;
     let nextLevelToFetch;
     const maxZoom = layer.source.zoom ? layer.source.zoom.max : Infinity;
     if (failureParams) {
-        nextLevelToFetch = _dichotomy(failureParams.targetLevel, currentLevel, layer.source);
+        nextLevelToFetch = _dichotomy(failureParams.targetLevel, nodeLayer.level, layer.source);
     } else {
-        switch (strategy) {
+        switch (layer.updateStrategy.type) {
             case STRATEGY_GROUP:
                 nextLevelToFetch = _group(nodeLevel, layer.updateStrategy.options);
                 break;
             case STRATEGY_PROGRESSIVE: {
-                nextLevelToFetch = _progressive(nodeLevel, currentLevel, layer.updateStrategy.options);
+                nextLevelToFetch = _progressive(nodeLevel, nodeLayer.level, layer.updateStrategy.options);
                 break;
             }
             case STRATEGY_DICHOTOMY:
-                nextLevelToFetch = _dichotomy(nodeLevel, currentLevel, layer.source);
+                nextLevelToFetch = _dichotomy(nodeLevel, nodeLayer.level, layer.source);
                 break;
             // default strategy
             case STRATEGY_MIN_NETWORK_TRAFFIC:
             default:
-                nextLevelToFetch = _minimizeNetworkTraffic(node, nodeLevel, currentLevel);
+                nextLevelToFetch = nodeLevel;
         }
     }
     return Math.min(nextLevelToFetch, maxZoom);

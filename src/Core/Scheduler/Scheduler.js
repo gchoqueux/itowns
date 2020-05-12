@@ -231,7 +231,7 @@ Scheduler.prototype.execute = function execute(command) {
  * @return {Promise} The {@link Scheduler} always expect a Promise as a result,
  * resolving to an object containing sufficient information for the associated
  * processing to the current layer. For example, see the
- * [LayeredMaterialNodeProcessing#updateLayeredMaterialNodeElevation]{@link
+ * [LayeredMaterialNodeProcessing#updateRasterNodeLayer]{@link
  * https://github.com/iTowns/itowns/blob/master/src/Process/LayeredMaterialNodeProcessing.js}
  * class or other processing class.
  */

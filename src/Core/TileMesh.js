@@ -41,6 +41,12 @@ class TileMesh extends THREE.Mesh {
 
         this.layerUpdateState = {};
         this.isTileMesh = true;
+
+        this.material.addEventListener('elevation', (e) => {
+            // console.log('e', e.node.extents[0].zoom, e.node.textures[0].extent.zoom);
+            const { min, max } = e.node.getMinMaxElevation();
+            this.setBBoxZ(min, max, e.node.layer.scale);
+        });
     }
 
     /**
