@@ -23,7 +23,8 @@
             // Define initial camera position
             var placement = {
                 coord: new itowns.Coordinates('EPSG:4326', 2.475, 48.807),
-                range: 12000000,
+                // range: 12000000,
+                zoom: 12,
             }
             var promises = [];
 
@@ -41,11 +42,11 @@
 
             setupLoadingScreen(viewerDiv, view);
 
-            promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ColorLayer('Ortho', config);
-                return view.addLayer(layer);
-            }));
+            // promises.push(itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ColorLayer('Ortho', config);
+            //     return view.addLayer(layer);
+            // }));
 
             // Add a vector tile layer
             function inter(z) {
@@ -54,38 +55,77 @@
 
             function isValidData(data, extentDestination) {
                 const isValid = inter(extentDestination.zoom) == inter(data.extent.zoom);
-                return isValid;
+                return false;
             }
 
             var mvtSource = new itowns.VectorTilesSource({
                 style: 'https://raw.githubusercontent.com/Oslandia/postile-openmaptiles/master/style.json',
                 // eslint-disable-next-line no-template-curly-in-string
                 url: 'https://osm.oslandia.io/data/v3/${z}/${x}/${y}.pbf',
-                attribution: {
-                    name: 'OpenStreetMap',
-                    url: 'http://www.openstreetmap.org/',
-                },
+                filter: function (layer) {
+                    return layer.id == 'water' || layer.id == 'building';
+                    },
                 zoom: {
                     min: 2,
-                    max: 16,
+                    max: 13,
                 },
             });
 
             var mvtLayer = new itowns.ColorLayer('MVT', {
-                isValidData: isValidData,
+                isValidData,
                 source: mvtSource,
-                fx: 2.5,
                 labelEnabled: true,
             });
-
             view.addLayer(mvtLayer);
+
+            var mvtBuild = new itowns.VectorTilesSource({
+                style: 'https://raw.githubusercontent.com/Oslandia/postile-openmaptiles/master/style.json',
+                // eslint-disable-next-line no-template-curly-in-string
+                url: 'https://osm.oslandia.io/data/v3/${z}/${x}/${y}.pbf',
+                filter: function (layer) {
+                    return layer.id == 'building';
+                    },
+                // zoom: {
+                //     min: 13,
+                //     max: 13,
+                // },
+                extent: new itowns.Extent("TMS:3857", 13, 2820, 4152),
+                // zoom: 15, row: 11279, col: 16611
+                // 14, row: 5641, col: 8304
+                tileMatrixSetLimits: {
+                    13: {
+                        minTileRow: 2809,
+                        maxTileRow: 2828,
+                        minTileCol: 4140,
+                        maxTileCol: 4155,
+                    },
+                }
+                // tileMatrixSetLimits: {
+                //     14: {
+                //         minTileRow: 5600,
+                //         maxTileRow: 5700,
+                //         minTileCol: 8250,
+                //         maxTileCol: 8350,
+                //     },
+                // }
+            });
+            const color = new itowns.THREE.Color(0x728595);
+            var vtBuildingLayer = new itowns.GeometryLayer('Wt Building', new itowns.THREE.Group(), {
+                update: itowns.FeatureProcessing.update,
+                convert: itowns.Feature2Mesh.convert({
+                    color: () => color,
+                    extrude: (p) => p.render_height || 50,
+                    altitude: () => 0 }),
+                overrideAltitudeInToZero: true,
+                source: mvtBuild,
+            });
+            view.addLayer(vtBuildingLayer);
 
             var menuGlobe = new GuiTools('menuDiv', view, 300);
             // Listen for globe full initialisation event
             view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 Promise.all(promises).then(function () {
                     menuGlobe.addImageryLayersGUI(view.getLayers(function (l) { return l.isColorLayer; }));
-                    itowns.ColorLayersOrdering.moveLayerToIndex(view, 'Ortho', 0);
                 }).catch(console.error);
             });
 

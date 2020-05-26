@@ -189,6 +189,8 @@ class Feature {
         this.normals = options.withNormal ? [] : undefined;
         this.crs = crs;
         this.size = options.withAltitude ? 3 : 2;
+        this.translation = options.translation;
+        this.scale = options.scale;
         if (options.buildExtent) {
             // this.crs is final projection, is out projection.
             // If the extent crs is the same then we use output coordinate (coordOut) to expand it.
@@ -250,6 +252,8 @@ export class FeatureCollection {
         }
         this.translation = new THREE.Vector3();
         this.scale = new THREE.Vector3(1, 1, 1);
+        this.optionsFeature.translation = this.translation;
+        this.optionsFeature.scale = this.scale;
     }
 
     /**

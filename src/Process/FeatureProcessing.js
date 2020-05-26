@@ -37,9 +37,10 @@ function assignLayer(object, layer) {
     }
 }
 
-function extentInsideSource(extent, source) {
+function extentInsideSource(extent, source, extNode) {
     return !source.extentInsideLimit(extent) ||
-        (source.isFileSource && !extent.isPointInside(source.extent.center(coord)));
+        (source.isFileSource && !extent.isPointInside(source.extent.center(coord)))  ||
+        (source.isVectorTilesSource && !extNode.isPointInside(extent.as(extNode.crs).center(coord)));
 }
 
 export default {
@@ -73,11 +74,13 @@ export default {
         for (const extentDest of extentsDestination) {
             const ext = layer.source.projection == extentDest.crs ? extentDest : extentDest.as(layer.source.projection);
             ext.zoom = extentDest.zoom;
-            if (extentInsideSource(ext, layer.source)) {
-                node.layerUpdateState[layer.id].noMoreUpdatePossible();
-                return;
+            if (!extentInsideSource(ext, layer.source, node.extent)) {
+                extentsSource.push(extentDest);
             }
-            extentsSource.push(extentDest);
+        }
+        if (extentsSource.length == 0) {
+            node.layerUpdateState[layer.id].noMoreUpdatePossible();
+            return;
         }
 
         node.layerUpdateState[layer.id].newTry();
@@ -90,10 +93,10 @@ export default {
             requester: node,
         };
 
-        return context.scheduler.execute(command).then((result) => {
+        return context.scheduler.execute(command).then((results) => {
             // if request return empty json, WFSProvider.getFeatures return undefined
-            result = result[0];
-            if (result) {
+            for (let i = 0; i < results.length; i++) {
+                const result = results[i];
                 const isApplied = !result.layer;
                 assignLayer(result, layer);
                 // call onMeshCreated callback if needed
@@ -111,8 +114,38 @@ export default {
                 if (isApplied) {
                     // NOTE: now data source provider use cache on Mesh
                     // TODO move transform in feature2Mesh
-                    mat4.copy(node.matrixWorld).getInverse(mat4).elements[14] -= result.minAltitude;
-                    applyMatrix4(result, mat4);
+                    // mat4.copy(node.matrixWorld).getInverse(mat4).elements[14] -= result.minAltitude;
+                    // applyMatrix4(result, mat4);
+
+                    const feature = result.feature;
+                    coord.crs = feature.crs;
+                    const exPM = extentsSource[i].as(feature.crs);
+                    const a =  new Coordinates(feature.crs, exPM.west, exPM.north, 0);
+                    const b =  new Coordinates(feature.crs, exPM.west, exPM.south, 0);
+                    const v1 = new THREE.Vector3();
+                    const v2 = new THREE.Vector3();
+                    const a1 = a.as(context.view.referenceCrs);
+                    const b1 = b.as(context.view.referenceCrs);
+                    a1.toVector3(v1);
+                    b1.toVector3(v2);
+                    const d = v1.distanceTo(v2);
+                    const scale =  d / (exPM.north - exPM.south);
+                    // rotate
+                    result.rotateZ(Math.PI * 0.5);
+                    // position
+                    exPM.center(coord);
+                    coord.as(context.view.referenceCrs, coord);
+                    coord.toVector3(result.position);
+                    node.worldToLocal(result.position);
+                    // const geometry = new THREE.BoxGeometry(4096 / feature.scale.x, 4096 / feature.scale.y, 150);
+                    // const material = new THREE.MeshBasicMaterial({ wireframe: true });
+                    // const cube = new THREE.Mesh(geometry, material);
+                    // cube.position.set(2048 / feature.scale.x, 2048 / feature.scale.y, 0);
+                    // result.add(cube);
+                    // result.add(new THREE.AxesHelper(500));
+                    result.translateX(-d / 2);
+                    result.translateY(d / 2);
+                    result.scale.set(scale / feature.scale.x, scale / feature.scale.y, 1);
                 }
 
                 if (result.minAltitude) {
@@ -121,9 +154,10 @@ export default {
                 result.layer = layer;
                 node.add(result);
                 node.updateMatrixWorld();
-            } else {
-                node.layerUpdateState[layer.id].failure(1, true);
             }
+            // else {
+            //     node.layerUpdateState[layer.id].failure(1, true);
+            // }
         },
         err => handlingError(err, node, layer, node.level, context.view));
     },
