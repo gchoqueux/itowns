@@ -5,14 +5,19 @@ import handlingError from 'Process/handlerNodeError';
 import Coordinates from 'Core/Geographic/Coordinates';
 
 const coord = new Coordinates('EPSG:4326', 0, 0, 0);
-const mat4 = new THREE.Matrix4();
+// const mat4 = new THREE.Matrix4();
 
-function applyMatrix4(obj, mat4) {
-    if (obj.geometry) {
-        obj.geometry.applyMatrix4(mat4);
-    }
-    obj.children.forEach(c => applyMatrix4(c, mat4));
-}
+// function applyMatrix4(obj, mat4) {
+//     if (obj.geometry) {
+//         obj.geometry.applyMatrix4(mat4);
+//     }
+//     obj.children.forEach(c => applyMatrix4(c, mat4));
+// }
+//
+const v1 = new THREE.Vector3();
+const v2 = new THREE.Vector3();
+const a =  new Coordinates('EPSG:4326',  0, 0, 0);
+const b =  new Coordinates('EPSG:4326',  0, 0, 0);
 
 function assignLayer(object, layer) {
     if (object) {
@@ -120,14 +125,14 @@ export default {
                     const feature = result.feature;
                     coord.crs = feature.crs;
                     const exPM = extentsSource[i].as(feature.crs);
-                    const a =  new Coordinates(feature.crs, exPM.west, exPM.north, 0);
-                    const b =  new Coordinates(feature.crs, exPM.west, exPM.south, 0);
-                    const v1 = new THREE.Vector3();
-                    const v2 = new THREE.Vector3();
-                    const a1 = a.as(context.view.referenceCrs);
-                    const b1 = b.as(context.view.referenceCrs);
-                    a1.toVector3(v1);
-                    b1.toVector3(v2);
+                    a.crs =  feature.crs;
+                    b.crs =  feature.crs;
+                    a.setFromValues(exPM.west, exPM.north, 0);
+                    b.setFromValues(exPM.west, exPM.south, 0);
+                    a.as(context.view.referenceCrs, a);
+                    b.as(context.view.referenceCrs, b);
+                    a.toVector3(v1);
+                    b.toVector3(v2);
                     const d = v1.distanceTo(v2);
                     const scale =  d / (exPM.north - exPM.south);
                     // rotate
