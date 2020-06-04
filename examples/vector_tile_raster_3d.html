@@ -89,25 +89,25 @@
                 //     min: 13,
                 //     max: 13,
                 // },
-                extent: new itowns.Extent("TMS:3857", 13, 2820, 4152),
+                // extent: new itowns.Extent("TMS:3857", 13, 2820, 4152),
                 // zoom: 15, row: 11279, col: 16611
                 // 14, row: 5641, col: 8304
-                tileMatrixSetLimits: {
-                    13: {
-                        minTileRow: 2809,
-                        maxTileRow: 2828,
-                        minTileCol: 4140,
-                        maxTileCol: 4155,
-                    },
-                }
                 // tileMatrixSetLimits: {
-                //     14: {
-                //         minTileRow: 5600,
-                //         maxTileRow: 5700,
-                //         minTileCol: 8250,
-                //         maxTileCol: 8350,
+                //     13: {
+                //         minTileRow: 2809,
+                //         maxTileRow: 2828,
+                //         minTileCol: 4140,
+                //         maxTileCol: 4155,
                 //     },
                 // }
+                tileMatrixSetLimits: {
+                    16: {
+                        minTileRow: 22500,
+                        maxTileRow: 22600,
+                        minTileCol: 33200,
+                        maxTileCol: 33300,
+                    },
+                }
             });
             const color = new itowns.THREE.Color(0x728595);
             var vtBuildingLayer = new itowns.GeometryLayer('Wt Building', new itowns.THREE.Group(), {

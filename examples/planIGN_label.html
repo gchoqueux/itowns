@@ -21,10 +21,9 @@
 
             // Define initial camera position
             var placement = {
-                coord: new itowns.Coordinates('EPSG:4326', 2.30390, 46.80990),
-                zoom: 14,
-                // range: 1600000,
-                //range: 1600,
+                coord: new itowns.Coordinates('EPSG:4326', 2.475, 48.807),
+                // range: 12000000,
+                zoom: 15,
             }
             var promises = [];
 
@@ -40,29 +39,70 @@
             view.getLayerById('atmosphere').visible = false;
             view.getLayerById('atmosphere').fog.enable = false;
 
-            function addElevationLayerFromConfig(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ElevationLayer(config.id, config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            }
-            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
-            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+            // function addElevationLayerFromConfig(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ElevationLayer(config.id, config);
+            //     view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            // }
+            // itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
 
             var mvtSource = new itowns.VectorTilesSource({
                 style: 'planign.json',
                 sprite: 'https://vectortiles.ign.fr/demonstrateur/sprite/PlanIgn',
                 // to do move to layer
                 filter: function (layer) {
-                	console.log('layer', layer.id);
-                	return !layer.id.startsWith('oro');
-                	// return ['fill', 'line'].includes(layer.type)
+                	return !layer.id.startsWith('oro') && !layer.id.startsWith('bati surfacique');
                 },
                 zoom: {
                     // Pourquoi il n'y pas de zoom 0 et 1
                     min: 2,
-                    max: 18,
+                    max: 16,
+                },
+            })
+
+            var mvtBuilding = new itowns.VectorTilesSource({
+                style: 'planign.json',
+                sprite: 'https://vectortiles.ign.fr/demonstrateur/sprite/PlanIgn',
+                // to do move to layer
+                filter: function (layer) {
+                	return layer.id.startsWith('bati surfacique') && layer.type == 'fill';
+                },
+                zoom: {
+                    min: 15,
+                    max: 15,
                 },
             });
+            const color = new itowns.THREE.Color(0x728595);
+
+            function colorBuildings(properties) {
+                if (properties.symbo == 'BATI_PUBLIC') {
+                    return color.set(0x8888ff);
+                } else if (properties.symbo == 'BATI_COMMERCIAL') {
+                    return color.set(0xff8888);
+                } else if (properties.symbo == 'HANGAR') {
+                    return color.set(0x666666);
+                } else if (properties.symbo == 'HANGAR_INDUSTRIEL') {
+                    return color.set(0xff4499);
+                } else if (properties.symbo == 'BATI_SPORTI') {
+                    return color.set(0x88ff99);
+                }
+                return color.set(0xbbbbbb);
+            }
+            var vtBuildingLayer = new itowns.GeometryLayer('Building', new itowns.THREE.Group(), {
+                update: itowns.FeatureProcessing.update,
+                convert: itowns.Feature2Mesh.convert({
+                    color: colorBuildings,
+                    extrude: (p) => {
+                    	return p.hauteur;
+                    },
+                    altitude: () => 0 }),
+                overrideAltitudeInToZero: true,
+                source: mvtBuilding,
+            });
+
+            view.addLayer(vtBuildingLayer);
+
             var mvtLayer = new itowns.ColorLayer('planIGN', {
                 isValidData: function v() { return false },
                 source: mvtSource,

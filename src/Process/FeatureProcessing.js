@@ -100,8 +100,17 @@ export default {
 
         return context.scheduler.execute(command).then((results) => {
             // if request return empty json, WFSProvider.getFeatures return undefined
+            // console.log('node', node.level);
+            // eslint-disable-next-line no-debugger
+            // debugger;
             for (let i = 0; i < results.length; i++) {
                 const result = results[i];
+                if (!result /* || !result.feature */) {
+                    break;
+                }
+                // node
+                // eslint-disable-next-line no-debugger
+                // debugger;
                 const isApplied = !result.layer;
                 assignLayer(result, layer);
                 // call onMeshCreated callback if needed
@@ -122,7 +131,7 @@ export default {
                     // mat4.copy(node.matrixWorld).getInverse(mat4).elements[14] -= result.minAltitude;
                     // applyMatrix4(result, mat4);
 
-                    const feature = result.feature;
+                    const feature = result.feature || result.children[0].feature;
                     coord.crs = feature.crs;
                     const exPM = extentsSource[i].as(feature.crs);
                     a.crs =  feature.crs;
