@@ -50,7 +50,9 @@ class VectorTilesSource extends TMSSource {
         const ffilter = source.filter || (() => true);
         this.layers = {};
         this.styles = {};
+        this.isVectorTilesSource = true;
         let promise;
+
 
         if (source.style) {
             if (typeof source.style == 'string') {

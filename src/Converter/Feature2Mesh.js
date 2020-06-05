@@ -431,21 +431,27 @@ function featureToMesh(feature, options) {
 function featuresToThree(features, options) {
     if (!features || features.length == 0) { return; }
 
+    options.filterFeatures = options.filterFeatures || (() => true);
+
     if (features.length == 1) {
-        coord.crs = features[0].crs;
-        coord.setFromValues(0, 0, 0);
-        return featureToMesh(features[0], options);
+        if (options.filterFeatures(features[0])) {
+            coord.crs = features[0].crs;
+            coord.setFromValues(0, 0, 0);
+            return featureToMesh(features[0], options);
+        }
     }
 
     const group = new THREE.Group();
     group.minAltitude = Infinity;
 
     for (const feature of features) {
-        coord.crs = feature.crs;
-        coord.setFromValues(0, 0, 0);
-        const mesh = featureToMesh(feature, options);
-        group.add(mesh);
-        group.minAltitude = Math.min(mesh.minAltitude, group.minAltitude);
+        if (options.filterFeatures(feature)) {
+            coord.crs = feature.crs;
+            coord.setFromValues(0, 0, 0);
+            const mesh = featureToMesh(feature, options);
+            group.add(mesh);
+            group.minAltitude = Math.min(mesh.minAltitude, group.minAltitude);
+        }
     }
 
     return group;

@@ -136,6 +136,7 @@ class Layer extends THREE.EventDispatcher {
             crsIn: this.source.projection,
             overrideAltitudeInToZero: this.overrideAltitudeInToZero,
             filter: this.filter || this.source.filter,
+            filterFeatures: config.filterFeatures,
             mergeFeatures: config.mergeFeatures === undefined ? true : config.mergeFeatures,
             isInverted: this.source.isInverted,
         };

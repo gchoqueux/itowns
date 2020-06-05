@@ -110,10 +110,10 @@ function readPBF(file, options) {
     // Only if the layer.origin is top
     const y = options.isInverted ? file.extent.row : (1 << z) - file.extent.row - 1;
 
-    options.buildExtent = true;
-    options.mergeFeatures = true;
-    options.withAltitude = false;
-    options.withNormal = false;
+    // options.buildExtent = true;
+    // options.mergeFeatures = true;
+    // options.withAltitude = false;
+    // options.withNormal = false;
 
     const collection = new FeatureCollection('EPSG:3857', options);
 

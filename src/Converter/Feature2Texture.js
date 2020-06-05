@@ -139,7 +139,7 @@ const extentTransformed = new Extent('EPSG:4326', 0, 0, 0, 0);
 export default {
     // backgroundColor is a THREE.Color to specify a color to fill the texture
     // with, given there is no feature passed in parameter
-    createTextureFromFeature(collection, extent, sizeTexture, style, backgroundColor) {
+    createTextureFromFeature(collection, extent, sizeTexture, style, backgroundColor, filter = () => (false)) {
         let texture;
 
         if (collection) {
@@ -175,7 +175,9 @@ export default {
 
             // Draw the canvas
             for (const feature of collection.features) {
-                drawFeature(ctx, feature, extentTransformed, feature.style || style, invCtxScale);
+                if (filter(feature)) {
+                    drawFeature(ctx, feature, extentTransformed, feature.style || style, invCtxScale);
+                }
             }
 
             texture = new THREE.CanvasTexture(c);

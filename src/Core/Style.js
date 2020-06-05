@@ -282,8 +282,8 @@ class Style {
         defineStyleProperty(this, 'text', 'justify', params.text.justify, 'center');
         defineStyleProperty(this, 'text', 'opacity', params.text.opacity, 1.0);
         defineStyleProperty(this, 'text', 'font', params.text.font, ['Open Sans Regular', 'Arial Unicode MS Regular', 'sans-serif']);
-        defineStyleProperty(this, 'text', 'haloColor', params.text.haloColor, '#000000');
-        defineStyleProperty(this, 'text', 'haloWidth', params.text.haloWidth, 0);
+        defineStyleProperty(this, 'text', 'haloColor', params.text.haloColor, '#ffffff');
+        defineStyleProperty(this, 'text', 'haloWidth', params.text.haloWidth, 3);
         defineStyleProperty(this, 'text', 'haloBlur', params.text.haloBlur, 0);
     }
 
@@ -403,6 +403,7 @@ class Style {
             this.text.offset = readVectorProperty(layer.layout['text-offset'], zoom);
             this.text.padding = readVectorProperty(layer.layout['text-padding'], zoom);
             this.text.size = readVectorProperty(layer.layout['text-size'], zoom);
+            this.text.size = Math.max(this.text.size, 14);
             this.text.placement = readVectorProperty(layer.layout['symbol-placement'], zoom);
             this.text.rotation = readVectorProperty(layer.layout['text-rotation-alignment'], zoom);
 
@@ -418,6 +419,7 @@ class Style {
             this.text.color = color;
             this.text.opacity = readVectorProperty(layer.paint['text-opacity'], zoom) || (opacity !== undefined && opacity);
             this.text.font = readVectorProperty(layer.layout['text-font'], zoom);
+            this.text.font = this.text.font.map(f => (f == 'Source Sans Pro' ? 'Source Sans Pro Regular' : f.replace('Italic', 'Regular')));
             this.text.haloColor = rgba2rgb(readVectorProperty(layer.paint['text-halo-color'], zoom)).color;
             this.text.haloWidth = readVectorProperty(layer.paint['text-halo-width'], zoom);
             this.text.haloBlur = readVectorProperty(layer.paint['text-halo-blur'], zoom);
