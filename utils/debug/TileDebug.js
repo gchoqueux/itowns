@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import View from 'Core/View';
+import Coordinates from 'Core/Geographic/Coordinates';
 import GeometryLayer from 'Layer/GeometryLayer';
 import { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
@@ -214,7 +215,11 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
     const circle = document.createElement('span');
     circle.className = 'circleBase';
 
+    const circle2 = document.createElement('span');
+    circle2.className = 'circleBase';
+
     viewerDiv.appendChild(circle);
+    viewerDiv.appendChild(circle2);
 
     const centerNode = new THREE.Vector3();
     let actualNode;
@@ -231,13 +236,24 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
         }
     };
 
+    function updateCircle(c, coords, size) {
+        c.style['line-height'] = `${size}px`;
+        c.style.width = `${size}px`;
+        c.style.height = `${size}px`;
+        c.innerHTML = `${Math.floor(size)} px`;
+        c.style.left = `${coords.x - size  * 0.5}px`;
+        c.style.top = `${coords.y - size * 0.5}px`;
+    }
+
     function picking(event) {
         const selectNode = selectTileAt(view, event, false);
         if (selectNode) {
             circle.style.display = 'table-cell';
+            circle2.style.display = 'table-cell';
             centerNode.copy(selectNode.boundingSphere.center).applyMatrix4(selectNode.matrixWorld);
             const project = centerNode.project(view.camera.camera3D);
             const coords = view.normalizedToViewCoords(project);
+            const coords2 = view.normalizedToViewCoords(centerNode.copy(selectNode.boundingSphere2.center).project(view.camera.camera3D));
             const size = selectNode.screenSize;
 
             if (actualNode != selectNode) {
@@ -249,12 +265,8 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
                     .easing(TWEEN.Easing.Sinusoidal.In)
                     .easing(TWEEN.Easing.Exponential.Out)
                     .onUpdate((object) => {
-                        circle.style['line-height'] = `${object.size}px`;
-                        circle.style.width = `${object.size}px`;
-                        circle.style.height = `${object.size}px`;
-                        circle.innerHTML = `${Math.floor(object.size)} px`;
-                        circle.style.left = `${coords.x - object.size  * 0.5}px`;
-                        circle.style.top = `${coords.y - object.size * 0.5}px`;
+                        updateCircle(circle, coords, object.size);
+                        updateCircle(circle2, coords2, selectNode.screenSize2);
                     })
                     .onComplete(removeAnimationRequester)
                     .start();
@@ -263,6 +275,7 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
             }
         } else {
             circle.style.display = 'none';
+            circle2.style.display = 'none';
         }
     }
 
@@ -271,6 +284,7 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
             window.addEventListener('mousemove', picking, false);
         } else {
             circle.style.display = 'none';
+            circle2.style.display = 'none';
             removeAnimationRequester();
             window.removeEventListener('mousemove', picking);
         }

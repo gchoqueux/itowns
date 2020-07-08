@@ -1,5 +1,32 @@
 import * as THREE from 'three';
+import Coordinates from 'Core/Geographic/Coordinates';
 import CRS from 'Core/Geographic/Crs';
+
+const v1 = new THREE.Vector3();
+const v2 = new THREE.Vector3();
+const a =  new Coordinates('EPSG:4326',  0, 0, 0);
+const b =  new Coordinates('EPSG:4326',  0, 0, 0);
+const coord = new Coordinates('EPSG:4326', 0, 0, 0);
+const epsg3857 = 'EPSG:3857';
+
+function get3857BB(extent, referenceCrs) {
+    coord.crs = epsg3857;
+    const exPM = extent.as(epsg3857);
+    a.crs =  epsg3857;
+    b.crs =  epsg3857;
+    a.setFromValues(exPM.west, exPM.north, 0);
+    b.setFromValues(exPM.west, exPM.south, 0);
+    a.as(referenceCrs, a);
+    b.as(referenceCrs, b);
+    a.toVector3(v1);
+    b.toVector3(v2);
+    const dimension = v1.distanceTo(v2) * 0.5;
+
+    exPM.center(coord);
+    coord.as(referenceCrs, coord);
+    const position = coord.toVector3();
+    return new THREE.Sphere(position, (2 * (dimension ** 2)) ** 0.5);
+}
 
 /**
  * A TileMesh is a THREE.Mesh with a geometricError and an OBB
@@ -34,6 +61,9 @@ class TileMesh extends THREE.Mesh {
         for (const tms of layer.tileMatrixSets) {
             this._tms.set(tms, this.extent.tiledCovering(tms));
         }
+
+        const extents = this.getExtentsByProjection(epsg3857);
+        this.boundingSphere2 = get3857BB(extents[1], 'EPSG:4978');
 
         this.frustumCulled = false;
         this.matrixAutoUpdate = false;
