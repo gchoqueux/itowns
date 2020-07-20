@@ -93,11 +93,12 @@ class MaterialLayer {
             let index = 0;
             for (const c of extents) {
                 for (const texture of parent.textures) {
-                    if (c.isInside(texture.extent)) {
-                        this.setTexture(index++, texture, c.offsetToParent(texture.extent));
+                    if (texture && c.isInside(texture.extent)) {
+                        this.setTexture(index, texture, c.offsetToParent(texture.extent));
                         break;
                     }
                 }
+                index++;
             }
 
             if (__DEBUG__) {
@@ -124,7 +125,7 @@ class MaterialLayer {
     dispose() {
         // TODO: WARNING  verify if textures to dispose aren't attached with ancestor
         for (const texture of this.textures) {
-            if (texture.isTexture) {
+            if (texture && texture.isTexture) {
                 texture.dispose();
             }
         }
@@ -135,9 +136,14 @@ class MaterialLayer {
     }
 
     setTexture(index, texture, offsetScale) {
-        this.level = (texture && (index == 0)) ? texture.extent.zoom : this.level;
-        this.textures[index] = texture || null;
-        this.offsetScales[index] = offsetScale;
+        if (texture) {
+            this.level = Math.max(this.level, texture.extent.zoom);
+            this.textures[index] = texture;
+            this.offsetScales[index] = offsetScale;
+        } else if (this.textures[index] == undefined || offsetScale == undefined) {
+            this.textures[index] = null;
+            this.offsetScales[index] = undefined;
+        }
         this.material.layersNeedUpdate = true;
     }
 

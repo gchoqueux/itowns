@@ -126,7 +126,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     const failureParams = node.layerUpdateState[layer.id].failureParams;
     const destinationLevel = extentsDestination[0].zoom || node.level;
     const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, destinationLevel, nodeLayer.level, layer, failureParams);
-    //  =>                                                               |
+
     const maxZoomLayer = Math.min(layer.zoom.max, targetLevel);
     const maxZoomSource = Math.min(layer.source.zoom.max, maxZoomLayer);
     if (maxZoomLayer <= nodeLayer.level || maxZoomLayer > destinationLevel) {
@@ -136,17 +136,20 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
         }
         return;
     }
-    // eslint-disable-next-line
-    const extentsSource = extentsDestination.map((e) => {
-        const extentToFetch = e.tiledExtentParent(maxZoomSource);
-        if (layer.source.extentInsideLimit(extentToFetch)) {
-            return extentToFetch;
-        }
-    });
 
-    if (extentsSource.every(a => a == undefined)) {
-        node.layerUpdateState[layer.id].noData({ targetLevel });
-        context.view.notifyChange(node, false);
+    // Get equivalent of extent destination in source
+    const extentsSource = [];
+    for (const extentDestination of extentsDestination) {
+        const extentSource = extentDestination.tiledExtentParent(maxZoomSource);
+        if (!layer.source.extentInsideLimit(extentSource)) {
+            // Retry extentInsideLimit because you must check with the targetLevel
+            // if the first test extentInsideLimit returns that it is out of limits
+            // and the node inherits from its parent, then it'll still make a command to fetch texture.
+            node.layerUpdateState[layer.id].noData({ targetLevel: maxZoomSource });
+            context.view.notifyChange(node, false);
+            return;
+        }
+        extentsSource.push(extentSource);
     }
 
     node.layerUpdateState[layer.id].newTry();
