@@ -31,6 +31,8 @@ class LabelLayer extends Layer {
         this.defineLayerProperty('visible', true, () => {
             this.domElement.style.display = this.visible ? 'block' : 'none';
         });
+
+        this.parsingOptions.buildExtent = true;
     }
 
     /**

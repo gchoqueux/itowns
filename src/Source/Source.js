@@ -4,6 +4,7 @@ import KMLParser from 'Parser/KMLParser';
 import GpxParser from 'Parser/GpxParser';
 import VectorTileParser from 'Parser/VectorTileParser';
 import Fetcher from 'Provider/Fetcher';
+import Cache from 'Core/Scheduler/Cache';
 
 export const supportedFetchers = new Map([
     ['image/x-bil;bits=32', Fetcher.textureFloat],
@@ -104,12 +105,13 @@ class Source {
         this.url = source.url;
         this.format = source.format;
         this.fetcher = source.fetcher || supportedFetchers.get(source.format) || Fetcher.texture;
-        this.parser = source.parser || supportedParsers.get(source.format) || (d => Promise.resolve(d));
+        this.parser = source.parser || supportedParsers.get(source.format);
         this.isVectorSource = (source.parser || supportedParsers.get(source.format)) != undefined;
         this.networkOptions = source.networkOptions || { crossOrigin: 'anonymous' };
         this.projection = source.projection;
         this.attribution = source.attribution;
         this.whenReady = Promise.resolve();
+        this._caches = {};
         if (source.extent && !(source.extent.isExtent)) {
             this.extent = new Extent(this.projection, source.extent);
         } else {
@@ -138,6 +140,35 @@ class Source {
         return [extent.zoom, extent.row, extent.col];
     }
 
+    parseData(fetchedData, options) {
+        return this.parser ? this.parser(fetchedData, options) : fetchedData;
+    }
+
+    getParsedData(from, options) {
+        const cache = this._caches[options.crsOut];
+        let parsedData = cache.getByArray(this.requestToKey(from));
+        if (!parsedData) {
+            parsedData = cache.setByArray(this.fetchData(from).then(fetchedData => this.parseData(fetchedData, options),
+                err => this.handlingError(err)), this.requestToKey(from));
+        }
+        return parsedData;
+    }
+
+    onLayerAdded(options) {
+        if (!this._caches[options.crsOut]) {
+            this._caches[options.crsOut] = new Cache();
+        }
+    }
+
+    fetchData(extent) {
+        const url = this.urlFromExtent(extent);
+
+        return this.fetcher(url, this.networkOptions).then((f) => {
+            f.extent = extent;
+            return f;
+        }, err => this.handlingError(err));
+    }
+
     /**
      * Tests if an extent is inside the source limits.
      *
@@ -157,13 +188,19 @@ class Source {
 
      * @return {boolean} True if all extents are inside, false otherwise.
      */
-    extentsInsideLimit(extents) {
-        for (const extent of extents) {
-            if (!this.extentInsideLimit(extent)) {
-                return false;
-            }
-        }
-        return true;
+    everyExtentsInsideLimit(extents) {
+        return extents.every(extent => this.extentInsideLimit(extent));
+    }
+
+    /**
+     * Tests if some extent of array is inside the source limits.
+     *
+     * @param {Array.<Extent>} extents - Array of extents to test.
+
+     * @return {boolean} True if some extents are inside, false otherwise.
+     */
+    someExtentsInsideLimit(extents) {
+        return extents.some(extent => this.extentInsideLimit(extent));
     }
 
     onParsedFile(parsedFile) {

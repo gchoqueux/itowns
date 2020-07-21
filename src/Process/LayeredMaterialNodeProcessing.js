@@ -29,14 +29,13 @@ function refinementCommandCancellationFn(cmd) {
     return !cmd.requester.material.visible;
 }
 
-function buildCommand(view, layer, extentsSource, extentsDestination, requester, parsedData) {
+function buildCommand(view, layer, extentsSource, extentsDestination, requester) {
     return {
         view,
         layer,
         extentsSource,
         extentsDestination,
         requester,
-        parsedData,
         priority: materialCommandQueuePriorityFunction(requester.material),
         earlyDropFunction: refinementCommandCancellationFn,
     };
@@ -60,7 +59,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
 
-        if (!layer.source.extentsInsideLimit(extentsDestination)) {
+        if (!layer.source.someExtentsInsideLimit(extentsDestination)) {
             // we also need to check that tile's parent doesn't have a texture for this layer,
             // because even if this tile is outside of the layer, it could inherit it's
             // parent texture
@@ -127,42 +126,40 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     const failureParams = node.layerUpdateState[layer.id].failureParams;
     const destinationLevel = extentsDestination[0].zoom || node.level;
     const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, destinationLevel, nodeLayer.level, layer, failureParams);
-
-    if (targetLevel <= nodeLayer.level || targetLevel > destinationLevel) {
+    //  =>                                                               |
+    const maxZoomLayer = Math.min(layer.zoom.max, targetLevel);
+    const maxZoomSource = Math.min(layer.source.zoom.max, maxZoomLayer);
+    if (maxZoomLayer <= nodeLayer.level || maxZoomLayer > destinationLevel) {
         if (failureParams.lowestLevelError != Infinity) {
             // this is the highest level found in case of error.
             node.layerUpdateState[layer.id].noMoreUpdatePossible();
         }
         return;
     }
-
-    // Get equivalent of extent destination in source
-    const extentsSource = [];
-    for (const extentDestination of extentsDestination) {
-        const extentSource = extentDestination.tiledExtentParent(targetLevel);
-        if (!layer.source.extentInsideLimit(extentSource)) {
-            // Retry extentInsideLimit because you must check with the targetLevel
-            // if the first test extentInsideLimit returns that it is out of limits
-            // and the node inherits from its parent, then it'll still make a command to fetch texture.
-            node.layerUpdateState[layer.id].noData({ targetLevel });
-            context.view.notifyChange(node, false);
-            return;
+    // eslint-disable-next-line
+    const extentsSource = extentsDestination.map((e) => {
+        const extentToFetch = e.tiledExtentParent(maxZoomSource);
+        if (layer.source.extentInsideLimit(extentToFetch)) {
+            return extentToFetch;
         }
-        extentsSource.push(extentSource);
+    });
+
+    if (extentsSource.every(a => a == undefined)) {
+        node.layerUpdateState[layer.id].noData({ targetLevel });
+        context.view.notifyChange(node, false);
     }
 
     node.layerUpdateState[layer.id].newTry();
-    const parsedData = nodeLayer.textures.map(t => t.parsedData);
-    const command = buildCommand(context.view, layer, extentsSource, extentsDestination, node, parsedData);
+    const command = buildCommand(context.view, layer, extentsSource, extentsDestination, node);
 
     return context.scheduler.execute(command).then(
         (result) => {
             // TODO: Handle error : result is undefined in provider. throw error
-            const pitchs = extentsDestination.map((ext, i) => ext.offsetToParent(result[i].extent, nodeLayer.offsetScales[i]));
+            const pitchs = extentsDestination.map((ext, i) => (result[i] ? ext.offsetToParent(result[i].extent, nodeLayer.offsetScales[i]) : undefined));
             nodeLayer.setTextures(result, pitchs);
             node.layerUpdateState[layer.id].success();
         },
-        err => handlingError(err, node, layer, targetLevel, context.view));
+        err => handlingError(err, node, layer, maxZoomSource, context.view));
 }
 
 export function updateLayeredMaterialNodeElevation(context, layer, node, parent) {

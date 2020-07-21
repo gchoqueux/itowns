@@ -66,6 +66,8 @@ class ColorLayer extends Layer {
         this.defineLayerProperty('sequence', 0);
         this.transparent = config.transparent || (this.opacity < 1.0);
         this.noTextureParentOutsideLimit = config.source ? config.source.isFileSource : false;
+        this.zoom = { max: 20, min: 2 };
+        this.parsingOptions.buildExtent = true;
     }
 
     update(context, layer, node, parent) {

@@ -1,5 +1,5 @@
 import Source from 'Source/Source';
-
+import Cache from 'Core/Scheduler/Cache';
 import Extent from 'Core/Geographic/Extent';
 
 const ext = new Extent('EPSG:4326', [0, 0, 0, 0]);
@@ -128,12 +128,13 @@ class FileSource extends Source {
         this.isFileSource = true;
 
         this.fetchedData = source.fetchedData;
-        this.parsedData = source.parsedData;
-
-        if (!this.fetchedData && !this.parsedData) {
+        if (!this.fetchedData && !source.parsedData) {
             this.whenReady = this.fetcher(this.urlFromExtent(), this.networkOptions).then((f) => {
                 this.fetchedData = f;
             });
+        } else if (source.parsedData) {
+            this._caches[source.parsedData.crs] = new Cache();
+            this._caches[source.parsedData.crs].setByArray(Promise.resolve(source.parsedData), this.requestToKey());
         }
 
         this.whenReady.then(() => this.fetchedData);
@@ -145,10 +146,28 @@ class FileSource extends Source {
         return this.url;
     }
 
-    onParsedFile(parsedFile) {
-        this.parsedData = parsedFile;
-        this.extent = parsedFile.extent;
-        return parsedFile;
+    onLayerAdded(options) {
+        super.onLayerAdded(options);
+        let parsedData = this._caches[options.crsOut].getByArray(this.requestToKey());
+        if (!parsedData) {
+            options.buildExtent = true;
+            parsedData = this.parseData(this.fetchedData, options);
+            this._caches[options.crsOut].setByArray(parsedData, this.requestToKey());
+        }
+        parsedData.then((data) => {
+            this.extent = data.extent;
+            if (data.isFeatureCollection) {
+                data.setParentStyle(options.style);
+            }
+        });
+    }
+
+    requestToKey(extent) {
+        return extent ? super.requestToKey(extent) : [0];
+    }
+
+    getParsedData(from, options) {
+        return this._caches[options.crsOut].getByArray(this.requestToKey());
     }
 
     extentInsideLimit(extent) {

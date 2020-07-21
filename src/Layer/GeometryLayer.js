@@ -128,10 +128,13 @@ class GeometryLayer extends Layer {
 
         this.attachedLayers = [];
         this.visible = config.visible == undefined ? true : config.visible;
-        Object.defineProperty(this.zoom, 'max', {
+	    Object.defineProperty(this.zoom, 'max', {
             value: Infinity,
             writable: false,
         });
+        this.parsingOptions.filteringExtent = !this.source.isFileSource;
+        this.parsingOptions.withNormal = true;
+        this.parsingOptions.withAltitude = true;
     }
 
     // Attached layers expect to receive the visual representation of a
