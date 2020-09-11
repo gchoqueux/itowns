@@ -128,7 +128,7 @@ class GeometryLayer extends Layer {
 
         this.attachedLayers = [];
         this.visible = config.visible == undefined ? true : config.visible;
-	    Object.defineProperty(this.zoom, 'max', {
+        Object.defineProperty(this.zoom, 'max', {
             value: Infinity,
             writable: false,
         });

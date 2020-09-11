@@ -7,7 +7,7 @@
     "sources": {
         "plan_ign": {
             "type": "vector",
-            "url": "https://vectortiles.ign.fr/rok4server/1.0.0/PLAN.IGN/metadata.json"
+            "url": "http://plan-ign1.ign.fr:8081/wxs/1.0.0/TEST.PLANIGNV2/metadata.json"
         }
     },
     "transition": {
@@ -20,6 +20,126 @@
             "type": "background",
             "paint": {
                 "background-color": "#FFFFFF"
+            }
+        },
+        {
+            "id": "orographie : relief - 0m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_0"],
+            "paint": {
+                "fill-color": "#D6E5BA",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 100m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_100"],
+            "paint": {
+                "fill-color": "#F7F2DA",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 200m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_200"],
+            "paint": {
+                "fill-color": "#EBDEBF",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 1000m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_1000"],
+            "paint": {
+                "fill-color": "#DABE97",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 3000m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_3000"],
+            "paint": {
+                "fill-color": "#B28773",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 4000m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_4000"],
+            "paint": {
+                "fill-color": "#9E6A54",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - 5000m",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","HYPSO_5000"],
+            "paint": {
+                "fill-color": "#773A2B",
+                "fill-opacity": 1
+            }
+        },
+        {
+            "id": "orographie : relief - glacier",
+            "type": "fill",
+            "source": "plan_ign",
+            "source-layer": "oro_relief",
+            "minzoom": 0,
+            "layout": {
+                "visibility": "visible"
+            },
+            "filter": ["==","symbo","GLACIER"],
+            "paint": {
+                "fill-color": "#FFFFFF",
+                "fill-opacity": 0.7
             }
         },
         {
@@ -4732,6 +4852,35 @@
             }
         },
         {
+            "id": "point coté",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "oro_ponc",
+            "minzoom": 11,
+            "filter": ["in","symbo",
+                                    "POINT_COTE",
+                                    "POINT_COTE_TOPO",
+                                    "POINT_COTE_RESEAU",
+                                    "POINT_RBF"
+            ],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "icon-image": "Localite",
+                "icon-size": 0.10,
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-allow-overlap": false,
+                "text-anchor": "bottom-left",
+                "text-offset": [0.2, 0.4],
+                "text-padding": 2,
+                "text-font": ["Source Sans Pro Regular"]
+            },
+            "paint": {
+                "text-color": "#000000"
+            }
+        },
+        {
             "id": "bati ponctuel : Hopital",
             "type": "symbol",
             "source": "plan_ign",
@@ -5370,6 +5519,72 @@
             }
         },
         {
+            "id": "toponyme - courbe rocher maitresse",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["==","txt_typo","ORO-COURBE_ROCHER"],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-allow-overlap": false,
+                "text-padding": 30,
+                "text-rotate": { "type": "identity", "property": "rotation" },
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#333333",
+                "text-halo-color": "rgba(255, 255, 255, 0.5)",
+                "text-halo-width": 1
+            }
+        },
+        {
+            "id": "toponyme - courbe galcier maitresse",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["==","txt_typo","ORO-COURBE_GLACIER"],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-allow-overlap": false,
+                "text-padding": 30,
+                "text-rotate": { "type": "identity", "property": "rotation" },
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#A4BFD9",
+                "text-halo-color": "rgba(255, 255, 255, 0.5)",
+                "text-halo-width": 1
+            }
+        },
+        {
+            "id": "toponyme - courbe maitresse",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["==","txt_typo","ORO-COURBE"],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-allow-overlap": false,
+                "text-padding": 30,
+                "text-rotate": { "type": "identity", "property": "rotation" },
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#604A2F",
+                "text-halo-color": "rgba(255, 255, 255, 0.5)",
+                "text-halo-width": 1
+            }
+        },
+        {
             "id": "toponyme - liaison maritime",
             "type": "symbol",
             "source": "plan_ign",
@@ -5402,7 +5617,7 @@
             "source": "plan_ign",
             "source-layer": "toponyme_bati_ponc",
             "minzoom":14,
-            "filter": ["==","txt_typo","TYPO_E1"],
+            "filter": ["==","txt_typo","TYPO_E_GE"],
             "layout": {
                 "visibility": "visible",
                 "symbol-placement": "point",
@@ -5701,6 +5916,58 @@
             }
         },
         {
+            "id": "toponyme - oro lineaire 4",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_lin",
+            "filter": ["in","txt_typo",
+                                    "ORO-SOMMET-3",
+                                    "ORO-GORGE-2"
+            ],
+            "layout": {
+                "symbol-placement": "line",
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-anchor": "center",
+                "text-keep-upright": true,
+                "text-max-angle": 45,
+                "text-padding": 1,
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#532A2A",
+                "text-halo-width": 1,
+                "text-halo-color": "rgba(255, 255, 255, 0.5)"
+            }
+        },
+        {
+            "id": "toponyme - oro ponc 4",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["in","txt_typo",
+                                    "ORO-SOMMET-3",
+                                    "ORO-GORGE-2",
+                                    "GROTTE",
+                                    "TYPO_C_9",
+                                    "TYPO_C_10"
+            ],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 10,
+                "text-allow-overlap": true,
+                "text-padding": 1,
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#532a2a",
+                "text-halo-color": "rgba(255, 255, 255, 0.5)",
+                "text-halo-width": 1
+            }
+        },
+        {
             "id": "toponyme - hydro ponc 4",
             "type": "symbol",
             "source": "plan_ign",
@@ -5992,6 +6259,73 @@
             }
         },
         {
+            "id": "toponyme - oro lineaire 3",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_lin",
+            "filter": ["in","txt_typo",
+                                    "ORO-ILE-3",
+                                    "ORO-RELIEF-3",
+                                    "ORO-RELIEF-3-T",
+                                    "ORO-RELIEF-4",
+                                    "ORO-RELIEF-4-T",
+                                    "ORO-CAP-2",
+                                    "ORO-CAP-3",
+                                    "ORO-SOMMET-3",
+                                    "ORO-COL-2",
+                                    "ORO-GORGE-1"
+            ],
+            "layout": {
+                "symbol-placement": "line",
+                "text-field": "{texte}",
+                "text-size": 12,
+                "text-anchor": "center",
+                "text-keep-upright": true,
+                "text-max-angle": 45,
+                "text-padding": 10,
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#532A2A",
+                "text-halo-width": 1,
+                "text-halo-color": "hsla(0, 0%, 100%, 0.5)"
+            }
+        },
+        {
+            "id": "toponyme - oro ponc 3",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["in","txt_typo",
+                                    "ORO-ILE-3",
+                                    "ORO-RELIEF-3",
+                                    "ORO-RELIEF-3-T",
+                                    "ORO-RELIEF-4",
+                                    "ORO-RELIEF-4-T",
+                                    "ORO-CAP-2",
+                                    "ORO-CAP-3",
+                                    "ORO-SOMMET-2",
+                                    "ORO-COL-2",
+                                    "ORO-GORGE-1",
+                                    "TYPO_C_7",
+                                    "TYPO_C_8"
+            ],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 12,
+                "text-allow-overlap": true,
+                "text-padding": 1,
+                "text-font": ["Source Sans Pro Italic"]
+            },
+            "paint": {
+                "text-color": "#532a2a",
+                "text-halo-color": "#FFFFFF",
+                "text-halo-width": 1
+            }
+        },
+        {
             "id": "toponyme - hydro lineaire 3",
             "type": "symbol",
             "source": "plan_ign",
@@ -6268,6 +6602,64 @@
                 "text-color": "#287b00",
                 "text-halo-color": "hsla(0, 0%, 100%, 0.5)",
                 "text-halo-width": 2
+            }
+        },
+        {
+            "id": "toponyme - oro lineaire 2",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_lin",
+            "filter": ["in","txt_typo",
+                                    "ORO-ILE-2",
+                                    "ORO-RELIEF-2",
+                                    "ORO-RELIEF-2-T",
+                                    "ORO-CAP-1",
+                                    "ORO-SOMMET-1"
+            ],
+            "layout": {
+                "symbol-placement": "line",
+                "text-field": "{texte}",
+                "text-size": 15,
+                "text-anchor": "center",
+                "text-keep-upright": true,
+                "text-max-angle": 45,
+                "text-font": ["Source Sans Pro Regular"]
+            },
+            "paint": {
+                "text-color": "#532A2A",
+                "text-halo-width": 2,
+                "text-halo-color": "hsla(0, 0%, 100%, 0.5)"
+            }
+        },
+        {
+            "id": "toponyme - oro ponc 2",
+            "type": "symbol",
+            "source": "plan_ign",
+            "source-layer": "toponyme_oro_ponc",
+            "filter": ["in","txt_typo",
+                                    "île",
+                                    "ORO-ILE-2",
+                                    "ORO-RELIEF-2",
+                                    "ORO-RELIEF-2-T",
+                                    "ORO-CAP-1",
+                                    "cap ou pointe",
+                                    "sommet ou col",
+                                    "ORO-SOMMET-1",
+                                    "TYPO_C_6"
+            ],
+            "layout": {
+                "visibility": "visible",
+                "symbol-placement": "point",
+                "text-field": "{texte}",
+                "text-size": 15,
+                "text-allow-overlap": false,
+                "text-padding": 1,
+                "text-font": ["Source Sans Pro Regular"]
+            },
+            "paint": {
+                "text-color": "#532a2a",
+                "text-halo-color": "hsla(0, 0%, 100%, 0.5)",
+                "text-halo-width": 1
             }
         },
         {

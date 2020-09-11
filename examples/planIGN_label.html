@@ -39,13 +39,13 @@
             view.getLayerById('atmosphere').visible = false;
             view.getLayerById('atmosphere').fog.enable = false;
 
-            // function addElevationLayerFromConfig(config) {
-            //     config.source = new itowns.WMTSSource(config.source);
-            //     var layer = new itowns.ElevationLayer(config.id, config);
-            //     view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            // }
-            // itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
-            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+            function addElevationLayerFromConfig(config) {
+                config.source = new itowns.WMTSSource(config.source);
+                var layer = new itowns.ElevationLayer(config.id, config);
+                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+            }
+            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
 
             var mvtSource = new itowns.VectorTilesSource({
                 style: 'planign.json',
@@ -64,53 +64,61 @@
             const color = new itowns.THREE.Color(0x728595);
             const colorE = new itowns.THREE.Color(0x000000);
 
-            var vtElecLayer = new itowns.GeometryLayer('elec', new itowns.THREE.Group(), {
-                update: itowns.FeatureProcessing.update,
-                convert: itowns.Feature2Mesh.convert({
-                    filterFeatures: function (feature) {
-                        return feature.id == 'ligne electrique';
-                    },
-                    color: colorE,
-                    altitude: () => 35 }),
-                overrideAltitudeInToZero: true,
-                source: mvtSource,
-                zoom: 15,
-            });
+            // var vtElecLayer = new itowns.GeometryLayer('elec', new itowns.THREE.Group(), {
+            //     update: itowns.FeatureProcessing.update,
+            //     convert: itowns.Feature2Mesh.convert({
+            //         filterFeatures: function (feature) {
+            //             return feature.id == 'ligne electrique';
+            //         },
+            //         color: colorE,
+            //         altitude: (p) => {
+            //             console.log('p', p);
 
-            view.addLayer(vtElecLayer);
+            //             return 35;
+            //         } }),
+            //     overrideAltitudeInToZero: true,
+            //     source: mvtSource,
+            //     zoom: { min: 15 },
+            // });
+
+            // view.addLayer(vtElecLayer);
             const cyl = new itowns.THREE.ConeGeometry( 10, 40, 8 );
             const mat = new itowns.THREE.MeshBasicMaterial({color: 0x333333});
 
-            var vtPyloneElecLayer = new itowns.GeometryLayer('elec2', new itowns.THREE.Group(), {
-                update: itowns.FeatureProcessing.update,
-                convert: itowns.Feature2Mesh.convert({
-                    filterFeatures: (feature) => {
-                          return feature.id == 'bati ponctuel infrastructure - pylone électrique';
-                    },
-                    color: colorE,
-                    altitude: () => 0 }),
-                onMeshCreated: function scaleZ(mesh) {
-                    mesh = mesh.isMesh ? mesh : (mesh.children[0]);
-                    if (mesh) {
-                        const geometry = mesh.geometry;
-                        if (geometry) {
-                            const array = mesh.geometry.attributes.position.array;
-                            for (var i = 0; i < array.length; i += 3) {
-                                const cm =  new itowns.THREE.Mesh(cyl, mat)
-                                cm.rotation.x = Math.PI * 0.5;
-                                cm.position.fromArray(mesh.geometry.attributes.position.array, i);
-                                cm.position.z = 20;
-                                mesh.add(cm);
-                            }
-                        }
-                    }
-                },
-                overrideAltitudeInToZero: true,
-                source: mvtSource,
-                zoom: 15,
-            });
+            // var vtPyloneElecLayer = new itowns.GeometryLayer('elec2', new itowns.THREE.Group(), {
+            //     update: itowns.FeatureProcessing.update,
+            //     convert: itowns.Feature2Mesh.convert({
+            //         filterFeatures: (feature) => {
+            //               return feature.id == 'bati ponctuel infrastructure - pylone électrique';
+            //         },
+            //         color: colorE,
+            //         altitude: (p) => {
+            //             console.log('p', p);
 
-            view.addLayer(vtPyloneElecLayer);
+            //             return 0;
+            //         } }),
+            //     onMeshCreated: function scaleZ(mesh) {
+            //         mesh = mesh.isMesh ? mesh : (mesh.children[0]);
+            //         if (mesh) {
+            //             const geometry = mesh.geometry;
+            //             if (geometry) {
+            //                 const array = mesh.geometry.attributes.position.array;
+            //                 for (var i = 0; i < array.length; i += 3) {
+            //                     const cm =  new itowns.THREE.Mesh(cyl, mat)
+            //                     cm.rotation.x = Math.PI * 0.5;
+            //                     cm.position.fromArray(mesh.geometry.attributes.position.array, i);
+            //                     cm.position.z = 20;
+            //                     mesh.add(cm);
+            //                 }
+            //             }
+            //         }
+            //     },
+            //     overrideAltitudeInToZero: true,
+            //     source: mvtSource,
+            //     zoom: { min: 15 },
+            // });
+
+            // view.addLayer(vtPyloneElecLayer);
 
             function colorBuildings(properties) {
                 if (properties.symbo == 'BATI_PUBLIC') {
@@ -137,10 +145,12 @@
                     extrude: (p) => {
                         return Math.max(p.hauteur, 2);
                     },
-                    altitude: () => 0 }),
+                    altitude: (p) => {
+                        return p.alti_sol;
+                    } }),
                 overrideAltitudeInToZero: true,
                 source: mvtSource,
-                zoom: 15,
+                zoom: { min: 15 },
             });
 
             view.addLayer(vtBuildingLayer);

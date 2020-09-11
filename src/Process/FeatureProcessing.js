@@ -171,9 +171,9 @@ export default {
                     result.scale.set(scale / feature.scale.x, scale / feature.scale.y, 1);
                 }
 
-                if (result.minAltitude) {
-                    result.position.z = result.minAltitude;
-                }
+                // if (result.minAltitude) {
+                //     result.position.z = result.minAltitude;
+                // }
                 result.layer = layer;
                 node.add(result);
                 node.updateMatrixWorld();
