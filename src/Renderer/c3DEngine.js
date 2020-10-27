@@ -70,6 +70,7 @@ class c3DEngine {
                 antialias: options.antialias,
                 alpha: options.alpha,
                 logarithmicDepthBuffer: options.logarithmicDepthBuffer,
+                powerPreference: 'high-performance',
             });
             this.renderer.domElement.style.position = 'relative';
             this.renderer.domElement.style.zIndex = 0;
