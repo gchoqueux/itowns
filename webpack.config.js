@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const debugBuild = process.env.NODE_ENV === 'development';
+const mode = process.env.NODE_ENV || 'production';
+console.log('mode', mode);
+
+const debugBuild = mode === 'development';
 
 /*
    configuring babel:
@@ -46,27 +49,35 @@ module.exports = (env) => {
         options: babelConf,
     });
     return {
+        mode,
         context: path.resolve(__dirname),
         resolve: {
             modules: [path.resolve(__dirname, 'src'), 'node_modules'],
         },
         entry: {
-            itowns: ['@babel/polyfill', 'url-polyfill', 'whatwg-fetch', './src/MainBundle.js'],
-            debug: ['./utils/debug/Main.js'],
+            // shared: ['@babel/polyfill', 'url-polyfill', 'whatwg-fetch', './src/MainBundle.js'],
+            itowns: {
+                import: ['@babel/polyfill', 'url-polyfill', 'whatwg-fetch', './src/MainBundle.js'],
+                // dependOn: 'shared',
+            },
+            debug: {
+                import: './utils/debug/Main.js',
+                dependOn: 'itowns',
+            },
         },
         devtool: 'source-map',
         output: {
             path: path.resolve(__dirname, 'dist'),
             filename: '[name].js',
             library: '[name]',
-            libraryTarget: 'umd',
-            umdNamedDefine: true,
+            libraryTarget: 'commonjs2',
+            // umdNamedDefine: true,
         },
-        optimization: {
-            runtimeChunk: {
-                name: 'itowns',
-            },
-        },
+        // optimization: {
+        //     runtimeChunk: {
+        //         name: 'itowns',
+        //     },
+        // },
         module: {
             rules: [
                 {
