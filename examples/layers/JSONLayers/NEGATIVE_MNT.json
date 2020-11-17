@@ -1,0 +1,33 @@
+{
+    "id": "negative",
+    "zmin": -10871,
+    "zmax": 8850,
+    "updateStrategy": {
+        "type": 1,
+        "options": {
+            "groups": [
+                7,
+                9,
+                12
+            ]
+        }
+    },
+    "tileMatrixSet": "WGS84G",
+    "source": {
+        "crs": "EPSG:4326",
+        "networkOptions": {
+            "crossOrigin": "anonymous"
+        },
+        "isInverted": false,
+        "format": "image/x-bil;bits=32",
+        "url": "http://86.88.221.106/service/elevation_tms/${z}/${x}/${y}/1",
+        "attribution": {
+            "name": "PANDEM",
+            "url": ""
+        },
+        "zoom": {
+            "min": 7,
+            "max": 12
+        }
+    }
+}
