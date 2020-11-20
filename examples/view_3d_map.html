@@ -10,7 +10,16 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
     </head>
     <body>
+        <!--Make sure the form has the autocomplete function switched off:-->
         <div id="viewerDiv"></div>
+        <div id="containerAC">
+            <form autocomplete="off">
+              <div class="autocomplete" style="width:300px;">
+                <input id="myInput" type="text" name="mySearch" placeholder="Recherche">
+              </div>
+            </form>
+            <script src="js/autoComplete.js"></script>
+        </div>
         <span id="divScaleWidget"> Scale </span>
         <div id="miniDiv"></div>
 
@@ -36,6 +45,15 @@
             // Instanciate iTowns GlobeView*
             var view = new itowns.GlobeView(viewerDiv, placement);
             setupLoadingScreen(viewerDiv, view);
+            const coord =  new itowns.Coordinates('EPSG:4326', 0, 0, 0);
+            const moveTo = (info) => {
+                if (info.x && info.y) {
+                    coord.setFromValues(info.x, info.y);
+                    view.controls.lookAtCoordinate({ coord, range: 20000 / info.classification, tilt: 89, heading: 0 }, false);
+                }
+            }
+
+            autocomplete(document.getElementById('myInput'), moveTo);
 
             // Dont' instance mini viewer if it's Test env
             miniView = new itowns.GlobeView(miniDiv, placement, {

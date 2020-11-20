@@ -636,7 +636,7 @@ class GlobeControls extends THREE.EventDispatcher {
         this.player.stop();
         this.onEndingMove();
         if (this.enabled === false) { return; }
-        event.preventDefault();
+        // event.preventDefault();
 
         this.updateTarget();
         previous = CameraUtils.getTransformCameraLookingAtTarget(this.view, this.camera, pickedPosition);
@@ -725,7 +725,7 @@ class GlobeControls extends THREE.EventDispatcher {
         this.player.stop();
         if (!this.enabled || !this.states.DOLLY.enable) { return; }
         CameraUtils.stop(this.view, this.camera);
-        event.preventDefault();
+        // event.preventDefault();
 
         this.updateTarget();
         let delta = 0;
