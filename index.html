@@ -18,10 +18,26 @@ and open the template in the editor.
         <script src="dist/itowns.js"></script>
         <script src="dist/debug.js"></script>
         <script type="text/javascript">
+            const initialExtent = new itowns.Extent('TMS:3857',  17, 45105, 66383);
+            const initialExtent4326 = initialExtent.as('EPSG:4326');
+            const coord = initialExtent4326.center();
             /* global itowns,document,GuiTools, debug, window */
             var placement = {
-                coord: new itowns.Coordinates('EPSG:4326', 2.351323, 48.856712),
-                range: 25000000,
+                coord,
+                range: 1275,
+            }
+            const THREE = itowns.THREE;
+
+            const xyz = new itowns.Coordinates('EPSG:4978', 0, 0, 0);
+            const c = new itowns.Coordinates('EPSG:4326', 0, 0, 0);
+            // Position object on globe
+            function positionObject(newPosition, object) {
+                xyz.setFromVector3(newPosition).as('EPSG:4326', c);
+                object.position.copy(newPosition);
+                object.lookAt(c.geodesicNormal.add(newPosition));
+                // object.rotateX(Math.PI * 0.5);
+                // object.rotateY(Math.PI * 0.5);
+                object.updateMatrixWorld(true);
             }
 
             // iTowns namespace defined here
@@ -29,45 +45,55 @@ and open the template in the editor.
             var view = new itowns.GlobeView(viewerDiv, placement);
             var menuGlobe = new GuiTools('menuDiv', view);
 
-            function createWMTSSourceFromConfig(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                return config;
-            }
 
-            function addColorLayerFromConfig(config) {
-                var layer = new itowns.ColorLayer(config.id, config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            }
+            const v1 = new THREE.Vector3();
+            const v2 = new THREE.Vector3();
+            const a =  new itowns.Coordinates('EPSG:4326',  0, 0, 0);
+            const b =  new itowns.Coordinates('EPSG:4326',  0, 0, 0);
 
-            itowns.Fetcher.json('examples/layers/JSONLayers/Ortho.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Region.json')
-                .then(function _(config) {
-                    config.source = new itowns.WMSSource(config.source);
-                    return config;
-                }).then(addColorLayerFromConfig);
+            const exPM = initialExtent.as('EPSG:3857');
+            a.crs =  'EPSG:3857';
+            b.crs =  'EPSG:3857';
+            a.setFromValues(exPM.west, exPM.north, 0);
+            b.setFromValues(exPM.west, exPM.south, 0);
+            a.as(view.referenceCrs, a);
+            b.as(view.referenceCrs, b);
+            a.toVector3(v1);
+            b.toVector3(v2);
+            const size = v1.distanceTo(v2);
 
-            itowns.Fetcher.json('examples/layers/JSONLayers/Cada.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Administrative.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Transport.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Railways.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Denomination.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
 
-            function addElevationLayerFromConfig(config) {
-                var layer = new itowns.ElevationLayer(config.id, config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
-            }
+            /*
+            const scale =  d / (exPM.north - exPM.south);
+            // rotate
+            result.rotateZ(Math.PI * 0.5);
+            // position
+            exPM.center(coord);
+            coord.as(context.view.referenceCrs, coord);
+            coord.toVector3(result.position);
+            node.worldToLocal(result.position);
 
-            itowns.Fetcher.json('examples/layers/JSONLayers/WORLD_DTM.json')
-                .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/IGN_MNT_HIGHRES.json')
-                .then(createWMTSSourceFromConfig).then(addElevationLayerFromConfig);
+            // Apply transform
+            result.translateX(-d / 2);
+            result.translateY(d / 2);
+            result.scale.set(scale / feature.scale.x, scale / feature.scale.y, 1);
+            */
 
-            const atmosphere = view.getLayerById('atmosphere');
-            menuGlobe.addGUI('RealisticLighting', false, function (v) {
-                atmosphere.setRealisticOn(v);
-                view.notifyChange(atmosphere);
-            });
+
+            const geometry = new THREE.BoxGeometry( size, size, size );
+            const material = new THREE.MeshBasicMaterial( {color: 0x00ff00, wireframe: true} );
+            const cube = new THREE.Mesh( geometry, material );
+            // const cube = new THREE.AxesHelper(400);
+
+            positionObject(coord.as(view.referenceCrs), cube);
+
+            // cube.position.copy(coord.as(view.referenceCrs));
+            // cube.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), coord.geodesicNormal);
+            // cube.rotateZ(Math.PI * 0.5);
+            view.scene.add( cube );
+
+            view.scene.updateMatrix();
+            view.scene.updateMatrixWorld(true);
 
             // eslint-disable-next-line prefer-arrow-callback
             view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function m() {

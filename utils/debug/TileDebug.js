@@ -67,7 +67,7 @@ export default function createTileDebugUI(datDebugTool, view, layer, debugInstan
     debugInstance.charts.push(new TileObjectChart(canvasObjectChardId.getContext('2d'), layer));
     debugInstance.charts.push(new TileVisibilityChart(canvasVisibleChardId.getContext('2d'), layer));
 
-    layer.showOutline = false;
+    layer.showOutline = true;
     layer.wireframe = false;
     const state = {
         objectChart: true,
