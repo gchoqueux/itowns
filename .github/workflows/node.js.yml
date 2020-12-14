@@ -27,7 +27,7 @@ jobs:
     - run: npm ci
     - run: npm run prepare
     - run: npm run build --if-present
-    - run: npm test
+    - run: nyc -n src --reporter=lcov cross-env npm run test-unit
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
