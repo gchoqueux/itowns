@@ -8,8 +8,6 @@ on:
     branches: [ master ]
   pull_request:
     branches: [ master ]
-env:
-  CI: true
 
 jobs:
   test:
@@ -27,6 +25,7 @@ jobs:
       with:
         node-version: ${{ matrix.node-version }}
     - run: npm ci
+    - run: npm run prepare
     - run: npm run build --if-present
     - run: npm test
     - name: Coveralls
@@ -34,7 +33,7 @@ jobs:
       with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           flag-name: ${{matrix.os}}-node-${{ matrix.node }}
-          parallel: true   
+
   finish:
     needs: test
     runs-on: ubuntu-latest
