@@ -42,15 +42,24 @@ void main() {
         gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
     }
 
-  #if defined(DEBUG)
-    if (showOutline) {
-        #pragma unroll_loop
-        for ( int i = 0; i < NUM_CRS; i ++) {
-            color = getOutlineColor( outlineColors[ i ], uvs[ i ].xy);
-            gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
-        }
-    }
-  #endif
+    vec3 c = gl_FragColor.rgb;
+
+    float height = (-10000. + ((c.r * 256. * 256. * 256. + c.g * 256. * 256. + c.b * 256.) * 0.1)) / 10000.0;
+
+    // float height = (c.r * 256. * 256. + c.g * 256.0 + c.b) * 0.1 / (256.0 * 256.0 + 256.0);
+
+
+    gl_FragColor.rgb = vec3(height, height, height);
+
+  // #if defined(DEBUG)
+  //   if (showOutline) {
+  //       #pragma unroll_loop
+  //       for ( int i = 0; i < NUM_CRS; i ++) {
+  //           color = getOutlineColor( outlineColors[ i ], uvs[ i ].xy);
+  //           gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
+  //       }
+  //   }
+  // #endif
 
     #include <itowns/fog_fragment>
     #include <itowns/lighting_fragment>

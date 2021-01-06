@@ -21,21 +21,25 @@
     }
 
     float getElevationMode(vec2 uv, sampler2D tex, int mode) {
-        if (mode == ELEVATION_RGBA)
-            return decode32(texture2D( tex, uv ).abgr * 255.0);
-        if (mode == ELEVATION_DATA || mode == ELEVATION_COLOR)
-        #if defined(WEBGL2)
-            return texture2D( tex, uv ).r;
-        #else
-            return texture2D( tex, uv ).w;
-        #endif
-        return 0.;
+        vec4 c = texture2D( tex, uv );
+        float height = (-10000. + ((c.r * 256. * 256. * 256. + c.g * 256. * 256. + c.b * 256.) * 0.1));
+        return height;
+
+        // if (mode == ELEVATION_RGBA)
+        //     return decode32(texture2D( tex, uv ).abgr * 255.0);
+        // if (mode == ELEVATION_DATA || mode == ELEVATION_COLOR)
+        // #if defined(WEBGL2)
+        //     return texture2D( tex, uv ).r;
+        // #else
+        //     return texture2D( tex, uv ).w;
+        // #endif
+        // return 0.;
     }
 
     float getElevation(vec2 uv, sampler2D tex, vec4 offsetScale, Layer layer) {
         uv = uv * offsetScale.zw + offsetScale.xy;
         float d = getElevationMode(uv, tex, layer.mode);
-        if (d < layer.zmin || d > layer.zmax) d = 0.;
-        return d * layer.scale + layer.bias;
+        // if (d < layer.zmin || d > layer.zmax) d = 0.;
+        return d;
     }
 #endif

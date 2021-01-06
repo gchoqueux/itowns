@@ -1,3 +1,4 @@
+import { Texture, DataTexture, RGBFormat } from 'three';
 import Extent from 'Core/Geographic/Extent';
 import GeoJsonParser from 'Parser/GeoJsonParser';
 import KMLParser from 'Parser/KMLParser';
@@ -57,7 +58,7 @@ function fetchSourceData(source, extent) {
     return source.fetcher(url, source.networkOptions).then((f) => {
         f.extent = extent;
         return f;
-    }, err => source.handlingError(err));
+    }, err => source.handlingError(extent));
 }
 
 let uid = 0;
@@ -137,10 +138,25 @@ class Source extends InformationsData {
         } else {
             this.extent = source.extent;
         }
+
+        const data = new Uint8Array([255, 255, 255]);
+        data[0] = 255;
+        data[1] = 255;
+        data[2] = 255;
+        this.texture = new DataTexture(data, 1, 1, RGBFormat);
+
+        this.texture.extent = new Extent('TMS:4326', 0, 0, 0);
     }
 
-    handlingError(err) {
-        throw new Error(err);
+    handlingError(extent) {
+        const data = new Uint8Array([255, 255, 255]);
+        data[0] = 255;
+        data[1] = 255;
+        data[2] = 255;
+        const texture = new DataTexture(data, 1, 1, RGBFormat);
+        texture.extent = extent;
+        return texture;
+        // throw new Error(err);
     }
 
     /**
