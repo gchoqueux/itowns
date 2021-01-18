@@ -2,7 +2,6 @@ import * as THREE from 'three';
 
 import View from 'Core/View';
 import CameraUtils from 'Utils/CameraUtils';
-import { CAMERA_TYPE } from 'Renderer/Camera';
 
 import PlanarControls from 'Controls/PlanarControls';
 import PlanarLayer from './Planar/PlanarLayer';
@@ -33,12 +32,6 @@ class PlanarView extends View {
     constructor(viewerDiv, extent, options = {}) {
         THREE.Object3D.DefaultUp.set(0, 0, 1);
 
-        // If an orthographic camera is requested (by options.cameraType), the extent height is passed in options when
-        // calling view constructor. Doing so allows Camera constructor (called in view constructor) to access it, and
-        // set the frustrum in order to see the total extent height.
-        if (options.camera && options.camera.type === CAMERA_TYPE.ORTHOGRAPHIC) {
-            options.camera.orthoExtent = extent.dimensions().y;
-        }
         // Setup View
         super(extent.crs, viewerDiv, options);
         this.isPlanarView = true;
@@ -49,6 +42,7 @@ class PlanarView extends View {
         const camera3D = this.camera.camera3D;
         camera3D.near = 0.1;
         camera3D.far = 2 * max;
+        this.camera.setFrustumFromExtent(extent);
         this.camera.camera3D.updateProjectionMatrix();
 
         const tileLayer = new PlanarLayer('planar', extent, options.object3d, options);

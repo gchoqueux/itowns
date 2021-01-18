@@ -107,7 +107,9 @@ class Camera {
         } else if (options.cameraThree) {
             this.camera3D = options.cameraThree;
         } else {
-            const orthoExtent = options.orthoExtent || 50;
+            // default vertical extent covered by an orthographic camera. Camera frustum can be changed afterwards
+            // using `setFrustumFromExtent` method
+            const orthoExtent = 50;
             const ratio = width / height;
 
             switch (options.type) {
@@ -141,6 +143,37 @@ class Camera {
                     updatePreSse(this, this.height, fov);
                 },
             });
+        }
+    }
+
+    /**
+     * Compute the wrapped Three.js camera frustum to completely cover a given extent.
+     *
+     * @param   {Extent}    extent      the extent the camera frustum must cover
+     */
+    setFrustumFromExtent(extent) {
+        if (this.camera3D.isOrthographicCamera) {
+            // find the extent side that must be covered by camera
+            const extentAspect = extent.dimensions().x / extent.dimensions().y;
+            const cameraAspect = this.width / this.height;
+            let maxDimension;
+            const aspect = [1, 1];
+
+            if (extentAspect > cameraAspect) {
+                maxDimension = extent.dimensions().x;
+                aspect[0] = cameraAspect;
+            } else {
+                maxDimension = extent.dimensions().y;
+                aspect[1] = cameraAspect;
+            }
+
+            // adjust the camera frustum
+            this.camera3D.top = maxDimension / (2 * aspect[0]);
+            this.camera3D.bottom = maxDimension / (-2 * aspect[0]);
+            this.camera3D.left = maxDimension * aspect[1] / -2;
+            this.camera3D.right = maxDimension * aspect[1] / 2;
+        } else if (this.camera3D.isPerspectiveCamera) {
+            // TODO: compute fov from orthoExtent and camera.camera3D.position
         }
     }
 
