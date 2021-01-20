@@ -12,7 +12,7 @@ env:
 
 jobs:
   tests:
-    name: build and test
+    name: Build and test
     runs-on: ubuntu-latest
     steps:
 
@@ -56,6 +56,7 @@ jobs:
         name: dist-itowns
         path: |
           dist/**/*.js
+          dist/**/*.map
           examples
           buildDocs
 
@@ -63,11 +64,30 @@ jobs:
       uses: coverallsapp/github-action@master
       with:
         github-token: ${{ secrets.GITHUB_TOKEN }}
+
+  # Publish package npm
+  publish:
+    needs: tests
+    if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
+    runs-on: ubuntu-latest
+    name: Publish NPM package
+    steps:
+      - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 15
+          registry-url: https://registry.npmjs.org/
+      - run: npm ci
+      - run: npm run prepare
+      - run: npm publish --access public
+        env:
+          NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
+
   deploy:
     needs: tests
     if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
-    name: deploy
+    name: Deploy itowns.github.io
     steps:
     - name: Download bundle
       uses: actions/download-artifact@v2
@@ -84,8 +104,68 @@ jobs:
       uses: peaceiris/actions-gh-pages@v3
       with:
         deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        external_repository: iTowns/itowns.github.io
+        # ATTENTION TOTOTOTOTOTODOOOOOOOOOOOOOO
+        # REVERT
+        external_repository: gchoqueux/itowns.github.io
+        # external_repository: iTowns/itowns.github.io
         publish_dir: ./itowns
         destination_dir: ./itowns
         publish_branch: master
         enable_jekyll: true
+  release:
+    needs: tests
+    name: Release Github
+    if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Use Node.js 15.x
+      uses: actions/setup-node@v2
+      with:
+        node-version: 15.x
+    - name: Message commit
+      run: echo "is RELEASE => ${{ github.event.head_commit.message }} !!"
+    - name: Get the version
+      run: echo ::set-output name=VERSION::$(node -e "console.log(require('./package.json').version);")
+      id: npm_pack
+    - name:  itowns Version
+      run: echo "The iTowns release version is ${{ steps.npm_pack.outputs.VERSION }}"
+    # ADD TAG
+    - name: Tag branch
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+        git tag -a v${{ steps.npm_pack.outputs.VERSION }} -m "release v${{ steps.npm_pack.outputs.VERSION }}."
+        git push --follow-tags
+    # Get archive to deploying
+    - name: Download bundle
+      uses: actions/download-artifact@v2
+      with:
+        name: dist-itowns
+    # Create Release
+    - name: Create Release
+      id: create_release
+      uses: actions/create-release@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: v${{ steps.npm_pack.outputs.VERSION }}
+        release_name: Release ${{ steps.npm_pack.outputs.VERSION }}
+        body_path: ./changelog.md
+        draft: false
+        prerelease: false
+    # This would actually build your project, using zip for an example artifact
+    - name: Zip assets
+      run: |
+        zip --junk-paths bundles ./dist/*.js ./dist/*.map
+    - name: Upload Release Asset
+      id: upload-release-asset
+      uses: actions/upload-release-asset@v1
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
+        upload_url: ${{ steps.create_release.outputs.upload_url }}
+        asset_path: ./bundles.zip
+        asset_name: bundles.zip
+        asset_content_type: application/zip

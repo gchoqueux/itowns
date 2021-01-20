@@ -1,5 +1,5 @@
 {
-  "name": "itowns",
+  "name": "@gchoqueux/itowns",
   "version": "2.28.1",
   "description": "A JS/WebGL framework for 3D geospatial data visualization",
   "main": "lib/Main.js",
@@ -16,10 +16,12 @@
     "build": "cross-env NODE_ENV=production webpack",
     "transpile": "cross-env BABEL_DISABLE_CACHE=1 babel src --out-dir lib",
     "start": "cross-env NODE_ENV=development webpack-dev-server -d --inline --hot",
-    "debug": "cross-env NODE_ENV=development webpack-dev-server -d --inline --hot --env.noInline=true",
+    "debug": "npm start -- --env.noInline=true",
     "prepublishOnly": "npm run build && npm run transpile",
     "prepare": "cross-env NO_UPDATE_NOTIFIER=true node ./config/prepare.js && node ./config/replace.config.js",
-    "watch": "cross-env BABEL_DISABLE_CACHE=1 babel --watch src --out-dir lib"
+    "watch": "cross-env BABEL_DISABLE_CACHE=1 babel --watch src --out-dir lib",
+    "changelog": "conventional-changelog -n ./config/conventionalChangelog/config.js -i changelog.md -s -r 1 ",
+    "bump": "if [ -z $npm_config_level ]; then grunt bump:minor;  else grunt bump:$npm_config_level; fi && npm run changelog && git add -A && git commit --amend --no-edit"
   },
   "nyc": {
     "exclude": [
@@ -74,6 +76,8 @@
     "babel-plugin-module-resolver": "^4.0.0",
     "chalk": "^4.1.0",
     "chart.js": "^2.9.4",
+    "compare-func": "^2.0.0",
+    "conventional-changelog-cli": "^2.1.1",
     "copyfiles": "^2.4.1",
     "core-js": "^3.8.0",
     "cross-env": "^7.0.3",
@@ -82,6 +86,9 @@
     "eslint-import-resolver-webpack": "^0.13.0",
     "eslint-loader": "^4.0.2",
     "eslint-plugin-import": "^2.22.1",
+    "github-url-from-git": "^1.5.0",
+    "grunt": "^1.3.0",
+    "grunt-bump": "^0.8.0",
     "https-proxy-agent": "^5.0.0",
     "jsdoc": "^3.6.6",
     "marked": "^1.2.5",
@@ -90,6 +97,7 @@
     "nyc": "^15.1.0",
     "proj4": "^2.6.3",
     "puppeteer": "^5.5.0",
+    "q": "^1.5.1",
     "replace-in-file": "^6.1.0",
     "three": "0.123.0",
     "url-polyfill": "^1.1.12",
@@ -97,5 +105,15 @@
     "webpack-cli": "^3.3.12",
     "webpack-dev-server": "^3.11.0",
     "whatwg-fetch": "^3.5.0"
-  }
+  },
+  "directories": {
+    "doc": "docs",
+    "example": "examples",
+    "lib": "lib",
+    "test": "test"
+  },
+  "keywords": [
+    "itowns"
+  ],
+  "author": "gchoqueux"
 }
