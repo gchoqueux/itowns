@@ -12,7 +12,7 @@ env:
 
 jobs:
   tests:
-    name: Build and test
+    name: Build and test validation
     runs-on: ubuntu-latest
     steps:
 
@@ -29,14 +29,14 @@ jobs:
     # Prepare before build
     - name: Prepare
       run: npm run prepare
-    # check linter
+    # Check linter
     - name: Linter
       run: npm run lint -- --max-warnings=0
     # Build bundle
     - name: Build bundle
       if: ${{ success() }}
       run:  npm run build
-    # run unit tests
+    # Unit tests
     - name: Unit tests
       run: npm run test-with-coverage_lcov
     # run functional tests
@@ -44,11 +44,11 @@ jobs:
     - name: Functional tests
       if: ${{ success() }}
       run: npm run test-functional
-    # build doc
-    - name: Build docs
+    # Build documention
+    - name: Build documentation
       if: ${{ success() }}
       run: npm run doc -- -d buildDocs
-    # prepare archive to deploying
+    # Prepare archive to deploying
     - name: Archive production artifacts
       if: ${{ success() && github.ref == 'refs/heads/master' }}
       uses: actions/upload-artifact@v2
@@ -59,7 +59,7 @@ jobs:
           dist/**/*.map
           examples
           buildDocs
-
+    # Code coverage
     - name: Coveralls
       uses: coverallsapp/github-action@master
       with:
@@ -83,16 +83,19 @@ jobs:
         env:
           NODE_AUTH_TOKEN: ${{secrets.NPM_TOKEN}}
 
+  # Deploy on web site
   deploy:
     needs: tests
     if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
-    name: Deploy itowns.github.io
+    name: Deploy to itowns.github.io
     steps:
+    # Download artifact from build
     - name: Download bundle
       uses: actions/download-artifact@v2
       with:
         name: dist-itowns
+    # Copy files for deployment
     - name: build site
       run: |
         mkdir -p itowns/dist
@@ -100,18 +103,20 @@ jobs:
         cp -R examples itowns/
         cp -R buildDocs itowns/docs
 
-    - name: Deploy to github
+    # Deploy to itowns.github.io
+    - name: Deploy to itowns.github.io
       uses: peaceiris/actions-gh-pages@v3
       with:
         deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-        # ATTENTION TOTOTOTOTOTODOOOOOOOOOOOOOO
-        # REVERT
+        # /!\ /!\ REVERT /!\ /!\
         external_repository: gchoqueux/itowns.github.io
         # external_repository: iTowns/itowns.github.io
         publish_dir: ./itowns
         destination_dir: ./itowns
         publish_branch: master
         enable_jekyll: true
+
+  # Create github release
   release:
     needs: tests
     name: Release Github
@@ -130,7 +135,7 @@ jobs:
       id: npm_pack
     - name:  itowns Version
       run: echo "The iTowns release version is ${{ steps.npm_pack.outputs.VERSION }}"
-    # ADD TAG
+    # Add tag
     - name: Tag branch
       run: |
         git config user.name github-actions
@@ -142,7 +147,7 @@ jobs:
       uses: actions/download-artifact@v2
       with:
         name: dist-itowns
-    # Create Release
+    # Create release
     - name: Create Release
       id: create_release
       uses: actions/create-release@v1
@@ -154,17 +159,17 @@ jobs:
         body_path: ./changelog.md
         draft: false
         prerelease: false
-    # This would actually build your project, using zip for an example artifact
+    # Zip assets bundle
     - name: Zip assets
       run: |
         zip --junk-paths bundles ./dist/*.js ./dist/*.map
-    - name: Upload Release Asset
+    # Upload release Asset
+    - name: Upload release Asset
       id: upload-release-asset
       uses: actions/upload-release-asset@v1
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       with:
-        # This pulls from the CREATE RELEASE step above, referencing it's ID to get its outputs object, which include a `upload_url`. See this blog post for more info: https://jasonet.co/posts/new-features-of-github-actions/#passing-data-to-future-steps
         upload_url: ${{ steps.create_release.outputs.upload_url }}
         asset_path: ./bundles.zip
         asset_name: bundles.zip
