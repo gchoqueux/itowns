@@ -42,7 +42,7 @@ class PlanarView extends View {
         const camera3D = this.camera.camera3D;
         camera3D.near = 0.1;
         camera3D.far = 2 * max;
-        this.camera.setFrustumFromExtent(extent);
+        this.camera.setFromExtent(extent);
         this.camera.camera3D.updateProjectionMatrix();
 
         const tileLayer = new PlanarLayer('planar', extent, options.object3d, options);

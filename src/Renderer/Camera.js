@@ -107,21 +107,13 @@ class Camera {
         } else if (options.cameraThree) {
             this.camera3D = options.cameraThree;
         } else {
-            // default vertical extent covered by an orthographic camera. Camera frustum can be changed afterwards
-            // using `setFrustumFromExtent` method
-            const orthoExtent = 50;
-            const ratio = width / height;
-
             switch (options.type) {
                 case CAMERA_TYPE.ORTHOGRAPHIC:
-                    this.camera3D = new THREE.OrthographicCamera(
-                        orthoExtent * ratio / -2, orthoExtent * ratio / 2,
-                        orthoExtent / 2, orthoExtent / -2,
-                    );
+                    this.camera3D = new THREE.OrthographicCamera();
                     break;
                 case CAMERA_TYPE.PERSPECTIVE:
                 default:
-                    this.camera3D = new THREE.PerspectiveCamera(30, ratio);
+                    this.camera3D = new THREE.PerspectiveCamera(30);
                     break;
             }
         }
@@ -151,27 +143,22 @@ class Camera {
      *
      * @param   {Extent}    extent      the extent the camera frustum must cover
      */
-    setFrustumFromExtent(extent) {
+    setFromExtent(extent) {
         if (this.camera3D.isOrthographicCamera) {
             // find the extent side that must be covered by camera
-            const extentAspect = extent.dimensions().x / extent.dimensions().y;
-            const cameraAspect = this.width / this.height;
-            let maxDimension;
-            const aspect = [1, 1];
-
-            if (extentAspect > cameraAspect) {
-                maxDimension = extent.dimensions().x;
-                aspect[0] = cameraAspect;
+            const dimensions = extent.dimensions();
+            const center = extent.center();
+            const camera = this.camera3D;
+            if (dimensions.x / dimensions.y > camera.aspect) {
+                camera.zoom = (camera.right - camera.left) / dimensions.x;
             } else {
-                maxDimension = extent.dimensions().y;
-                aspect[1] = cameraAspect;
+                camera.zoom = (camera.top - camera.bottom) / dimensions.y;
             }
+            camera.position.x = center.x;
+            camera.position.y = center.y;
 
-            // adjust the camera frustum
-            this.camera3D.top = maxDimension / (2 * aspect[0]);
-            this.camera3D.bottom = maxDimension / (-2 * aspect[0]);
-            this.camera3D.left = maxDimension * aspect[1] / -2;
-            this.camera3D.right = maxDimension * aspect[1] / 2;
+            camera.updateProjectionMatrix();
+            camera.updateMatrixWorld(true);
         } else if (this.camera3D.isPerspectiveCamera) {
             // TODO: compute fov from orthoExtent and camera.camera3D.position
         }
