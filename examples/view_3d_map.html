@@ -110,6 +110,11 @@
             view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
                 // eslint-disable-next-line no-console
                 console.info('Globe initialized');
+                // const subextent = new itowns.Extent('TMS:4326', 19, 119808, 531060).as('EPSG:4326');
+
+                const subextent = new itowns.Extent('TMS:3857', 17, 45086, 66381).as('EPSG:4326');
+
+                view.camera.setFromExtent(view, subextent);
                 updateScaleWidget();
             });
             view.controls.addEventListener(itowns.CONTROL_EVENTS.RANGE_CHANGED, () => {

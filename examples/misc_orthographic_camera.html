@@ -43,14 +43,16 @@
                 5170036.45870, 5178412.82698,
             );
 
+
             // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
             const viewerDiv = document.getElementById('viewerDiv');
 
             // instantiate PlanarView with an orthographic camera
             const view = new itowns.PlanarView(viewerDiv, extent, {
-                camera: { type: itowns.CAMERA_TYPE.ORTHOGRAPHIC },
+                // camera: { type: itowns.CAMERA_TYPE.ORTHOGRAPHIC },
             });
             setupLoadingScreen(viewerDiv, view);
+            const subextent = new itowns.Extent('TMS:3946', 3, 1, 1).as('EPSG:3946');
 
             // add a WMS imagery source
             const wmsImagerySource = new itowns.WMSSource({
@@ -81,6 +83,8 @@
                 // eslint-disable-next-line no-console
                 console.info('View initialized');
                 updateScaleWidget();
+                view.camera.setFromExtent(view, subextent);
+                view.notifyChange(view.camera.camera3D, true);
             });
             view.addEventListener(itowns.PLANAR_CONTROL_EVENT.MOVED, function () {
                 updateScaleWidget();
