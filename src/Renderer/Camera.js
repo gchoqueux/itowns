@@ -1,6 +1,10 @@
 import * as THREE from 'three';
 import Coordinates from 'Core/Geographic/Coordinates';
 import DEMUtils from 'Utils/DEMUtils';
+import CameraUtils from 'Utils/CameraUtils';
+import OBB from 'Renderer/OBB';
+
+const obb = new OBB();
 
 /**
  * @typedef     {object}    Camera~CAMERA_TYPE
@@ -141,14 +145,15 @@ class Camera {
     /**
      * Compute the wrapped Three.js camera frustum to completely cover a given extent.
      *
-     * @param   {Extent}    extent      the extent the camera frustum must cover
+     * @param {View}  view    The view
+     * @param {Extent}    extent      the extent the camera frustum must cover
      */
-    setFromExtent(extent) {
+    setFromExtent(view, extent) {
+        const camera = this.camera3D;
         if (this.camera3D.isOrthographicCamera) {
-            // find the extent side that must be covered by camera
-            const dimensions = extent.dimensions();
-            const center = extent.center();
-            const camera = this.camera3D;
+            const camExtent = extent.as(this.crs);
+            const dimensions = camExtent.dimensions();
+            const center = camExtent.center();
             if (dimensions.x / dimensions.y > camera.aspect) {
                 camera.zoom = (camera.right - camera.left) / dimensions.x;
             } else {
@@ -160,7 +165,27 @@ class Camera {
             camera.updateProjectionMatrix();
             camera.updateMatrixWorld(true);
         } else if (this.camera3D.isPerspectiveCamera) {
-            // TODO: compute fov from orthoExtent and camera.camera3D.position
+            // const dimensions = extent.as(this.crs).dimensions();
+            obb.setFromExtent(extent.as('EPSG:4326'));
+            // /!\ invert x and y
+            const size = obb.box3D.getSize();
+            const dimensions = { x: size.y, y: size.x };
+
+            const placement = {
+                coord: extent.center(),
+                tilt: 89.99,
+                heading: 0,
+            };
+            const verticalFOV = THREE.Math.degToRad(camera.fov);
+            if (dimensions.x / dimensions.y > camera.aspect) {
+                const focal = (this.height * 0.5) / Math.tan(verticalFOV * 0.5);
+                const horizontalFOV = 2 * Math.atan(this.width * 0.5 / focal);
+                placement.range = dimensions.x / (2 * Math.tan(horizontalFOV * 0.5));
+            } else {
+                placement.range = dimensions.y / (2 * Math.tan(verticalFOV * 0.5));
+            }
+
+            CameraUtils.transformCameraToLookAtTarget(view, camera, placement);
         }
     }
 

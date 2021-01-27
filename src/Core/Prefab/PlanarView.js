@@ -41,22 +41,21 @@ class PlanarView extends View {
         const max = Math.max(dim.x, dim.y);
         const camera3D = this.camera.camera3D;
         camera3D.near = 0.1;
-        camera3D.far = 2 * max;
-        this.camera.setFromExtent(extent);
-        this.camera.camera3D.updateProjectionMatrix();
+        camera3D.far = 200 * max;
 
         const tileLayer = new PlanarLayer('planar', extent, options.object3d, options);
         this.mainLoop.gfxEngine.label2dRenderer.infoTileLayer = tileLayer.info;
 
         this.addLayer(tileLayer);
 
-        const placement = options.placement || {};
-        placement.coord = placement.coord || extent.center();
-        placement.tilt = placement.tilt || 90;
-        placement.heading = placement.heading || 0;
-        placement.range = placement.range || max;
+        this.camera.setFromExtent(this, extent);
+        // const placement = options.placement || {};
+        // placement.coord = placement.coord || extent.center();
+        // placement.tilt = placement.tilt || 90;
+        // placement.heading = placement.heading || 0;
+        // placement.range = placement.range || max;
 
-        CameraUtils.transformCameraToLookAtTarget(this, camera3D, placement);
+        // CameraUtils.transformCameraToLookAtTarget(this, camera3D, placement);
 
         if (!options.noControls) {
             this.controls = new PlanarControls(this, options.controls);
