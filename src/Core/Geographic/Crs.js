@@ -27,8 +27,8 @@ function is4326(crs) {
     return crs === 'EPSG:4326';
 }
 
-function _unitFromProj4Unit(projunit) {
-    if (projunit === 'degrees') {
+function _unitFromProj4Unit(projunit, proj) {
+    if (projunit === 'degrees' || proj == 'longlat') {
         return UNIT.DEGREE;
     } else if (projunit === 'm') {
         return UNIT.METER;
@@ -46,7 +46,7 @@ function toUnit(crs) {
             if (!p) {
                 return undefined;
             }
-            return _unitFromProj4Unit(p.units);
+            return _unitFromProj4Unit(p.units, p.projName);
         }
     }
 }

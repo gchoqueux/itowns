@@ -137,17 +137,18 @@ class Atmosphere extends GeometryLayer {
     }
 
     // default to non-realistic lightning
-    _initRealisticLighning() {
+    _initRealisticLighning(options) {
         // Atmosphere Shader From Space (Atmospheric scattering)
         // http://stainlessbeer.weebly.com/planets-9-atmospheric-scattering.html
-        const atmosphere = {
+        const atmosphere = options || {
             Kr: 0.0025,
-            Km: 0.0010,
+            Km: 0.0015,
             ESun: 20.0,
             g: -0.950,
             innerRadius: 6400000,
             outerRadius: 6700000,
-            wavelength: [0.650, 0.570, 0.475],
+            // wavelength: [0.650, 0.570, 0.475],
+            wavelength: [0.350, 0.470, 0.575],
             scaleDepth: 0.25,
             mieScaleDepth: 0.1,
         };

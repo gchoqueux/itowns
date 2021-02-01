@@ -32,9 +32,11 @@
         <script src="js/Scale.js"></script>
         <script type="text/javascript">
             // Define crs projection that we will use (taken from https://epsg.io/3946, Proj4js section)
-            itowns.proj4.defs('EPSG:3946', '+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+            // itowns.proj4.defs('EPSG:3946', '+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
             /* global itowns, setupLoadingScreen, GuiTools, debug */
             // # Planar (EPSG:3946) viewer
+
+            itowns.proj4.defs('EPSG:104905', '+proj=longlat +a=3396190 +rf=169.894447223612 +no_defs +type=crs');
 
             var extent;
             var viewerDiv;
@@ -45,57 +47,62 @@
 
             // Define geographic extent: CRS, min/max X, min/max Y
             extent = new itowns.Extent(
-                'EPSG:3946',
-                1837816.94334, 1847692.32501,
-                5170036.4587, 5178412.82698);
+                'EPSG:104905',
+                -180, 180,
+                -90, 90);
 
             // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
             viewerDiv = document.getElementById('viewerDiv');
 
             // Instanciate PlanarView*
-            view = new itowns.PlanarView(viewerDiv, extent, { placement: { heading: -49.6, range: 6200, tilt: 17 } });
+            view = new itowns.PlanarView(viewerDiv, extent, { placement: { heading: -49.6, range: 40, tilt: 17 } });
             setupLoadingScreen(viewerDiv, view);
 
             // Add a WMS imagery source
-            var wmsImagerySource = new itowns.WMSSource({
-                extent: extent,
-                name: 'Ortho2009_vue_ensemble_16cm_CC46',
-                url: 'https://download.data.grandlyon.com/wms/grandlyon',
-                version: '1.3.0',
-                crs: 'EPSG:3946',
-                format: 'image/jpeg',
-            });
+            var wmsImagerySource = new itowns.TMSSource({
+                    crs: 'EPSG:104905',
+                    url : 'https://api.nasa.gov/mars-wmts/catalog/Mars_Viking_MDIM21_ClrMosaic_global_232m/1.0.0//default/default028mm/${z}/${y}/${x}.jpg'
+                })
 
             // Add a WMS imagery layer
             var wmsImageryLayer = new itowns.ColorLayer('wms_imagery', {
-                updateStrategy: {
-                    type: itowns.STRATEGY_DICHOTOMY,
-                    options: {},
-                },
                 source: wmsImagerySource,
             });
 
             view.addLayer(wmsImageryLayer);
 
-            // Add a WMS elevation source
-            var wmsElevationSource = new itowns.WMSSource({
-                extent: extent,
-                url: 'https://download.data.grandlyon.com/wms/grandlyon',
-                name: 'MNT2012_Altitude_10m_CC46',
-                crs: 'EPSG:3946',
-                width: 256,
-                format: 'image/jpeg',
-            });
-
-            // Add a WMS elevation layer
-            var wmsElevationLayer = new itowns.ElevationLayer('wms_elevation', {
+            var demMars = new itowns.ElevationLayer('demMars', {
                 useColorTextureElevation: true,
-                colorTextureElevationMinZ: 144,
-                colorTextureElevationMaxZ: 622,
-                source: wmsElevationSource,
+                colorTextureElevationMinZ: 500,
+                colorTextureElevationMaxZ: 20000,
+                source: new itowns.TMSSource({
+                    crs: 'EPSG:104905',
+                    url : 'https://api.nasa.gov/mars-wmts/catalog/Mars_MGS_MOLA_DEM_mosaic_global_463m_8/1.0.0//default/default028mm/${z}/${y}/${x}.png',
+                    zoom: { min: 0, max: 5 },
+                }),
             });
+            view.addLayer(demMars);
 
-            view.addLayer(wmsElevationLayer);
+
+            // Add a WMS elevation source
+            // var wmsElevationSource = new itowns.WMSSource({
+            //     extent: extent,
+            //     url: 'https://download.data.grandlyon.com/wms/grandlyon',
+            //     name: 'MNT2012_Altitude_10m_CC46',
+            //     crs: 'EPSG:3946',
+            //     width: 256,
+            //     format: 'image/jpeg',
+            // });
+
+            // // Add a WMS elevation layer
+            // var wmsElevationLayer = new itowns.ElevationLayer('wms_elevation', {
+            //     useColorTextureElevation: true,
+            //     colorTextureElevationMinZ: 144,
+            //     colorTextureElevationMaxZ: 622,
+            //     source: wmsElevationSource,
+            // });
+
+            // view.addLayer(wmsElevationLayer);
 
             // Initialize scale :
             const initialScaleSize = 200;  // in pixel
@@ -122,7 +129,7 @@
             if (view.isDebugMode) {
                 menuGlobe = new GuiTools('menuDiv', view);
                 menuGlobe.addImageryLayersGUI(view.getLayers(function gui(l) { return l.isColorLayer; }));
-                menuGlobe.addElevationLayerGUI(wmsElevationLayer);
+                // menuGlobe.addElevationLayerGUI(wmsElevationLayer);
                 debug.createTileDebugUI(menuGlobe.gui, view);
             }
         </script>

@@ -136,6 +136,12 @@ class OBB extends THREE.Object3D {
             size.set(dimension.x, dimension.y, Math.abs(maxHeight - minHeight));
             this.box3D.setFromCenterAndSize(center, size);
             this.updateMatrixWorld(true);
+        } else if (!CRS.isTms(extent.crs) && CRS.isGeographic(extent.crs)) {
+            extent.center(coord).toVector3(this.position);
+            extent.dimensions(dimension);
+            size.set(dimension.x, dimension.y, Math.abs(maxHeight - minHeight));
+            this.box3D.setFromCenterAndSize(center, size);
+            this.updateMatrixWorld(true);
         } else {
             throw new Error('Unsupported extent crs');
         }
