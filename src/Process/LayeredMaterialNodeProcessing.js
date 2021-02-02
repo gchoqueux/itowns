@@ -189,9 +189,9 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
 
         if (nodeLayer.level >= layer.source.zoom.min) {
             const { min, max } = computeMinMaxElevation(
-                nodeLayer.textures[0].image.data,
-                SIZE_TEXTURE_TILE, SIZE_TEXTURE_TILE,
-                nodeLayer.offsetScales[0]);
+                nodeLayer.textures[0],
+                nodeLayer.offsetScales[0],
+                parentLayer.layer.noDataValue);
             node.setBBoxZ(min, max, layer.scale);
             context.view.notifyChange(node, false);
             return;
@@ -248,19 +248,17 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
                     elevation.min = layer.colorTextureElevationMinZ;
                     elevation.max = layer.colorTextureElevationMaxZ;
                 } else {
-                    const { min, max } = computeMinMaxElevation(elevation.texture.image.data,
-                        SIZE_TEXTURE_TILE,
-                        SIZE_TEXTURE_TILE,
-                        elevation.pitch);
+                    const { min, max } = computeMinMaxElevation(elevation.texture, elevation.pitch);
                     elevation.min = !min ? 0 : min;
                     elevation.max = !max ? 0 : max;
                 }
             }
 
-            node.setBBoxZ(elevation.min, elevation.max, layer.scale);
             nodeLayer.setTexture(0, elevation.texture, elevation.pitch);
             const nodeParent = parent.material && parent.material.getElevationLayer();
             nodeLayer.replaceNoDataValueFromParent(nodeParent, layer.noDataValue);
+            // Moved after replace, to parse all elevation.
+            node.setBBoxZ(elevation.min, elevation.max, layer.scale, layer.noDataValue);
         },
         err => handlingError(err, node, layer, targetLevel, context.view));
 }

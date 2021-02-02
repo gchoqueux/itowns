@@ -116,12 +116,14 @@ function _readTextureValueAt(layer, texture, ...uv) {
     if (texture.image.data) {
         // read a single value
         if (uv.length === 2) {
-            return texture.image.data[uv[1] * texture.image.width + uv[0]];
+            const v = texture.image.data[uv[1] * texture.image.width + uv[0]];
+            return v != layer.noDataValue ? v : undefined;
         }
         // or read multiple values
         const result = [];
         for (let i = 0; i < uv.length; i += 2) {
-            result.push(texture.image.data[uv[i + 1] * texture.image.width + uv[i]]);
+            const v = texture.image.data[uv[i + 1] * texture.image.width + uv[i]];
+            result.push(v != layer.noDataValue ? v : undefined);
         }
         return result;
     } else {
@@ -171,7 +173,7 @@ function _readTextureValueAt(layer, texture, ...uv) {
     }
 }
 
-function _convertUVtoTextureCoords(texture, u, v) {
+export function _convertUVtoTextureCoords(texture, u, v) {
     const width = texture.image.width;
     const height = texture.image.height;
 
@@ -208,7 +210,7 @@ function _lerpWithUndefinedCheck(x, y, t) {
     }
 }
 
-function _readTextureValueWithBilinearFiltering(layer, texture, vertexU, vertexV) {
+export function _readTextureValueWithBilinearFiltering(layer, texture, vertexU, vertexV) {
     const coords = _convertUVtoTextureCoords(texture, vertexU, vertexV);
 
     const [z11, z21, z12, z22] = _readTextureValueAt(layer, texture,
