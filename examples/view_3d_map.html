@@ -52,6 +52,8 @@
             // because we want a transparent background for the miniglobe view to be able
             // to see the main view "behind"
             miniView.mainLoop.gfxEngine.renderer.setClearColor(0x000000, 0);
+            miniView.getLayerById('atmosphere').visible = false;
+            miniView.getLayerById('atmosphere').fog.enable = false;
 
             // update miniview's camera with the view's camera position
             view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.AFTER_RENDER, function updateMiniView() {

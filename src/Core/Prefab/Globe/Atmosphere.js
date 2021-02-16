@@ -27,7 +27,7 @@ const skyBaseColor = new THREE.Color(0x93d5f8);
 const colorSky = new THREE.Color();
 const spaceColor = new THREE.Color(0x030508);
 const limitAlti = 600000;
-const mfogDistance = ellipsoidSizes.x * 160.0;
+const mfogDistance = ellipsoidSizes.x * 80.0;
 
 class Atmosphere extends GeometryLayer {
     constructor(id = 'atmosphere', options = {}) {
@@ -114,7 +114,9 @@ class Atmosphere extends GeometryLayer {
             const len = v.distanceTo(cameraPosition);
             // Compute fog distance, this function makes it possible to have a shorter distance
             // when the camera approaches the ground
+            console.log(((len - ellipsoidSizes.x * 0.99) * 0.25 / ellipsoidSizes.x) ** 1.5);
             this.fog.distance = mfogDistance * ((len - ellipsoidSizes.x * 0.99) * 0.25 / ellipsoidSizes.x) ** 1.5;
+            console.log('this.fog.distance', this.fog.distance);
         } else {
             this.fog.distance = 10e10;
         }

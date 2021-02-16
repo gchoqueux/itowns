@@ -130,7 +130,7 @@ class LayeredMaterial extends THREE.RawShaderMaterial {
 
         // Misc properties
         CommonMaterial.setUniformProperty(this, 'fogDistance', 1000000000.0);
-        CommonMaterial.setUniformProperty(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
+        CommonMaterial.setUniformProperty(this, 'fogColor', new THREE.Color('rgb(176, 232, 255)'));
         CommonMaterial.setUniformProperty(this, 'overlayAlpha', 0);
         CommonMaterial.setUniformProperty(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
         CommonMaterial.setUniformProperty(this, 'objectId', 0);
