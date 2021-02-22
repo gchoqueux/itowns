@@ -15,6 +15,7 @@ import { LASLoader } from '@loaders.gl/las';
  *
  * @module LASParser
  */
+
 export default {
     /**
      * Parses a LAS file or a LAZ (LASZip) file and return the corresponding
@@ -57,7 +58,29 @@ export default {
                 geometry.setAttribute('color', colorBuffer);
             }
 
-            geometry.computeBoundingBox();
+
+            // Use metadata
+            const boundingBox = new THREE.Box3();
+            const min = parsedData.loaderData.header.mins;
+            const max = parsedData.loaderData.header.maxs;
+
+
+            boundingBox.min.set(min[0], min[1], min[2]);
+            boundingBox.max.set(max[0], max[1], max[2]);
+            const center = new THREE.Vector3().fromArray(parsedData.loaderData.header.offset);
+            // const size = new THREE.Vector3();
+
+            // boundingBox.getCenter(center);
+            // boundingBox.getSize(size);
+
+            // center.negate();
+            // mat.makeTranslation(center.x, center.y, center.z);
+
+            // positionBuffer.applyMatrix4(mat);
+
+            geometry.boundingBox = boundingBox; // .setFromCenterAndSize(new THREE.Vector3(), size);
+
+            geometry.translation = center;
 
             return geometry;
         });
