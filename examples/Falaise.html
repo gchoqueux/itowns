@@ -1,0 +1,218 @@
+<html>
+    <head>
+        <title>Itowns - Lidar Paris</title>
+
+        <style type="text/css">
+            #miniDiv {
+                display: block;
+                margin-bottom: 20px;
+                margin-right: 20px;
+                position: absolute;
+                width:100px;
+                height:100px;
+                left: 20;
+                bottom: 0;
+                color: white;
+            }
+        </style>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <div id="info"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="../libs/tween/tween.min.js"></script>
+        <script src="Potree/potree/BinaryHeap.js"></script>
+        <script src="Potree/potree/jquery-3.1.1.min.js"></script>
+        <script src="Potree/potree/potree.js"></script>
+        <script src="plasio/js/laslaz.js"></script>
+        <script type="text/javascript">
+                var THREE = itowns.THREE;
+
+                itowns.proj4.defs('EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+                var datGui = new dat.GUI();
+
+                Potree.pointBudget = 10000*1000;
+                const viewerDiv = document.getElementById("viewerDiv");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', -0.8482399150822765, 43.00396117941756, 0),
+                    range: 1000,
+                    tilt: 29.48,
+                    heading: -25.11
+                }
+                const deltaGeoid = 55;
+                const view = new itowns.GlobeView(viewerDiv, placement);
+                const camera = view.camera.camera3D;
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                });
+                function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                const points = new THREE.Group()
+                view.scene.add(points);
+                const deltaPivotLocal = new THREE.Vector2(100, 100);
+                const pointclouds = [];
+                const p1_2154 = new itowns.Coordinates('EPSG:2154', 385984.6349, 6219242.2964, 0);
+                p1_2154.x -= deltaPivotLocal.x;
+                p1_2154.y -= deltaPivotLocal.y;
+                const p1_4326 = p1_2154.as('EPSG:4326');
+                const pivotTHREE = new THREE.Object3D();
+
+                const geocentricPosition = p1_4326.as(view.referenceCrs);
+                pivotTHREE.position.copy(geocentricPosition);
+                pivotTHREE.lookAt(p1_4326.geodesicNormal.add(geocentricPosition));
+                pivotTHREE.updateMatrixWorld(true);
+
+                // convergence of meridians
+                const a = itowns.OrientationUtils.quaternionFromCRSToCRS('EPSG:2154', 'EPSG:4326', p1_4326);
+
+                view.scene.add(pivotTHREE);
+
+                function addCloud(e) {
+                    const pointcloud = e.pointcloud;
+                    pointclouds.push(pointcloud);
+
+                    pivotTHREE.add(pointcloud);
+                    pointcloud.position.z -= deltaGeoid;
+                    pointcloud.quaternion.copy(a);
+                    pivotTHREE.updateMatrixWorld(true);
+                    pointcloud.material = new itowns.PointsMaterial();
+
+                    pointcloud.material.clipBoxes = [];
+                    pointcloud.material.mode = 4;
+                    pointcloud.material.uniforms.octreeSize = { value: 0 };
+                    pointcloud.material.size = 3;
+                    datGui.add(pointcloud.material, 'size', 1, 10).name('Taille des points');
+                }
+
+                Potree.loadPointCloud('./Cloud/STFalaise/ept_Falaise/ept.json', "Falaise", addCloud);
+                Potree.loadPointCloud('./Cloud/STFalaise/ept_Context/ept.json', "Route", addCloud);
+
+                view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.BEFORE_RENDER, (a) => {
+                    if (points) {
+                        const renderer = view.mainLoop.gfxEngine.renderer;
+                        const octree = Potree.updatePointClouds(pointclouds, camera, renderer);
+
+                        points.children = [];
+
+                        if (octree.visibleNodes.length) {
+                            const sceneNodes = octree.visibleNodes.map(a => a.sceneNode);
+                            points.add(...sceneNodes);
+                        }
+                        view.notifyChange(camera, true);
+                    }
+                });
+                var optionsGeoJsonParser = {
+                    in: {
+                        crs: 'EPSG:2154',
+                    },
+                    out: {
+                        crs: 'EPSG:4326',
+                        buildExtent: true,
+                        mergeFeatures: true,
+                        withNormal: false,
+                        withAltitude: true,
+                    }
+                };
+
+                const material = new THREE.MeshBasicMaterial( {color: 0xff0000, transparent: true, opacity: 1.0 } );
+
+                itowns.Fetcher.json('./Falaise/cibles.geojson')
+                .then(function _(geojson) {
+                    return itowns.GeoJsonParser.parse(geojson, optionsGeoJsonParser).then((features) => {
+                        const vertices = features.features[0].vertices;
+                        for (var i = 0; i < vertices.length; i+= 3) {
+                            vertices[i + 2] -= deltaGeoid;
+
+                            const coord = new itowns.Coordinates('EPSG:4326').setFromArray(vertices, i);
+                            // ??
+                            coord.z -= 1.7;
+
+                            const s = new THREE.Sphere();
+                            const geometry = new THREE.SphereGeometry( 0.10, 8, 8 );
+                            const sphere = new THREE.Mesh( geometry, material );
+
+                            sphere.position.copy(coord.as(view.referenceCrs));
+                            view.scene.add( sphere );
+                            sphere.updateMatrixWorld(true);
+                        }
+                        return features;
+                    });
+                }).then(function _(features) {
+                    var ciblesSource = new itowns.FileSource({ features });
+
+                    var style = new itowns.Style({
+                        zoom: {
+                            min: 16,
+                        },
+                        stroke: {
+                            color: 'red',
+                        },
+                        point: {
+                            color: 'white',
+                            line: 'red',
+                        },
+                        text: {
+                            color: 'red',
+                            field: '{name}',
+                            font: ['Arial', 'sans-serif'],
+                            haloColor: 'white',
+                            haloWidth: 3,
+                        },
+                    });
+
+                    var ciblesLayer = new itowns.ColorLayer('Cibles', {
+                        transparent: true,
+                        source: ciblesSource,
+                        crs: 'EPSG:4326',
+                        style,
+                        labelEnabled: true,
+                    });
+
+                    view.addLayer(ciblesLayer);
+                });
+
+                view.tileLayer.display = true;
+
+                view.controls.minDistanceCollision = 50;
+                view.controls.minDistance = 50;
+
+                datGui.add(view.tileLayer, 'display').name('Sol').onChange((value) => {
+                    view.tileLayer.display = value;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    view.controls.minDistance = value ? 50 : 5;
+                    view.getLayerById('Ortho').visible = value;
+                });
+
+                datGui.add(Potree, 'pointBudget', Potree.pointBudget * 0.005, Potree.pointBudget * 3).name('Détail');
+        </script>
+    </body>
+</html>

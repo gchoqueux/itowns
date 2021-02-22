@@ -1,0 +1,192 @@
+<html>
+    <head>
+        <title>Itowns - Lidar ALEX</title>
+
+        <style type="text/css">
+            #miniDiv {
+                display: block;
+                margin-bottom: 20px;
+                margin-right: 20px;
+                position: absolute;
+                width:100px;
+                height:100px;
+                left: 20;
+                bottom: 0;
+                color: white;
+            }
+        </style>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <div id="info"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="../libs/tween/tween.min.js"></script>
+        <script src="Potree/potree/BinaryHeap.js"></script>
+        <script src="Potree/potree/jquery-3.1.1.min.js"></script>
+        <script src="Potree/potree/potree.js"></script>
+        <script src="plasio/js/laslaz.js"></script>
+        <script type="text/javascript">
+                var THREE = itowns.THREE;
+
+                var datGui = new dat.GUI();
+
+                Potree.pointBudget = 10000*1000;
+                const viewerDiv = document.getElementById("viewerDiv");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', 7.31974850827616, 43.98952226087919, 0),
+                    range: 50000,
+                    tilt: 29.48,
+                    heading: -25.11
+                }
+                const view = new itowns.GlobeView(viewerDiv, placement);
+                const camera = view.camera.camera3D;
+
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                });
+                function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                const points = new THREE.Group()
+                view.scene.add(points);
+                let pointclouds = [];
+
+                itowns.proj4.defs('EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+                itowns.Fetcher.json('./Cloud/Alex/20FULALPMAR02/LAZ_Altitude_classe_ALL_BBOX.json').then((pivot) => {
+                    const nodes = pivot.nodes;
+                    let maxx = -Infinity;
+                    let maxy = -Infinity;
+                    let maxz = -Infinity;
+                    let minx = +Infinity;
+                    let miny = +Infinity;
+                    let minz = +Infinity;
+                    nodes.forEach((n) => {
+                        const bbox = n.bound;
+                        maxx = Math.max(bbox.maxx, maxx);
+                        maxy = Math.max(bbox.maxy, maxy);
+                        maxz = Math.max(bbox.maxz, maxz);
+                        minx = Math.min(bbox.minx, minx);
+                        miny = Math.min(bbox.miny, miny);
+                        minz = Math.min(bbox.minz, minz);
+                    });
+
+                    const c = new itowns.Coordinates('EPSG:2154', (maxx - minx) * 0.5 + minx, (maxy - miny) * 0.5 + miny, 0)
+
+                    // CENTER EPSG:2154 x: 1049464.5 y: 6332380.5 z: 0
+                    // crs: EPSG:4326, x: 7.359564451156049, y: 44.003580514414764, z: 0
+
+                    // view.controls.lookAtCoordinate({ coord: c.as('EPSG:4326'), heading: 0, tilt: 89 }, false)
+
+                    // const geometry = new THREE.SphereGeometry( 2000, 8, 8 );
+                    // const sphere = new THREE.Mesh( geometry);
+
+                    // sphere.position.copy(c.as(view.referenceCrs));
+                    // view.scene.add( sphere );
+                    // sphere.updateMatrixWorld(true);
+                    // maxx,maxy,maxz,minx,miny,minz
+                    // console.log(minx, maxx,miny, maxy,minz, maxz);
+                })
+
+                // Potree.loadPointCloud('../perso/Cloud/Alex/ept/eptAllTransform/ept.json', "pointcloud", function(e) {
+                itowns.Fetcher.json('pivotTHREE_7.314992_44.004995.json').then((pivot) => {
+                    const loader = new THREE.ObjectLoader();
+                     return loader.parse(pivot);
+                }).then((pivotTHREE) => {
+                    // Potree.loadPointCloud('https://alex.ign.fr/3d/ept.json', "pointcloud", function(e) {
+                    Potree.loadPointCloud('./Cloud/Alex/ept/pivot/ept.json', "pointcloud", function(e) {
+                        const pointcloud = e.pointcloud;
+
+                        pointclouds.push(pointcloud);
+
+                        // const position = new itowns.THREE.Vector3(-21188.66740624979, -2795.3316578148515, -6369521.159717696).negate();
+                        // position.z -= 50;
+                        // const quaternion = new itowns.THREE.Quaternion(0.051029642724280636, -0.386805667413997, 0, 0.9207482561590027).inverse();
+                        // position.applyQuaternion(quaternion);
+                        // pointcloud.position.copy(position);
+                        // pointcloud.quaternion.copy(quaternion);
+                        //
+                        //
+                        pointcloud.position.copy(pivotTHREE.position);
+                        pointcloud.quaternion.copy(pivotTHREE.quaternion);
+                        //
+
+                        // Transformation du nuage absolu
+                        // const position = new THREE.Vector3(0, 0, 1);
+                        // const quaternion = new THREE.Quaternion(0.051029642724280636, -0.386805667413997, 0, 0.9207482561590027).inverse();
+                        // position.applyQuaternion(quaternion);
+                        // position.setLength(60);
+                        // pointcloud.position.sub(position);
+                        //
+
+
+                        pointcloud.material = new itowns.PointsMaterial();
+
+                        pointcloud.material.clipBoxes = [];
+                        pointcloud.material.mode = 1;
+                        pointcloud.material.intensityRange = new THREE.Vector3(0, 4096 * 2);
+                        pointcloud.material.uniforms.octreeSize = { value: 0 };
+                        pointcloud.material.size = 3;
+                        datGui.add(pointcloud.material, 'size', 1, 10).name('Taille des points');
+                    });
+
+                });
+
+                view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.BEFORE_RENDER, (a) => {
+                    if (points) {
+                        const renderer = view.mainLoop.gfxEngine.renderer;
+                        const octree = Potree.updatePointClouds(pointclouds, camera, renderer);
+
+                        points.children = [];
+
+                        if (octree.visibleNodes.length) {
+                            const sceneNodes = octree.visibleNodes.map(a => a.sceneNode)
+                            points.add(...sceneNodes);
+                        }
+                        view.notifyChange(camera, true);
+                    }
+                });
+
+                view.tileLayer.display = true;
+
+                view.controls.minDistanceCollision = 50;
+                view.controls.minDistance = 150;
+
+                datGui.add(view.tileLayer, 'display').name('Sol').onChange((value) => {
+                    view.tileLayer.display = value;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    view.controls.minDistance = value ? 150 : 50;
+                    view.getLayerById('Ortho').visible = value;
+                });
+
+                datGui.add(Potree, 'pointBudget', Potree.pointBudget * 0.005, Potree.pointBudget * 3).name('Détail');
+        </script>
+    </body>
+</html>
