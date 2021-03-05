@@ -102,6 +102,7 @@ class LabelLayer extends Layer {
 
                 const geometryField = g.properties.style && g.properties.style.text.field;
                 let content;
+                const ctx = { globals: { zoom: extent.zoom }, properties: () => g.properties };
                 if (!geometryField && !featureField && !layerField) {
                     // Check if there is an icon, with no text
                     if (!(g.properties.style && g.properties.style.icon)
@@ -110,16 +111,17 @@ class LabelLayer extends Layer {
                         return;
                     }
                 } else if (geometryField) {
-                    content = g.properties.style.getTextFromProperties(g.properties);
+                    content = g.properties.style.getTextFromProperties(ctx);
                 } else if (featureField) {
-                    content = f.style.getTextFromProperties(g.properties);
+                    content = f.style.getTextFromProperties(ctx);
                 } else if (layerField) {
-                    content = this.style.getTextFromProperties(g.properties);
+                    content = this.style.getTextFromProperties(ctx);
                 }
 
                 const label = new Label(content,
                     coord.clone(),
-                    g.properties.style || f.style || this.style);
+                    g.properties.style || f.style || this.style,
+                    ctx);
                 label.layerId = this.id;
 
                 if (f.size == 2) {

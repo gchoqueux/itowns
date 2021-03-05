@@ -1,27 +1,28 @@
 import * as THREE from 'three';
 import { FEATURE_TYPES } from 'Core/Feature';
 import Extent from 'Core/Geographic/Extent';
+import { readExpression } from 'Core/Style';
 import Coordinates from 'Core/Geographic/Coordinates';
 
 const _extent = new Extent('EPSG:4326', [0, 0, 0, 0]);
 const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
 const matrix = svg.createSVGMatrix();
 
-function drawPolygon(ctx, vertices, indices = [{ offset: 0, count: 1 }], style = {}, size, extent, invCtxScale, canBeFilled) {
+function drawPolygon(ctx, vertices, indices = [{ offset: 0, count: 1 }], style = {}, size, extent, invCtxScale, canBeFilled, featureCtx) {
     if (vertices.length === 0) {
         return;
     }
 
     if (style.length) {
         for (const s of style) {
-            _drawPolygon(ctx, vertices, indices, s, size, extent, invCtxScale, canBeFilled);
+            _drawPolygon(ctx, vertices, indices, s, size, extent, invCtxScale, canBeFilled, featureCtx);
         }
     } else {
-        _drawPolygon(ctx, vertices, indices, style, size, extent, invCtxScale, canBeFilled);
+        _drawPolygon(ctx, vertices, indices, style, size, extent, invCtxScale, canBeFilled, featureCtx);
     }
 }
 
-function _drawPolygon(ctx, vertices, indices, style, size, extent, invCtxScale, canBeFilled) {
+function _drawPolygon(ctx, vertices, indices, style, size, extent, invCtxScale, canBeFilled, featureCtx) {
     // build contour
     ctx.beginPath();
     for (const indice of indices) {
@@ -37,18 +38,18 @@ function _drawPolygon(ctx, vertices, indices, style, size, extent, invCtxScale, 
 
     // draw line or edge of polygon
     if (style.stroke.color) {
-        strokeStyle(style, ctx, invCtxScale);
+        strokeStyle(style, ctx, invCtxScale, featureCtx);
         ctx.stroke();
     }
 
     // fill polygon only
     if (canBeFilled && (style.fill.color || style.fill.pattern)) {
-        fillStyle(style, ctx, invCtxScale);
+        fillStyle(style, ctx, invCtxScale, featureCtx);
         ctx.fill();
     }
 }
 
-function fillStyle(style, ctx, invCtxScale) {
+function fillStyle(style, ctx, invCtxScale, featureCtx) {
     if (style.fill.pattern && ctx.fillStyle.src !== style.fill.pattern.src) {
         ctx.fillStyle = ctx.createPattern(style.fill.pattern, 'repeat');
         if (ctx.fillStyle.setTransform) {
@@ -56,47 +57,62 @@ function fillStyle(style, ctx, invCtxScale) {
         } else {
             console.warn('Raster pattern isn\'t completely supported on Ie and edge');
         }
-    } else if (style.fill.color && ctx.fillStyle !== style.fill.color) {
-        ctx.fillStyle = style.fill.color;
+    } else if (style.fill.color) {
+        const fillStyle = readExpression(style.fill.color, featureCtx);
+        if (ctx.fillStyle !== fillStyle) {
+            ctx.fillStyle = fillStyle;
+        }
     }
-    if (style.fill.opacity !== ctx.globalAlpha) {
-        ctx.globalAlpha = style.fill.opacity;
+
+    const opacity = readExpression(style.fill.opacity, featureCtx);
+    if (opacity !== ctx.globalAlpha) {
+        ctx.globalAlpha = opacity;
     }
 }
 
-function strokeStyle(style, ctx, invCtxScale) {
-    if (ctx.strokeStyle !== style.stroke.color) {
-        ctx.strokeStyle = style.stroke.color;
+function strokeStyle(style, ctx, invCtxScale, featureCtx) {
+    const strokeStyle = readExpression(style.stroke.color, featureCtx);
+    if (ctx.strokeStyle !== strokeStyle) {
+        ctx.strokeStyle = strokeStyle;
     }
-    const width = (style.stroke.width || 2.0) * invCtxScale;
+    const width = (readExpression(style.stroke.width, featureCtx) || 2.0) * invCtxScale;
     if (ctx.lineWidth !== width) {
         ctx.lineWidth = width;
     }
-    const alpha = style.stroke.opacity == undefined ? 1.0 : style.stroke.opacity;
+    const opacity = readExpression(style.stroke.opacity, featureCtx);
+    const alpha = opacity == undefined ? 1.0 : opacity;
     if (alpha !== ctx.globalAlpha && typeof alpha == 'number') {
         ctx.globalAlpha = alpha;
     }
-    if (ctx.lineCap !== style.stroke.lineCap) {
-        ctx.lineCap = style.stroke.lineCap;
+    const lineCap = readExpression(style.stroke.lineCap, featureCtx);
+    if (ctx.lineCap !== lineCap) {
+        ctx.lineCap = lineCap;
     }
-    ctx.setLineDash(style.stroke.dasharray.map(a => a * invCtxScale * 2));
+    const dasharray = readExpression(style.stroke.dasharray, featureCtx);
+    ctx.setLineDash(dasharray.map(a => a * invCtxScale * 2));
 }
 
-function drawPoint(ctx, x, y, style = {}, invCtxScale) {
+function drawPoint(ctx, x, y, style = {}, invCtxScale, featureCtx) {
     ctx.beginPath();
-    const opacity = style.point.opacity == undefined ? 1.0 : style.point.opacity;
+    let opacity = readExpression(style.point.opacity, featureCtx);
+    opacity = opacity == undefined ? 1.0 : opacity;
     if (opacity !== ctx.globalAlpha) {
         ctx.globalAlpha = opacity;
     }
 
-    ctx.arc(x, y, (style.point.radius || 3.0) * invCtxScale, 0, 2 * Math.PI, false);
-    if (style.point.color) {
-        ctx.fillStyle = style.point.color;
+    const radius = readExpression(style.point.radius, featureCtx);
+    ctx.arc(x, y, (radius || 3.0) * invCtxScale, 0, 2 * Math.PI, false);
+    const color = readExpression(style.point.color, featureCtx);
+    if (color) {
+        ctx.fillStyle = color;
         ctx.fill();
     }
-    if (style.point.line) {
-        ctx.lineWidth = (style.point.width || 1.0) * invCtxScale;
-        ctx.strokeStyle = style.point.line;
+
+    const line = readExpression(style.point.line, featureCtx);
+    if (line) {
+        const lineWidth = (readExpression(style.point.width, featureCtx) || 1.0) * invCtxScale;
+        ctx.lineWidth = lineWidth;
+        ctx.strokeStyle = line;
         ctx.stroke();
     }
 }
@@ -110,6 +126,7 @@ function drawFeature(ctx, feature, extent, style, invCtxScale) {
     for (const geometry of feature.geometries) {
         if (geometry.extent.intersectsExtent(extent)) {
             const geoStyle = geometry.properties.style || style;
+            const geomCtx = { globals: { zoom: extent.zoom }, properties: () => geometry.properties };
             if (feature.type === FEATURE_TYPES.POINT) {
                 // cross multiplication to know in the extent system the real size of
                 // the point
@@ -120,12 +137,12 @@ function drawFeature(ctx, feature, extent, style, invCtxScale) {
                     for (let j = offset; j < count; j += feature.size) {
                         coord.setFromArray(feature.vertices, j);
                         if (extent.isPointInside(coord, px)) {
-                            drawPoint(ctx, feature.vertices[j], feature.vertices[j + 1], geoStyle, invCtxScale);
+                            drawPoint(ctx, feature.vertices[j], feature.vertices[j + 1], geoStyle, invCtxScale, geomCtx);
                         }
                     }
                 }
             } else {
-                drawPolygon(ctx, feature.vertices, geometry.indices, geoStyle, feature.size, extent, invCtxScale, (feature.type == FEATURE_TYPES.POLYGON));
+                drawPolygon(ctx, feature.vertices, geometry.indices, geoStyle, feature.size, extent, invCtxScale, (feature.type == FEATURE_TYPES.POLYGON), geomCtx);
             }
         }
     }

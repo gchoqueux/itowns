@@ -91,6 +91,9 @@ function vtFeatureToFeatureGeometry(vtFeature, feature, classify = false) {
     feature.updateExtent(geometry);
 }
 
+// check z >= l.zoom.min && z < l.zoom.max remove some layers
+// verify if the test is correct with specification.
+// return styles[id].find(s => s.zoom.min <= zoom && s.zoom.max > zoom) || styles[id][0];
 export function getStyle(styles, id, zoom) {
     return styles[id].find(s => s.zoom.min <= zoom && s.zoom.max > zoom);
 }
@@ -133,6 +136,8 @@ function readPBF(file, options) {
 
         for (let i = sourceLayer.length - 1; i >= 0; i--) {
             const vtFeature = sourceLayer.feature(i);
+            // check z >= l.zoom.min && z < l.zoom.max remove some layers
+            // verify if the test is correct with specification.
             const layers = options.in.layers[layer_id].filter(l => l.filterExpression.filter({ zoom: z }, vtFeature) && z >= l.zoom.min && z < l.zoom.max);
             let feature;
 

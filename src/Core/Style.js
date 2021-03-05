@@ -1,6 +1,7 @@
 import { FEATURE_TYPES } from 'Core/Feature';
 import Cache from 'Core/Scheduler/Cache';
 import Fetcher from 'Provider/Fetcher';
+import * as mapbox from '@mapbox/mapbox-gl-style-spec';
 
 import itowns_stroke_single_before from './StyleChunk/itowns_stroke_single_before.css';
 
@@ -9,11 +10,10 @@ const cacheStyle = new Cache();
 const inv255 = 1 / 255;
 const canvas = document.createElement('canvas');
 
-function rgba2rgb(orig) {
-    if (!orig) {
+function _rgba2rgb(orig) {
+    if (!orig || typeof orig !== 'string') {
         return {};
     }
-
     const result = orig.match(/(?:((hsl|rgb)a? *\(([\d.%]+(?:deg|g?rad|turn)?)[ ,]*([\d.%]+)[ ,]*([\d.%]+)[ ,/]*([\d.%]*)\))|(#((?:[\d\w]{3}){1,2})([\d\w]{1,2})?))/i);
     if (!result) {
         return { color: orig, opacity: 1.0 };
@@ -28,13 +28,41 @@ function rgba2rgb(orig) {
     }
 }
 
+function rgba2rgb(orig) {
+    if (orig && orig.stops) {
+        const stopsOpacity = [];
+        for (var i = 0; i < orig.stops.length; i++) {
+            const stop = orig.stops[i];
+            stopsOpacity[i] = [stop[0]];
+            const { color, opacity }  = _rgba2rgb(stop[1]);
+            stopsOpacity[i].push(opacity);
+            stop[1] = color;
+        }
+        return { color: orig, opacity: { stops: stopsOpacity } };
+    } else if (orig && orig.expression) {
+        return { color: orig };
+    } else {
+        return _rgba2rgb(orig);
+    }
+}
 
-function readVectorProperty(property, zoom) {
+const defaultCtx = { globals: {}, properties: () => ({}) };
+
+export function readExpression(property, ctx = defaultCtx) {
+    if (property && property.expression) {
+        return property.expression.evaluate(ctx);
+    } else if (property && property.stops) {
+        return property.stops.find(element => element[0] >= ctx.globals.zoom)[1] || property.stops[0][1];
+    } else {
+        return property;
+    }
+}
+
+function readVectorProperty(property, options) {
     if (property == undefined) {
         //
-    } else if (property.stops) {
-        const p = property.stops.slice().reverse().find(stop => zoom >= stop[0]);
-        return p ? p[1] : property.stops[0][1];
+    } else if (mapbox.expression.isExpression(property)) {
+        return mapbox.expression.createExpression(property, options).value;
     } else {
         return property.base || property;
     }
@@ -370,7 +398,7 @@ class Style {
         if (layer.type === 'fill' && !this.fill.color) {
             const { color, opacity } = rgba2rgb(readVectorProperty(layer.paint['fill-color'] || layer.paint['fill-pattern']));
             this.fill.color = color;
-            this.fill.opacity = readVectorProperty(layer.paint['fill-opacity'], zoom) || opacity;
+            this.fill.opacity = readVectorProperty(layer.paint['fill-opacity']) || opacity;
             if (layer.paint['fill-pattern'] && sprites) {
                 this.fill.pattern = getImage(this.fill.pattern, sprites, layer.paint['fill-pattern']);
             }
@@ -383,23 +411,23 @@ class Style {
                 this.stroke.dasharray = [];
             }
         } else if (layer.type === 'line' && !this.stroke.color) {
-            const prepare = readVectorProperty(layer.paint['line-color'], zoom);
+            const prepare = readVectorProperty(layer.paint['line-color']);
             const { color, opacity } = rgba2rgb(prepare);
-            this.stroke.dasharray = readVectorProperty(layer.paint['line-dasharray'], zoom);
+            this.stroke.dasharray = readVectorProperty(layer.paint['line-dasharray']);
             this.stroke.color = color;
             this.stroke.lineCap = layer.layout['line-cap'];
-            this.stroke.width = readVectorProperty(layer.paint['line-width'], zoom);
-            this.stroke.opacity = readVectorProperty(layer.paint['line-opacity'], zoom) || opacity;
+            this.stroke.width = readVectorProperty(layer.paint['line-width']);
+            this.stroke.opacity = readVectorProperty(layer.paint['line-opacity']) || opacity;
         } else if (layer.type === 'circle' || symbolToCircle) {
-            const { color, opacity } = rgba2rgb(readVectorProperty(layer.paint['circle-color'], zoom));
+            const { color, opacity } = rgba2rgb(readVectorProperty(layer.paint['circle-color']));
             this.point.color = color;
             this.point.opacity = opacity;
-            this.point.radius = readVectorProperty(layer.paint['circle-radius'], zoom);
+            this.point.radius = readVectorProperty(layer.paint['circle-radius']);
         } else if (layer.type === 'symbol') {
             // overlapping order
-            this.text.zOrder = readVectorProperty(layer.layout['symbol-z-order'], zoom);
+            this.text.zOrder = readVectorProperty(layer.layout['symbol-z-order']);
             if (this.text.zOrder == 'auto') {
-                this.text.zOrder = readVectorProperty(layer.layout['symbol-sort-key'], zoom) || 'Y';
+                this.text.zOrder = readVectorProperty(layer.layout['symbol-sort-key']) || 'Y';
             } else if (this.text.zOrder == 'viewport-y') {
                 this.text.zOrder = 'Y';
             } else if (this.text.zOrder == 'source') {
@@ -407,40 +435,47 @@ class Style {
             }
 
             // position
-            this.text.anchor = readVectorProperty(layer.layout['text-anchor'], zoom);
-            this.text.offset = readVectorProperty(layer.layout['text-offset'], zoom);
-            this.text.padding = readVectorProperty(layer.layout['text-padding'], zoom);
-            this.text.size = readVectorProperty(layer.layout['text-size'], zoom);
-            this.text.placement = readVectorProperty(layer.layout['symbol-placement'], zoom);
-            this.text.rotation = readVectorProperty(layer.layout['text-rotation-alignment'], zoom);
+            this.text.anchor = readVectorProperty(layer.layout['text-anchor']);
+            this.text.offset = readVectorProperty(layer.layout['text-offset']);
+            this.text.padding = readVectorProperty(layer.layout['text-padding']);
+            this.text.size = readVectorProperty(layer.layout['text-size']);
+            this.text.placement = readVectorProperty(layer.layout['symbol-placement']);
+            this.text.rotation = readVectorProperty(layer.layout['text-rotation-alignment']);
 
             // content
-            this.text.field = readVectorProperty(layer.layout['text-field'], zoom);
-            this.text.wrap = readVectorProperty(layer.layout['text-max-width'], zoom);
-            this.text.spacing = readVectorProperty(layer.layout['text-letter-spacing'], zoom);
-            this.text.transform = readVectorProperty(layer.layout['text-transform'], zoom);
-            this.text.justify = readVectorProperty(layer.layout['text-justify'], zoom);
+            this.text.field = readVectorProperty(layer.layout['text-field']);
+            this.text.wrap = readVectorProperty(layer.layout['text-max-width']);
+            this.text.spacing = readVectorProperty(layer.layout['text-letter-spacing']);
+            this.text.transform = readVectorProperty(layer.layout['text-transform']);
+            this.text.justify = readVectorProperty(layer.layout['text-justify']);
 
             // appearance
-            const { color, opacity } = rgba2rgb(readVectorProperty(layer.paint['text-color'], zoom));
+            const { color, opacity } = rgba2rgb(readVectorProperty(layer.paint['text-color']));
             this.text.color = color;
-            this.text.opacity = readVectorProperty(layer.paint['text-opacity'], zoom) || (opacity !== undefined && opacity);
-            this.text.font = readVectorProperty(layer.layout['text-font'], zoom);
-            this.text.haloColor = rgba2rgb(readVectorProperty(layer.paint['text-halo-color'], zoom)).color;
-            this.text.haloWidth = readVectorProperty(layer.paint['text-halo-width'], zoom);
-            this.text.haloBlur = readVectorProperty(layer.paint['text-halo-blur'], zoom);
+            this.text.opacity = readVectorProperty(layer.paint['text-opacity']) || (opacity !== undefined && opacity);
+
+            this.text.font = readVectorProperty(layer.layout['text-font']);
+            const haloColor = readVectorProperty(layer.paint['text-halo-color'], { type: 'color' });
+            if (haloColor) {
+                this.text.haloColor = haloColor.color || haloColor;
+                this.text.haloWidth = readVectorProperty(layer.paint['text-halo-width']);
+                this.text.haloBlur = readVectorProperty(layer.paint['text-halo-blur']);
+            }
 
             // additional icon
-            const iconSrc = readVectorProperty(layer.layout['icon-image'], zoom);
+            const iconSrc = readVectorProperty(layer.layout['icon-image']);
             if (iconSrc) {
-                let size = readVectorProperty(layer.layout['icon-size'], zoom);
-                if (size == undefined) { size = 1; }
+                const ctx = { globals: { zoom }, properties: () => ({}) };
+                const size = readExpression(readVectorProperty(layer.layout['icon-size']), ctx);
+                if (size == undefined) {
+                    return;
+                }
 
                 this.icon = cacheStyle.get(iconSrc, size);
 
                 if (!this.icon) {
                     this.icon = getImage(this.icon, sprites, iconSrc, size);
-                    this.icon.anchor = readVectorProperty(layer.layout['icon-anchor'], zoom) || 'center';
+                    this.icon.anchor = readVectorProperty(layer.layout['icon-anchor']) || 'center';
                     cacheStyle.set(this.icon, iconSrc, size);
                 }
             }
@@ -453,24 +488,31 @@ class Style {
      * properties of this style.
      *
      * @param {Element} domElement - The element to set the style to.
+     * @param {Object} [ctx] - The context to determine the style from expression.
      */
-    applyToHTML(domElement) {
-        domElement.style.padding = `${this.text.padding}px`;
-        domElement.style.maxWidth = `${this.text.wrap}em`;
+    applyToHTML(domElement, ctx) {
+        domElement.style.padding = `${readExpression(this.text.padding, ctx)}px`;
+        domElement.style.maxWidth = `${readExpression(this.text.wrap, ctx)}em`;
 
-        domElement.style.color = this.text.color;
-        domElement.style.fontSize = `${this.text.size}px`;
-        domElement.style.fontFamily = this.text.font.join(',');
+        domElement.style.color = readExpression(this.text.color, ctx);
+        if (this.text.size > 0 || this.text.size.expression) {
+            domElement.style.fontSize = `${readExpression(this.text.size, ctx)}px`;
+        }
 
-        domElement.style.textTransform = this.text.transform;
-        domElement.style.letterSpacing = `${this.text.spacing}em`;
-        domElement.style.textAlign = this.text.justify;
+        const fontFamily = readExpression(this.text.font, ctx);
+        domElement.style.fontFamily = fontFamily.join(',');
+
+        domElement.style.textTransform = readExpression(this.text.transform, ctx);
+        domElement.style.letterSpacing = `${readExpression(this.text.spacing, ctx)}em`;
+        domElement.style.textAlign = readExpression(this.text.justify, ctx);
         domElement.style['white-space'] = 'pre-line';
 
-        if (this.text.haloWidth > 0) {
+        const haloWidth = readExpression(this.text.haloWidth, ctx);
+        if (haloWidth > 0) {
             domElement.style.setProperty('--text_stroke_display', 'block');
-            domElement.style.setProperty('--text_stroke_width', `${this.text.haloWidth}px`);
-            domElement.style.setProperty('--text_stroke_color', this.text.haloColor);
+            domElement.style.setProperty('--text_stroke_width', `${haloWidth}px`);
+            const haloColor = readExpression(this.text.haloColor, ctx);
+            domElement.style.setProperty('--text_stroke_color', haloColor);
             domElement.setAttribute('data-before', domElement.textContent);
         }
 
@@ -479,7 +521,8 @@ class Style {
         }
 
         this.icon.style.position = 'absolute';
-        switch (this.text.anchor) { // center by default
+        const anchor = readExpression(this.text.anchor, ctx);
+        switch (anchor) { // center by default
             case 'left':
                 this.icon.style.right = `calc(100% - ${this.icon.halfWidth}px)`;
                 this.icon.style.top = `calc(50% - ${this.icon.halfHeight}px)`;
@@ -520,22 +563,28 @@ class Style {
      * Gets the values corresponding to the anchor of the text. It is
      * proportions, to use with a `translate()` and a `transform` property.
      *
+     * @param      {Object}  ctx the context
+     *
      * @return {number[]} Two percentage values, for x and y respectively.
      */
-    getTextAnchorPosition() {
-        return textAnchorPosition[this.text.anchor];
+    getTextAnchorPosition(ctx) {
+        return textAnchorPosition[readExpression(this.text.anchor, ctx)];
     }
 
     /**
      * Returns a string, associating `style.text.field` and properties to use to
      * replace the keys in `style.text.field`.
      *
-     * @param {Object} properties - An object containing the properties to use.
+     * @param {Object} ctx - An object containing the feature context.
      *
      * @return {string} The formatted string.
      */
-    getTextFromProperties(properties) {
-        return this.text.field.replace(/\{(.+?)\}/g, (a, b) => (properties[b] || '')).trim();
+    getTextFromProperties(ctx) {
+        if (this.text.field.expression) {
+            return readExpression(this.text.field, ctx);
+        } else {
+            return this.text.field.replace(/\{(.+?)\}/g, (a, b) => (ctx.properties()[b] || '')).trim();
+        }
     }
 }
 

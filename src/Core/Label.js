@@ -48,8 +48,9 @@ class Label extends THREE.Object3D {
      * is applied, it cannot be changed directly. However, if it really needed,
      * it can be accessed through `label.content.style`, but it is highly
      * discouraged to do so.
+     * @param {Object} [ctx] feature context to determine style from expression.
      */
-    constructor(content = '', coordinates, style = {}) {
+    constructor(content = '', coordinates, style = {}, ctx) {
         if (coordinates == undefined) {
             throw new Error('coordinates are mandatory to add a Label');
         }
@@ -89,11 +90,11 @@ class Label extends THREE.Object3D {
         this.baseContent = content;
 
         if (style.isStyle) {
-            this.anchor = style.getTextAnchorPosition();
+            this.anchor = style.getTextAnchorPosition(ctx);
             if (style.text.haloWidth > 0) {
                 this.content.classList.add('itowns-stroke-single');
             }
-            style.applyToHTML(this.content);
+            style.applyToHTML(this.content, ctx);
         } else {
             this.anchor = [0, 0];
         }
