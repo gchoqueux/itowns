@@ -1,0 +1,179 @@
+<html>
+    <head>
+        <title>Lidar Morbihan</title>
+
+        <style type="text/css">
+            #miniDiv {
+                display: block;
+                margin-bottom: 20px;
+                margin-right: 20px;
+                position: absolute;
+                width:100px;
+                height:100px;
+                left: 20;
+                bottom: 0;
+                color: white;
+            }
+        </style>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+    </head>
+    <body>
+        <div id="viewerDiv"></div>
+        <div id="info"></div>
+        <script src="js/GUI/GuiTools.js"></script>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="../libs/tween/tween.min.js"></script>
+        <script src="Potree/potree/BinaryHeap.js"></script>
+        <script src="Potree/potree/jquery-3.1.1.min.js"></script>
+        <script src="Potree/potree/potree.js"></script>
+        <script src="plasio/js/laslaz.js"></script>
+        <script type="text/javascript">
+                var THREE = itowns.THREE;
+
+                var datGui = new dat.GUI();
+
+                Potree.pointBudget = 10000*1000;
+                const viewerDiv = document.getElementById("viewerDiv");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', 0, 0, 0),
+                    range: 5000000,
+                    tilt: 29.48,
+                    heading: -25.11
+                }
+                const view = new itowns.GlobeView(viewerDiv, placement);
+                const camera = view.camera.camera3D;
+
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                });
+                function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                const points = new THREE.Group()
+                view.scene.add(points);
+                let pointclouds = [];
+
+                itowns.Fetcher.json('../perso/Cloud/Morbihan/Out/metadata/pivotTHREE.json').then((pivot) => {
+                    const loader = new THREE.ObjectLoader();
+                    return loader.parse(pivot);
+                }).then((pivotTHREE) => {
+                    Potree.loadPointCloud('../perso/Cloud/Morbihan/Out/EPT_4978/ept.json', "pointcloud", function(e) {
+                        const pointcloud = e.pointcloud;
+
+                        const pivot = new itowns.Coordinates('EPSG:4978', 0, 0, 0)
+                        pivot.setFromVector3(pivotTHREE.position);
+                        console.log('pivot', pivot);
+
+                        view.controls.lookAtCoordinate({ coord: pivot, range: 5000 }, false);
+
+                        pointclouds.push(pointcloud);
+
+                        pointcloud.position.copy(pivotTHREE.position);
+                        pointcloud.quaternion.copy(pivotTHREE.quaternion);
+                        pointcloud.translateZ(-48.65);
+
+                        // 1 Defaut
+                        // 2 Sol
+                        // 5 Végétation
+                        // 7 Point Bas
+                        // 18 Point Haut
+                        // 99 Noeud MNT RGE-Alti 10m
+                        const classification = {
+                            1: { visible: true, name: 'default', color: new THREE.Color(0.5,  0.5,  0.5), opacity: 1.0 },
+                            2: { visible: true, name: 'sol', color: new THREE.Color(0.63, 0.32, 0.18), opacity: 1.0 },
+                            3: { visible: true, name: 'low vegetation', color: new THREE.Color(0.0,  1.0,  0.0), opacity: 1.0 },
+                            4: { visible: true, name: 'medium vegetation', color: new THREE.Color(0.0,  0.8,  0.0), opacity: 1.0 },
+                            5: { visible: true, name: 'high vegetation', color: new THREE.Color(0.0,  0.6,  0.0), opacity: 1.0 },
+                            6: { visible: true, name: 'building', color: new THREE.Color(1.0,  0.66, 0.0), opacity: 1.0 },
+                            7: { visible: true, name: 'low point(noise)', color: new THREE.Color(1.0,  0.0,  1.0), opacity: 0.0 },
+                            8: { visible: true, name: 'key-point', color: new THREE.Color(1.0,  0.0,  0.0), opacity: 1.0 },
+                            9: { visible: true, name: 'water', color: new THREE.Color(0.0,  0.0,  1.0), opacity: 1.0 },
+                            10: { visible: true, name: 'rail', color: new THREE.Color(0.8,  0.8,  1.0), opacity: 1.0 },
+                            11: { visible: true, name: 'road Surface', color: new THREE.Color(0.4,  0.4,  0.7), opacity: 1.0 },
+                            12: { visible: true, name: 'overlap', color: new THREE.Color(1.0,  1.0,  0.0), opacity: 1.0 },
+                            18: { visible: true, name: 'overlap', color: new THREE.Color(1.0,  1.0,  0.0), opacity: 0.0 },
+                            99: { visible: true, name: 'overlap', color: new THREE.Color(1.0,  0.0,  0.0), opacity: 0.0 },
+                            DEFAULT: { visible: true, name: 'default', color: new THREE.Color(0.3,  0.6,  0.6), opacity: 0.5 },
+                        };
+
+                        pointcloud.material = new itowns.PointsMaterial({
+                            // transparent: true,
+                            classification,
+                            applyOpacityClassication: true,
+                        });
+
+                        pointcloud.material.clipBoxes = [];
+                        pointcloud.material.mode = 0;
+                        pointcloud.material.intensityRange = new THREE.Vector3(0, 4096);
+                        pointcloud.material.uniforms.octreeSize = { value: 0 };
+                        pointcloud.material.size = 3;
+                        datGui.add(pointcloud.material, 'size', 1, 10).name('Taille des points');
+                    });
+
+                });
+
+                view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.BEFORE_RENDER, (a) => {
+                    if (points) {
+                        const renderer = view.mainLoop.gfxEngine.renderer;
+                        const octree = Potree.updatePointClouds(pointclouds, camera, renderer);
+
+                        points.children = [];
+
+                        if (octree.visibleNodes.length) {
+                            const sceneNodes = octree.visibleNodes.map(a => a.sceneNode)
+                            for (var i = sceneNodes.length - 1; i >= 0; i--) {
+                                const sceneNode = sceneNodes[i]
+                                sceneNode.geometry.attributes.classification.normalized = true;
+                                const rgba = sceneNode.geometry.getAttribute('rgba');
+                                if (rgba) {
+                                    sceneNode.geometry.setAttribute('color', rgba);
+                                    sceneNode.geometry.deleteAttribute('rbga');
+                                }
+                                points.add(sceneNode);
+                            }
+                        }
+                        view.notifyChange(camera, true);
+                    }
+                });
+
+                view.controls.minDistanceCollision = 50;
+                view.controls.minDistance = 150;
+
+                view.tileLayer.display = true;
+
+                datGui.add(view.tileLayer, 'display').name('Sol').onChange((value) => {
+                    view.tileLayer.opacity = value ? 1.0 : 0.001;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    view.controls.minDistance = value ? 150 : 50;
+                    view.getLayerById('Ortho').visible = value;
+                });
+
+                datGui.add(Potree, 'pointBudget', Potree.pointBudget * 0.005, Potree.pointBudget * 3).name('Détail');
+        </script>
+    </body>
+</html>
