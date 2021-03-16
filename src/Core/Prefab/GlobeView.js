@@ -10,6 +10,9 @@ import CameraUtils from 'Utils/CameraUtils';
 
 import CRS from 'Core/Geographic/Crs';
 import { ellipsoidSizes } from 'Core/Math/Ellipsoid';
+import { TilesRenderer } from '/home/gchoqueux/code/3d/3DTilesRendererJS/src/index';
+import { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
+
 
 /**
  * Fires when the view is completely loaded. Controls and view's functions can be called then.
@@ -130,6 +133,29 @@ class GlobeView extends View {
 
         // GlobeView needs this.camera.resize to set perpsective matrix camera
         this.camera.resize(viewerDiv.clientWidth, viewerDiv.clientHeight);
+
+        // const tilesRenderer = new TilesRenderer( 'http://172.20.1.6/3dTiles/demo/demo.json' );
+        const tilesRenderer = new TilesRenderer( 'http://172.20.1.6/export_AP/root/1.json' );
+
+        tilesRenderer.setCamera( this.camera.camera3D );
+        tilesRenderer.setResolutionFromRenderer( this.camera.camera3D, this.mainLoop.gfxEngine.renderer );
+
+        const light = new THREE.HemisphereLight( 0xffffbb, 0x080820, 1 );
+
+        light.position.copy(placement.coord.as(this.referenceCrs));
+        light.updateMatrix();
+        light.updateMatrixWorld(true);
+        this.scene.add( light );
+
+        // tilesRenderer.group.position.copy(placement.coord.geodesicNormal).setLength(5);
+        this.scene.add( tilesRenderer.group );
+
+        this.addFrameRequester(MAIN_LOOP_EVENTS.BEFORE_RENDER, () => {
+            tilesRenderer.update();
+            tilesRenderer.group.updateMatrix();
+            tilesRenderer.group.updateMatrixWorld(true);
+            this.notifyChange();
+        });
     }
 
     /**
