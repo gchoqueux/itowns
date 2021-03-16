@@ -41,6 +41,9 @@ const uniforms = {
     up: {
         value: new THREE.Vector3(0.0, 1.0, 0.0),
     },
+    lambda: {
+        value: new THREE.Vector3(680e-9, 550e-9, 450e-9),
+    },
 };
 
 class Sky extends THREE.Mesh {

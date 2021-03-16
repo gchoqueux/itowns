@@ -27,7 +27,8 @@ const float N = 2.545E25; // number of molecules per unit volume for air at
 const float pn = 0.035; // depolatization factor for standard air
 
 // wavelength of used primaries, according to preetham
-const vec3 lambda = vec3(680E-9, 550E-9, 450E-9);
+// const vec3 lambda = vec3(680E-9, 550E-9, 450E-9);
+uniform vec3 lambda;
 
 // mie stuff
 // K coefficient for the primaries
