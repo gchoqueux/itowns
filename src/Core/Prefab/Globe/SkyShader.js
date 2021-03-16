@@ -42,7 +42,10 @@ const uniforms = {
         value: new THREE.Vector3(0.0, 1.0, 0.0),
     },
     lambda: {
-        value: new THREE.Vector3(680e-9, 550e-9, 450e-9),
+        // earth
+        // value: new THREE.Vector3(680, 550, 440).multiplyScalar(1e-9),
+        // mars
+        value: new THREE.Vector3(500, 510, 560).multiplyScalar(1e-9),
     },
 };
 

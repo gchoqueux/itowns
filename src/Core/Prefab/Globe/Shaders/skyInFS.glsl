@@ -32,14 +32,16 @@ uniform vec3 lambda;
 
 // mie stuff
 // K coefficient for the primaries
-const vec3 K = vec3(0.686, 0.678, 0.666);
+// earth
+// const vec3 K = vec3(0.686, 0.678, 0.666);
+// mars
+const vec3 K = vec3(0.2, 0.3, 0.8) / 4.;
 const float v = 4.0;
 
 // optical length at zenith for molecules
 const float rayleighZenithLength = 8.4E3;
 const float mieZenithLength = 1.25E3;
-        // "const vec3 up = vec3(0.0, 1.0, 0.0);",
-
+// const vec3 up = vec3(0.0, 1.0, 0.0);
 
 const float EE = 1000.0;
 const float sunAngularDiameterCos = 0.999956676946448443553574619906976478926848692873900859324;
@@ -113,8 +115,9 @@ void main(){
     // extinction (absorbtion + out scattering)
     // rayleigh coefficients
 
-            // "vec3 betaR = totalRayleigh(lambda) * reileighCoefficient;",
-    vec3 betaR = simplifiedRayleigh() * reileighCoefficient;
+    // Could be pre-calculed
+    vec3 betaR = totalRayleigh(lambda) * reileighCoefficient;
+    // vec3 betaR = simplifiedRayleigh() * reileighCoefficient;
 
     // mie coefficients
     vec3 betaM = totalMie(lambda, K, turbidity) * mieCoefficient;
