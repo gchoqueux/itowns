@@ -19,6 +19,30 @@ if (document.documentElement.style.transform !== undefined) {
     STYLE_TRANSFORM = 'transform';
 }
 
+
+function makeTextCanvas(text, size) {
+    // const size = 15;
+    const borderSize = 0;
+    const doubleBorderSize = borderSize * 2;
+
+    const textCtx = document.createElement('canvas').getContext('2d');
+    textCtx.font = '20px monospace';
+    const textWidth = textCtx.measureText(text).width;
+
+    textCtx.canvas.width  = textWidth + doubleBorderSize;
+    textCtx.canvas.height = size + doubleBorderSize;
+    textCtx.font = `${size}px monospace`;
+    textCtx.textAlign = 'center';
+    textCtx.textBaseline = 'middle';
+    textCtx.clearRect(0, 0, textCtx.canvas.width, textCtx.canvas.height);
+    textCtx.strokeStyle = 'white';
+    textCtx.lineWidth = 2;
+    textCtx.strokeText(text, textCtx.canvas.width * 0.5, textCtx.canvas.height * 0.5);
+    textCtx.fillStyle = 'black';
+    textCtx.fillText(text, textCtx.canvas.width * 0.5, textCtx.canvas.height * 0.5);
+    return textCtx.canvas;
+}
+
 /**
  * An object that handles the display of a text and/or an icon, linked to a 3D
  * position. The content of the `Label` is managed through a DOM object, in a
@@ -39,7 +63,7 @@ if (document.documentElement.style.transform !== undefined) {
  * @property {number} order - Order of the label that will be read from the
  * style. It helps sorting and prioritizing a Label during render.
  */
-class Label extends THREE.Object3D {
+class Label extends THREE.Sprite {
     /**
      * @param {Element|string} content - The content; can be a
      * string, with or without HTML tags in it, or it can be an Element.
@@ -56,22 +80,28 @@ class Label extends THREE.Object3D {
             throw new Error('coordinates are mandatory to add a Label');
         }
 
-        super();
+        coordinates.z = 500;
 
-        let _visible = this.visible;
-        // can't do an ES6 setter/getter here
-        Object.defineProperty(this, 'visible', {
-            set(v) {
-                if (v != _visible) { // avoid changing the style
-                    _visible = v;
-                    this.content.style.display = v ? 'block' : 'none';
-                    // TODO: add smooth transition for fade in/out
-                }
-            },
-            get() {
-                return _visible;
-            },
-        });
+        // const base = 100;
+
+        const fontsize = 20;
+
+        // const c = makeLabelCanvas(base, fontsize, content);
+        const c = makeTextCanvas(content, fontsize);
+
+        const map = new THREE.CanvasTexture(c);
+
+        const material = new THREE.SpriteMaterial({ map });
+
+        // map.magFilter = THREE.NearestFilter;
+        // map.minFilter = THREE.NearestFilter;
+        // map.generateMipmaps = false;
+        material.sizeAttenuation = false;
+        material.depthWrite = false;
+
+        super(material);
+
+        this.frustumCulled = false;
 
         this.isLabel = true;
         this.coordinates = coordinates;
@@ -80,14 +110,6 @@ class Label extends THREE.Object3D {
         this.boundaries = { left: 0, right: 0, top: 0, bottom: 0 };
 
         this.content = document.createElement('div');
-        this.content.classList.add('itowns-label');
-        this.content.style.userSelect = 'none';
-        this.content.style.position = 'absolute';
-        if (typeof content == 'string') {
-            this.content.textContent = content;
-        } else {
-            this.content.appendChild(content);
-        }
         this.baseContent = content;
 
         if (style.isStyle) {
@@ -95,7 +117,7 @@ class Label extends THREE.Object3D {
             if (style.text.haloWidth > 0) {
                 this.content.classList.add('itowns-stroke-single');
             }
-            style.applyToHTML(this.content, sprites);
+            // style.applyToHTML(this.content, sprites);
         } else {
             this.anchor = [0, 0];
         }
@@ -106,8 +128,16 @@ class Label extends THREE.Object3D {
         };
 
         this.order = style.order || 0;
-        // Padding value, to avoid labels being too close to each other.
-        this.padding = 2;
+        // Padding value, to avoid labels being too close to each
+        // other. This value has been choosen arbitrarily.
+        this.padding = 7;
+
+        this.offset = {
+            left: c.width * this.anchor[0],
+            top: c.height * this.anchor[1],
+        };
+        this.offset.right = this.offset.left + c.width;
+        this.offset.bottom = this.offset.top + c.height;
     }
 
     /**
@@ -128,29 +158,6 @@ class Label extends THREE.Object3D {
             this.boundaries.right = x + this.offset.right + this.padding;
             this.boundaries.top = y + this.offset.top - this.padding;
             this.boundaries.bottom = y + this.offset.bottom + this.padding;
-        }
-    }
-
-    updateCSSPosition() {
-        this.content.style[STYLE_TRANSFORM] = `translate(${this.boundaries.left + this.padding}px, ${this.boundaries.top + this.padding}px)`;
-    }
-
-    /**
-     * Updates the screen dimensions of the label, using
-     * `getBoundingClientRect`.  It updates `width` and `height` property of the
-     * label, and the boundaries.
-     */
-    initDimensions() {
-        if (!this.offset) {
-            rect = this.content.getBoundingClientRect();
-            const width = Math.round(rect.width);
-            const height = Math.round(rect.height);
-            this.offset = {
-                left: width * this.anchor[0],
-                top: height * this.anchor[1],
-            };
-            this.offset.right = this.offset.left + width;
-            this.offset.bottom = this.offset.top + height;
         }
     }
 

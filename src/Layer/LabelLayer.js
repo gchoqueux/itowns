@@ -11,6 +11,17 @@ const coord = new Coordinates('EPSG:4326', 0, 0, 0);
 
 const _extent = new Extent('EPSG:4326', 0, 0, 0, 0);
 
+
+function upLab(label /* , context */) {
+    const image = label.material.map.image;
+
+    label.scale.set(
+        1 / image.height * 0.5,
+        1 / image.width  * 0.5, 1);
+    label.updateMatrix();
+    label.updateMatrixWorld();
+}
+
 /**
  * A layer to handle a bunch of `Label`. This layer can be created on its own,
  * but it is better to use the option `addLabelLayer` on another `Layer` to let
@@ -158,6 +169,13 @@ class LabelLayer extends Layer {
             });
         }
 
+        node.children.forEach((c) => {
+            if (c.isLabel) {
+                upLab(c, context);
+            }
+        });
+
+
         if (!node.layerUpdateState[this.id].canTryUpdate()) {
             return;
         } else if (!this.source.extentInsideLimit(node.extent, zoomDest)) {
@@ -197,6 +215,7 @@ class LabelLayer extends Layer {
 
                     const present = node.children.find(l => l.isLabel && l.baseContent == label.baseContent);
 
+                    // if (!present && label.baseContent.toLowerCase() == 'france') {
                     if (!present) {
                         node.add(label);
                         label.update3dPosition(context.view.referenceCrs);
@@ -226,8 +245,11 @@ class LabelLayer extends Layer {
 
                 // Batch update the dimensions of labels all at once to avoid
                 // redraw for at least this tile.
-                result.forEach(labels => labels.forEach(label => label.initDimensions()));
-                result.forEach(labels => labels.forEach((label) => { label.visible = false; }));
+                result.forEach(labels => labels.forEach((label) => {
+                    upLab(label, context);
+
+                    label.visible = false;
+                }));
 
                 // Sort labels so they can be the first in the renderer. That
                 // way, we cull labels on parent tile first, and then on

@@ -160,7 +160,6 @@ class Label2DRenderer {
         this.grid.visible.forEach((l) => {
             if (this.grid.insert(l)) {
                 l.visible = true;
-                l.updateCSSPosition();
             }
         });
 
@@ -203,6 +202,7 @@ class Label2DRenderer {
                 object.parent.remove(object);
                 this.grid.hidden.push(object);
             } else {
+                object.visible = true;
                 this.grid.visible.push(object);
             }
         }
