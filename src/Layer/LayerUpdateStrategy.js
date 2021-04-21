@@ -11,13 +11,6 @@ export const STRATEGY_GROUP = 1;
 export const STRATEGY_PROGRESSIVE = 2;
 export const STRATEGY_DICHOTOMY = 3;
 
-function _minimizeNetworkTraffic(node, nodeLevel, currentLevel) {
-    if (node.pendingSubdivision) {
-        return currentLevel;
-    }
-    return nodeLevel;
-}
-
 // Maps nodeLevel to groups defined in layer's options
 // eg with groups = [3, 7, 12]:
 //     * nodeLevel = 2 -> 3
@@ -46,7 +39,7 @@ function _dichotomy(nodeLevel, currentLevel, options = {}) {
         Math.ceil((currentLevel + nodeLevel) / 2));
 }
 
-export function chooseNextLevelToFetch(strategy, node, nodeLevel = node.level, currentLevel, layer, failureParams) {
+export function chooseNextLevelToFetch(strategy, nodeLevel, currentLevel, layer, failureParams) {
     let nextLevelToFetch;
     const maxZoom = layer.source.zoom ? layer.source.zoom.max : Infinity;
     if (failureParams.lowestLevelError != Infinity) {
@@ -72,7 +65,7 @@ export function chooseNextLevelToFetch(strategy, node, nodeLevel = node.level, c
             // default strategy
             case STRATEGY_MIN_NETWORK_TRAFFIC:
             default:
-                nextLevelToFetch = _minimizeNetworkTraffic(node, nodeLevel, currentLevel);
+                nextLevelToFetch = nodeLevel;
         }
         nextLevelToFetch = Math.min(nextLevelToFetch, maxZoom);
     }

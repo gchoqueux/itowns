@@ -95,8 +95,8 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
         }
     }
 
-    // Node is hidden, no need to update it
-    if (!material.visible) {
+    // Node is hidden or pending subdivision, no need to update it
+    if (node.pendingSubdivision || !material.visible) {
         return;
     }
 
@@ -117,8 +117,8 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
     }
 
     const failureParams = node.layerUpdateState[layer.id].failureParams;
-    const destinationLevel = extentsDestination[0].zoom || node.level;
-    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, destinationLevel, nodeLayer.level, layer, failureParams);
+    const destinationLevel = extentsDestination[0].zoom;
+    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, destinationLevel, nodeLayer.level, layer, failureParams);
 
     if ((!layer.source.isVectorSource && targetLevel <= nodeLayer.level) || targetLevel > destinationLevel) {
         if (failureParams.lowestLevelError != Infinity) {
@@ -191,7 +191,7 @@ export function updateLayeredMaterialNodeElevation(context, layer, node, parent)
     }
 
     const failureParams = node.layerUpdateState[layer.id].failureParams;
-    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, node, extentsDestination[0].zoom, nodeLayer.level, layer, failureParams);
+    const targetLevel = chooseNextLevelToFetch(layer.updateStrategy.type, extentsDestination[0].zoom, nodeLayer.level, layer, failureParams);
 
     if (targetLevel <= nodeLayer.level || targetLevel > extentsDestination[0].zoom) {
         node.layerUpdateState[layer.id].noMoreUpdatePossible();
