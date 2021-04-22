@@ -39,11 +39,13 @@ function _dichotomy(nodeLevel, currentLevel, options = {}) {
         Math.ceil((currentLevel + nodeLevel) / 2));
 }
 
-export function chooseNextLevelToFetch(strategy, nodeLevel, currentLevel, layer, failureParams) {
+export function chooseNextLevelToFetch(layer, nodeLayer, finalLevel, failureParams) {
+    const strategy = layer.updateStrategy.type;
+
     let nextLevelToFetch;
     const maxZoom = layer.source.zoom ? layer.source.zoom.max : Infinity;
     if (failureParams.lowestLevelError != Infinity) {
-        nextLevelToFetch = _dichotomy(failureParams.lowestLevelError, currentLevel, layer.source);
+        nextLevelToFetch = _dichotomy(failureParams.lowestLevelError, nodeLayer.level, layer.source);
 
         nextLevelToFetch = failureParams.lowestLevelError == nextLevelToFetch ? nextLevelToFetch - 1 : nextLevelToFetch;
 
@@ -53,19 +55,19 @@ export function chooseNextLevelToFetch(strategy, nodeLevel, currentLevel, layer,
     } else {
         switch (strategy) {
             case STRATEGY_GROUP:
-                nextLevelToFetch = _group(nodeLevel, layer.updateStrategy.options);
+                nextLevelToFetch = _group(finalLevel, layer.updateStrategy.options);
                 break;
             case STRATEGY_PROGRESSIVE: {
-                nextLevelToFetch = _progressive(nodeLevel, currentLevel, layer.updateStrategy.options);
+                nextLevelToFetch = _progressive(finalLevel, nodeLayer.level, layer.updateStrategy.options);
                 break;
             }
             case STRATEGY_DICHOTOMY:
-                nextLevelToFetch = _dichotomy(nodeLevel, currentLevel, layer.source);
+                nextLevelToFetch = _dichotomy(finalLevel, nodeLayer.level, layer.source);
                 break;
             // default strategy
             case STRATEGY_MIN_NETWORK_TRAFFIC:
             default:
-                nextLevelToFetch = nodeLevel;
+                nextLevelToFetch = finalLevel;
         }
         nextLevelToFetch = Math.min(nextLevelToFetch, maxZoom);
     }
