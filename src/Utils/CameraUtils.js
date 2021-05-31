@@ -384,7 +384,9 @@ export default {
      */
     transformCameraToLookAtTarget(view, camera, params = {}) {
         if (params.isExtent) {
+            const proxy = params.proxy;
             params = this.getCameraTransformOptionsFromExtent(view, camera, params);
+            params.proxy = proxy;
         }
 
         params.proxy = params.proxy === undefined || params.proxy;

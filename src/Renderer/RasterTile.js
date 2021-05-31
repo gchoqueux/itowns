@@ -28,6 +28,7 @@ class RasterTile extends THREE.EventDispatcher {
             console.error('Unknown crs:', layer.crs);
         }
 
+        this.projectiveTextureMatrix = new THREE.Matrix4();
         this.textures = [];
         this.offsetScales = [];
         this.level = EMPTY_TEXTURE_ZOOM;
@@ -64,6 +65,7 @@ class RasterTile extends THREE.EventDispatcher {
             if (__DEBUG__) {
                 if (index != extents.length) {
                     console.error(`non-coherent result ${index} vs ${extents.length}.`, extents);
+                    extents[0].isInside(parent.textures[0].extent);
                 }
             }
         }

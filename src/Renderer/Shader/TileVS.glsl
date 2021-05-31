@@ -11,8 +11,10 @@ attribute float     uv_1;
 attribute vec3      normal;
 
 uniform mat4 modelMatrix;
+uniform mat4 projectiveTextureMatrix;
 uniform bool lightingEnabled;
 varying vec2 vHighPrecisionZW;
+varying vec4 projectiveTextureCoords;
 
 #if MODE == MODE_FINAL
 #include <fog_pars_vertex>
@@ -35,5 +37,6 @@ void main() {
         vUv = vec3(uv_0, 0.0);
         #endif
         vNormal = normalize ( mat3( modelMatrix[0].xyz, modelMatrix[1].xyz, modelMatrix[2].xyz ) * normal );
+        projectiveTextureCoords = projectiveTextureMatrix * mvPosition;
 #endif
 }

@@ -2,6 +2,14 @@ import * as THREE from 'three';
 import Feature2Texture from 'Converter/Feature2Texture';
 import Extent from 'Core/Geographic/Extent';
 import CRS from 'Core/Geographic/Crs';
+import CameraUtils from 'Utils/CameraUtils';
+
+// const obb = new OBB();
+const ndcToTextureMatrix = new THREE.Matrix4().set(
+    1, 0, 0, 1,
+    0, 1, 0, 1,
+    0, 0, 2, 0,
+    0, 0, 0, 2);
 
 const extentTexture = new Extent('EPSG:4326', [0, 0, 0, 0]);
 
@@ -36,6 +44,27 @@ export default {
         } else {
             throw (new Error('Data type is not supported to convert into texture'));
         }
+        // compute projection
+        const extent = data.extent.as('EPSG:4326');
+        extent.proxy = false;
+        const camera = new THREE.OrthographicCamera();
+        CameraUtils.transformCameraToLookAtTarget({
+            isGlobeView: true,
+            extent: { crs: 'EPSG:4326' },
+            referenceCrs: 'EPSG:4978',
+            getPickingPositionFromDepth: () => {},
+            getLayers: () => [layer.parent],
+            addFrameRequester: () => {},
+            notifyChange: () => {},
+        }, camera, extent);
+
+        camera.updateMatrixWorld(true);
+
+        texture.textureMatrixWorldInverse = new THREE.Matrix4();
+        texture.textureMatrixWorldInverse.multiplyMatrices(ndcToTextureMatrix, camera.projectionMatrix);
+        texture.textureMatrixWorldInverse.multiply(camera.matrixWorldInverse);
+
+        texture.camera = camera;
 
         if (layer.isColorLayer) {
             return textureColorLayer(texture, layer);

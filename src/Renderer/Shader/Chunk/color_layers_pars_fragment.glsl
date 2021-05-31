@@ -41,6 +41,8 @@ vec4 applyLightColorToInvisibleEffect(vec4 color, float intensity) {
 uniform bool showOutline;
 uniform vec3 outlineColors[NUM_CRS];
 uniform float outlineWidth;
+varying vec4 projectiveTextureCoords;
+
 
 vec4 getOutlineColor(vec3 outlineColor, vec2 uv) {
     float alpha = 1. - clamp(getBorderDistance(uv) / outlineWidth, 0., 1.);
@@ -60,7 +62,8 @@ vec4 getLayerColor(int textureOffset, sampler2D tex, vec4 offsetScale, Layer lay
 
     float borderDistance = getBorderDistance(uv.xy);
     if (textureOffset != layer.textureOffset + int(uv.z) || borderDistance < minBorderDistance ) return vec4(0);
-    vec4 color = texture2D(tex, pitUV(uv.xy, offsetScale));
+    vec3 p = projectiveTextureCoords.xyz / projectiveTextureCoords.w;
+    vec4 color = texture2D(tex, p.xy);
     if (layer.effect_type == 1) {
         color.rgb /= color.a;
         color = applyLightColorToInvisibleEffect(color, layer.effect_parameter);

@@ -1,6 +1,7 @@
 import Source from 'Source/Source';
 import Cache from 'Core/Scheduler/Cache';
 import CRS from 'Core/Geographic/Crs';
+import Extent from 'Core/Geographic/Extent';
 
 /**
  * @classdesc
@@ -153,17 +154,25 @@ class FileSource extends Source {
         return this.url;
     }
 
+    requestToKey() {
+        return [0];
+    }
+
     onLayerAdded(options) {
         options.in = this;
         super.onLayerAdded(options);
-        let features = this._featuresCaches[options.out.crs].getByArray([0]);
+        let features = this._featuresCaches[options.out.crs].getByArray(this.requestToKey());
         if (!features) {
             options.out.buildExtent = this.crs != 'EPSG:4978';
             if (options.out.buildExtent) {
                 options.out.forcedExtentCrs = options.out.crs != 'EPSG:4978' ? options.out.crs : CRS.formatToEPSG(this.crs);
             }
             features = this.parser(this.fetchedData, options);
-            this._featuresCaches[options.out.crs].setByArray(features, [0]);
+            if (options.isColorLayer) {
+                this._featuresCaches[options.out.crs].setByArray(features, this.requestToKey());
+            } else {
+                options.out.cache.setByArray(features, this.requestToKey());
+            }
         }
         features.then((data) => {
             if (data.extent) {
@@ -172,6 +181,9 @@ class FileSource extends Source {
                 if (this.extent.crs == data.crs) {
                     this.extent.applyMatrix4(data.matrixWorld);
                 }
+            } else {
+                data.extent = new Extent(CRS.formatToTms(this.crs), 13, 2818, 4149);
+                options.out.convert(data, {}, options.out);
             }
 
             if (data.isFeatureCollection) {
@@ -189,7 +201,7 @@ class FileSource extends Source {
      * @return     {FeatureCollection|Texture}  The parsed data.
      */
     loadData(extent, out) {
-        return this._featuresCaches[out.crs].getByArray([0]);
+        return this._featuresCaches[out.crs].getByArray(this.requestToKey());
     }
 
     extentInsideLimit(extent) {

@@ -73,10 +73,10 @@
             itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
                 config.source = new itowns.WMTSSource(config.source);
                 var layer = new itowns.ColorLayer('Ortho', config);
-                view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
+                // view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
 
                 var miniLayer = new itowns.ColorLayer('OrthoMini', config);
-                miniView.addLayer(miniLayer);
+                // miniView.addLayer(miniLayer);
             });
             // Add two elevation layers.
             // These will deform iTowns globe geometry to represent terrain elevation.
@@ -85,8 +85,8 @@
                 var layer = new itowns.ElevationLayer(config.id, config);
                 view.addLayer(layer).then(menuGlobe.addLayerGUI.bind(menuGlobe));
             }
-            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
-            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+            // itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
 
             var menuGlobe = new GuiTools('menuDiv', view);
             var divScaleWidget = document.getElementById('divScaleWidget');
@@ -123,6 +123,19 @@
                 atmosphere.setRealisticOn(v);
                 view.notifyChange(atmosphere);
             });
+
+            const image = new itowns.ColorLayer('proj', {
+                source: new itowns.FileSource({
+                    crs: 'EPSG:3857',
+                    url: 'https://i.redd.it/ludtu0odrm461.png',
+                    format: 'image/png',
+                    networkOptions: {
+                        crossOrigin: 'anonymous',
+                    },
+                })
+            })
+
+            view.addLayer(image);
 
             window.addEventListener('resize', updateScaleWidget);
 

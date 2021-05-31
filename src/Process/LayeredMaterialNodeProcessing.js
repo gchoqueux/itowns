@@ -60,6 +60,7 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
 
     let nodeLayer = material.getLayer(layer.id);
 
+
     // Initialisation
     if (node.layerUpdateState[layer.id] === undefined) {
         node.layerUpdateState[layer.id] = new LayerUpdateState();
@@ -100,17 +101,22 @@ export function updateLayeredMaterialNodeImagery(context, layer, node, parent) {
         }
     }
 
+
     // Node is hidden, no need to update it
     if (!material.visible) {
         return;
     }
 
+    const texture = nodeLayer.textures[0];
+    if (texture) {
+        node.material.uniforms.projectiveTextureMatrix.value.multiplyMatrices(texture.textureMatrixWorldInverse, context.view.camera.camera3D.matrixWorld);
+    }
     // An update is pending / or impossible -> abort
     if (!layer.visible || !node.layerUpdateState[layer.id].canTryUpdate()) {
         return;
     }
 
-    if (nodeLayer.level >= extentsDestination[0].zoom) {
+    if (nodeLayer.level >= extentsDestination[0].zoom && (layer.source.isFileSource && nodeLayer.level > -1)) {
         // default decision method
         node.layerUpdateState[layer.id].noMoreUpdatePossible();
         return;
