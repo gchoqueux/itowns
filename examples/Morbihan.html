@@ -1,0 +1,201 @@
+<html>
+    <head>
+        <title>Lidar Morbihan</title>
+
+        <style type="text/css">
+            #miniDiv {
+                display: block;
+                margin-bottom: 20px;
+                margin-right: 20px;
+                position: absolute;
+                width:100px;
+                height:100px;
+                left: 20;
+                bottom: 0;
+                color: white;
+            }
+        </style>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+        <link rel="stylesheet" type="text/css" href="Potree/potree/potree.css">
+        <link rel="stylesheet" type="text/css" href="libs/jquery-ui.min.css">
+        <link rel="stylesheet" type="text/css" href="libs/spectrum.css">
+        <link rel="stylesheet" type="text/css" href="libs/jstree/themes/mixed/style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+            <div id="potree_render_area"></div>
+            <div id="potree_sidebar_container"> </div>
+        </div>
+        <script src="../dist/itowns.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="../dist/debug.js"></script>
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            itowns.proj4.defs("EPSG:2154","+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="libs/jquery/jquery-3.1.1.min.js"></script>
+        <script src="libs/i18next/i18next.js"></script>
+        <script src="libs/jstree/jstree.min.js"></script>
+        <script src="libs/plasio/js/laslaz.js"></script>
+        <script src="Potree/potree/potree.js"></script>
+
+        <script type="text/javascript">
+                Potree.setTHREEShaderChunk(itowns.ShaderChunk.target);
+                const potreeViewer = new Potree.Viewer(document.getElementById("potree_render_area"));
+                potreeViewer.setEDLEnabled(true);
+                potreeViewer.setPointBudget(6_000_000);
+                potreeViewer.setBackground('skybox');
+
+                potreeViewer.scene.addEventListener('measurement_added', (e) => {
+                    const { measurement } = e;
+                    if(measurement.name == "Area"); {
+                        measurement.onExport = () => {
+                            // https://pdal.io/stages/filters.crop.html
+                            console.log(measurement.points.map((point) => {
+                                const pos = point.position;
+                                const coord = new itowns.Coordinates('EPSG:4978', pos).as('EPSG:2154');
+                                return `${coord.x} ${coord.y}`;
+                            }));
+                        };
+                    }
+                });
+
+                potreeViewer.loadGUI(() => {
+                    potreeViewer.setLanguage('fr');
+                    $("#menu_tools").next().show();
+                    $("#menu_scene").next().show();
+                    $('#navigation').hide();
+                    $('#sldMoveSpeed').hide();
+                    $('#lblMoveSpeed').hide();
+                    $('#menu_about').hide();
+                    potreeViewer.toggleSidebar();
+                });
+
+                const listeners = potreeViewer.inputHandler.getSortedListeners();
+                const viewerDiv = document.getElementById("potree_render_area");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', 0, 0, 0),
+                    range: 5000000,
+                    tilt: 29.48,
+                    heading: -25.11
+                }
+                const view = new itowns.GlobeView(viewerDiv, placement, {
+                    renderer: potreeViewer.renderer,
+                    scene3D: potreeViewer.scene.scene,
+                });
+
+                const itowns_labels_style = view.mainLoop.gfxEngine.label2dRenderer.domElement.style;
+                itowns_labels_style['pointer-events'] = 'none';
+
+                view.render = () => {};
+
+                const camera = view.camera.camera3D;
+
+                document.getElementById("potree_render_area").addEventListener('mousemove', () => {
+                    view.controls.states.enabled = potreeViewer.inputHandler.hoveredElements.length == 0;
+                });
+
+                camera.zoomTo = () => {};
+                potreeViewer.scene.cameraP = camera;
+
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                });
+                function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                itowns.Fetcher.json('./EPT_TOTAL/EPT_56/metadata/pivotTHREE.json').then((pivot) => {
+                    const loader = new THREE.ObjectLoader();
+                    return loader.parse(pivot);
+                }).then((pivotTHREE) => {
+                    Potree.loadPointCloud('./EPT_TOTAL/EPT_56/EPT_4978/ept.json', "pointcloud", function(e) {
+                        const pointcloud = e.pointcloud;
+                        const material = pointcloud.material;
+                        potreeViewer.scene.addPointCloud(pointcloud);
+                        pointcloud.getAttribute("intensity").range = [0, 10000];
+                        material.size = 1.0;
+                        material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                        material.intensityRange = [0, 10000];
+                        material.shape = Potree.PointShape.CIRCLE
+                        // material.activeAttributeName = "classification";
+
+                        const pivot = new itowns.Coordinates('EPSG:4978', 0, 0, 0)
+                        pivot.setFromVector3(pivotTHREE.position);
+
+                        view.controls.lookAtCoordinate({ coord: pivot, range: 5000 }, false);
+
+                        pointcloud.position.copy(pivotTHREE.position);
+                        pointcloud.quaternion.copy(pivotTHREE.quaternion);
+                        pointcloud.translateZ(-48.65);
+                        pointcloud.updateMatrixWorld(true);
+                    });
+
+                });
+
+                view.controls.minDistanceCollision = 25;
+                view.controls.minDistance = 25;
+
+                view.tileLayer.display = true;
+
+                const terrainHandling = (value) => {
+                    view.tileLayer.visible = true;
+                    view.tileLayer.opacity = value ? 1.0 : 0.001;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    view.controls.minDistance = value ? 150 : 50;
+                    view.getLayerById('Ortho').visible = value;
+                    view.getLayers(l => l.isElevationLayer).forEach(l => {
+                        l.scale = value ? 1.0 : 0.0;
+                        view.notifyChange(l);
+                    });
+                    potreeViewer.setBackground(value ? 'skybox' : 'white');
+                };
+                //
+                potreeViewer.onGUILoaded(() => {
+                    // Add entries to object list in sidebar
+                    let tree = $(`#jstree_scene`);
+                    let parentNode = "other";
+
+                    tree.on("uncheck_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(false);
+                        }
+                    });
+
+                    tree.on("check_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(true);
+                        }
+                    });
+                    let terrain = tree.jstree('create_node', parentNode, {
+                            "text": "Terrain",
+                            "icon": `${Potree.resourcePath}/icons/earth_controls.svg`,
+                            "data": view.tileLayer
+                        },
+                        "last", false, false);
+                    tree.jstree(view.tileLayer.visible ? "check_node" : "uncheck_node", terrain);
+                });
+        </script>
+    </body>
+</html>
