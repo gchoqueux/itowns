@@ -165,6 +165,7 @@ h3 {
     left: 20;
     bottom: 20;
     color: white;
+    z-index: 1000;
 }
 
 #divScaleWidget {
@@ -239,4 +240,87 @@ h3 {
   --text_stroke_display: 'none';
   --text_stroke_width: 0px;
   --text_stroke_color: 'white';
+}
+
+#containerAC {
+    display: block;
+    position: absolute;
+    right: 10px;
+    /*width: 60px;*/
+    top: 10px;
+    z-index: 3;
+}
+/*
+ * { box-sizing: border-box; }
+body {
+  font: 16px Arial;
+  color: #fff;
+}
+*/
+/*the container must be positioned relative:*/
+.autocomplete {
+  position: relative;
+  display: inline-block;
+  background-color: #777c;
+  width: 300px;
+  height: 35px;
+}
+
+input {
+  border: 1px solid #444;
+  background-color: #777c;
+  padding: 8px;
+  color: #eee;
+  font-size: 16px;
+}
+
+input:focus {
+    outline: none !important;
+    border-color: #719ECE;
+    box-shadow: 0 0 5px #408090;
+}
+
+input[type=text] {
+  background-color: #777c;
+  width: 100%;
+}
+
+input[type=submit] {
+  background-color: #719ECE;
+  color: #eee;
+}
+
+input::placeholder {
+  color: #aaa;
+}
+
+.autocomplete-items {
+  color: #eee;
+  position: absolute;
+  border: 1px solid #222;
+  border-bottom: none;
+  border-top: none;
+  z-index: 99;
+  /*position the autocomplete items to be the same width as the container:*/
+  top: 100%;
+  left: 0;
+  right: 0;
+}
+
+.autocomplete-items div {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #777c;
+  border-bottom: 1px solid #222;
+}
+
+.autocomplete-items div:hover {
+  /*when hovering an item:*/
+  background-color: #444;
+}
+
+.autocomplete-active {
+  /*when navigating through the items using the arrow keys:*/
+  background-color: #719ECE !important;
+  color: #eee;
 }

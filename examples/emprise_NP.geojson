@@ -1,0 +1,7 @@
+{
+"type": "FeatureCollection",
+"name": "emprise_NP",
+"features": [
+{ "type": "Feature", "properties": { "ID": "786_6333", "Nom": "NP", "Periode": "01\/04 au 31\/05", "Duree": 2.0, "DateMin": "01\/04", "DateMax": "31\/05", "Lot": "7", "Difficulte": 1, "nb_h_ing": 15.4, "nb_h_op": 46.2, "sous_trait": "Avineon", "nb_h_vol": 12.4 }, "geometry": { "type": "Polygon", "coordinates": [ [ [ 4.0655537, 43.6408222 ], [ 4.0655537, 44.0828402 ], [ 4.6982285, 44.0828402 ], [ 4.6982285, 43.6408222 ], [ 4.0655537, 43.6408222 ] ] ] } }
+]
+}
