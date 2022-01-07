@@ -1,0 +1,209 @@
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "P1"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          385984.6349, 6219242.2964, 507.2633
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 1"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386065.2847, 6219270.6709, 505.0791
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 2"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386062.6660, 6219272.2848, 506.0050
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 3"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386057.6575, 6219274.9696, 505.6675
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 4"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386054.4706, 6219276.0776, 504.3914
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 5"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386049.6762, 6219277.9430, 504.6831
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 6"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386045.8487, 6219279.0337, 503.4389
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 7"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386042.2149, 6219281.0513, 503.9595
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 8"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386038.4958, 6219284.0431, 502.7945
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 9"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386035.8209, 6219287.1830, 503.5095
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 10"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386034.3691, 6219289.5063, 503.0897
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 11"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386032.1560, 6219293.5654, 502.1249
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 12"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386031.4509, 6219296.1026, 502.7917
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 14"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386027.7921, 6219305.8937, 502.4690
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 15"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386027.4035, 6219307.5311, 502.3543
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 16"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386026.9959, 6219311.6613, 501.9038
+        ]
+      }
+    },
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Cible 17"
+      },
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          386027.2707, 6219315.1292, 503.0194
+        ]
+      }
+    }
+  ]
+}

@@ -1,0 +1,370 @@
+<html>
+    <head>
+        <title>Lidar HD</title>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+
+        <style type="text/css">
+            #miniDiv {
+                width:150px;
+                height:150px;
+                border: 1px solid white;
+                border-radius: 5px;
+                overflow: hidden;
+            }
+        </style>
+
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+        <link rel="stylesheet" type="text/css" href="Potree/potree/potree.css">
+        <link rel="stylesheet" type="text/css" href="libs/jquery-ui.min.css">
+        <link rel="stylesheet" type="text/css" href="libs/spectrum.css">
+        <link rel="stylesheet" type="text/css" href="libs/jstree/themes/mixed/style.css">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div id="containerAC">
+            <form autocomplete="off">
+                <div class="autocomplete">
+                    <input id="myInput" type="text" name="mySearch" placeholder="Recherche">
+                </div>
+            </form>
+        </div>
+        <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+            <div id="potree_render_area">
+                <div id="miniDiv"></div>
+            </div>
+            <div id="potree_sidebar_container"> </div>
+        </div>
+        <script src="dist/itowns.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="dist/debug.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="js/GUI/autoComplete.js"></script>
+
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            itowns.proj4.defs("EPSG:2154","+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="libs/jquery/jquery-3.1.1.min.js"></script>
+        <script src="libs/i18next/i18next.js"></script>
+        <script src="libs/jstree/jstree.min.js"></script>
+        <script src="libs/plasio/js/laslaz.js"></script>
+        <script src="Potree/potree/potree.js"></script>
+        <iframe id="dlframe" src=""></iframe>
+
+        <script type="text/javascript">
+                const coordinates = new itowns.Coordinates('EPSG:4978');
+
+                const urlGeocodage = new URL('https://wxs.ign.fr/ayxvok72rcocdyn8xyvy32og/ols/apis/completion?text=&type=StreetAddress,PositionOfInterest')
+
+                function lookAtCoordinate(info) {
+                    if (info.x && info.y) {
+                        coord.setFromValues(info.x, info.y);
+                        view.controls.lookAtCoordinate({ coord, range: 20000 / info.classification, tilt: 60, heading: 0 });
+
+                    }
+                }
+                const coord =  new itowns.Coordinates('EPSG:4326', 0, 0, 0);
+
+                autocomplete(urlGeocodage, document.getElementById('myInput'), lookAtCoordinate);
+
+                Potree.setTHREEShaderChunk(itowns.ShaderChunk.target);
+                const potreeViewer = new Potree.Viewer(document.getElementById("potree_render_area"), {
+                    measureCoordinateCallback: (position) => {
+                        return coordinates.setFromVector3(position).as('EPSG:2154').toVector3();
+                    }
+                });
+                potreeViewer.setEDLEnabled(true);
+                potreeViewer.setPointBudget(4_000_000);
+                potreeViewer.setBackground('black');
+
+                potreeViewer.scene.addEventListener('measurement_added', (e) => {
+                    const { measurement } = e;
+                    if(measurement.name == "Area"); {
+                        const areaPoints = [new itowns.Coordinates('EPSG:2154')];
+
+                        measurement.addEventListener('marker_added', () => {
+                            areaPoints.push(new itowns.Coordinates('EPSG:2154'));
+                        }, false)
+                        measurement.addEventListener('marker_moved', (event) => {
+                            coordinates.setFromVector3(event.position).as('EPSG:2154', areaPoints[event.index]);
+                        }, false);
+                        measurement.addEventListener('marker_removed', () => {
+                            areaPoints.splice(areaPoints.length - 1, 1);
+                        }, false);
+
+                        // Override potree `Measure.getArea` method to use projected coordinates to compute area
+                        function overriddenAreaMethod() {
+                            let area = 0;
+                            let j = areaPoints.length - 1;
+
+                            for (let i = 0; i < areaPoints.length; i++) {
+                                let p1 = areaPoints[i];
+                                let p2 = areaPoints[j];
+                                area += (p2.x + p1.x) * (p1.y - p2.y);
+                                j = i
+                            }
+
+                            return Math.abs(area / 2);
+                        };
+                        measurement.getArea = overriddenAreaMethod;
+
+                        measurement.onExport = () => {
+                            let points_EPSG_2154 = measurement.points.map((point) => {
+                                const pos = point.position;
+                                const coord = new itowns.Coordinates('EPSG:4978', pos).as('EPSG:2154');
+
+                                // round precision, now we can loose 1 centimeter
+                                coord.x = coord.x.toFixed(2);
+                                coord.y = coord.y.toFixed(2);
+                                coord.z = coord.z.toFixed(2);
+                                return coord;
+                            });
+
+                            // TODO : maybe change code to use Extent object
+                            let minX = points_EPSG_2154[0].x;
+                            let maxX = points_EPSG_2154[0].x;
+                            let minY = points_EPSG_2154[0].y;
+                            let maxY = points_EPSG_2154[0].y;
+
+                            let poly = "";
+                            for (let i = 0; i < points_EPSG_2154.length; ++i) {
+                                if (points_EPSG_2154[i].x > maxX) {
+                                    maxX = points_EPSG_2154[i].x;
+                                }
+                                if (points_EPSG_2154[i].x < minX) {
+                                    minX = points_EPSG_2154[i].x;
+                                }
+                                if (points_EPSG_2154[i].y > maxY) {
+                                    maxY = points_EPSG_2154[i].y;
+                                }
+                                if (points_EPSG_2154[i].y < minY) {
+                                    minY = points_EPSG_2154[i].y;
+                                }
+                                poly += points_EPSG_2154[i].x + "_" + points_EPSG_2154[i].y + ",";
+                            }
+
+                            // add first point to close the polygon
+                            poly += points_EPSG_2154[0].x + "_" + points_EPSG_2154[0].y;
+
+                            console.log("Found minx/maxx : " + minX + "/" + maxX);
+                            console.log("Found miny/maxy : " + minY + "/" + maxY);
+                            options = {
+                                mode: "no-cors",
+                            };
+
+                            let url = "http://" + window.location.hostname + ":3000/points/" + minX + "/" + maxX + "/" + minY + "/" + maxY;
+                            url +="?poly=" + poly;
+
+
+                            const dlFrame = document.getElementById("dlframe");
+                            dlFrame.src = url;
+                        };
+                    }
+                });
+
+                potreeViewer.loadGUI(() => {
+                    potreeViewer.setLanguage('fr');
+                    $("#menu_tools").next().show();
+                    $("#menu_scene").next().show();
+                    $('#navigation').hide();
+                    $('#sldMoveSpeed').hide();
+                    $('#lblMoveSpeed').hide();
+                    $('#menu_about').hide();
+                    potreeViewer.toggleSidebar();
+                });
+
+                const listeners = potreeViewer.inputHandler.getSortedListeners();
+                const viewerDiv = document.getElementById("potree_render_area");
+                const minimapDiv = document.getElementById("miniDiv");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', 0, 0, 0),
+                    range: 5000000,
+                    tilt: 29.48,
+                    heading: -25.11
+                }
+                const view = new itowns.GlobeView(viewerDiv, placement, {
+                    renderer: potreeViewer.renderer,
+                    scene3D: potreeViewer.scene.scene,
+                });
+
+                const itowns_labels_style = view.mainLoop.gfxEngine.label2dRenderer.domElement.style;
+                itowns_labels_style['pointer-events'] = 'none';
+                const minimapView = new itowns.GlobeView(minimapDiv, placement, {
+                    maxSubdivisionLevel: 9,
+                    noControls: true,
+                });
+                const minDistance = 100000;
+                const maxDistance = 30000000;
+                minimapView.mainLoop.gfxEngine.renderer.setClearColor(0x000000, 0);
+
+                view.addFrameRequester(itowns.MAIN_LOOP_EVENTS.AFTER_RENDER, function updateMiniView() {
+                    // clamp camera distance from globe
+                    let cameraDistance = view.camera.camera3D.position.length();
+                    let distance = Math.min(Math.max(cameraDistance * 1.025, minDistance), maxDistance);
+                    let camera = minimapView.camera.camera3D;
+                    let cameraTargetPosition = view.controls.getCameraTargetPosition();
+                    // update target mini view's camera
+                    camera.position.copy(cameraTargetPosition).setLength(distance);
+                    camera.lookAt(cameraTargetPosition);
+                    minimapView.notifyChange(camera);
+                });
+
+                view.render = () => {
+                    // Labels rendering :
+                    view.mainLoop.gfxEngine.label2dRenderer.render(view.scene, view.camera.camera3D);
+                };
+                // Force the view to resize when changing #potree_render_area div size.
+                // This allows view resizing when toggling potree menu.
+                const resizeViewer = new ResizeObserver(() => view.resize())
+                resizeViewer.observe(document.getElementById('potree_render_area'));
+
+                const camera = view.camera.camera3D;
+
+                document.getElementById("potree_render_area").addEventListener('mousemove', () => {
+                    view.controls.states.enabled = potreeViewer.inputHandler.hoveredElements.length == 0;
+                });
+
+                camera.zoomTo = () => {};
+                potreeViewer.scene.cameraP = camera;
+
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    config.effect_type = itowns.colorLayerEffects.removeWhiteColor;
+                    config.effect_parameter =  1;
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                    minimapView.addLayer(new itowns.ColorLayer('OrthoMini', config));
+                });
+                function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                // Add a Vector Tile layer to display places names
+                view.addLayer(new itowns.LabelLayer('MVT_4', {
+                    margin: 20,
+                    source: new itowns.VectorTilesSource({
+                        style: 'https://wxs.ign.fr/essentiels/static/vectorTiles/styles/PLAN.IGN/standard.json',
+                        filter: (layer) => {
+                            if (layer.id == 'toponyme - parcellaire - parcelle' ||
+                                layer.id == 'toponyme - parcellaire - adresse') {
+                                return false;
+                            }
+                            if(layer.paint) {
+                                if (layer.paint['text-halo-color']) {
+                                    layer.paint['text-halo-color'] = 'rgba(240,240,240,0.8)';
+                                }
+                                if (layer.paint['text-halo-width']) {
+                                    layer.paint['text-halo-width'] += 2;
+                                }
+                            }
+                            return true;
+                        }
+                    }),
+                }));
+
+                const points = new THREE.Group()
+                view.scene.add(points);
+                let pointclouds = [];
+                // let pointcloudUrl = './EPT_TOTAL/EPT_56';
+                let pointcloudUrl = './data';
+
+                // pointcloudUrl = './EPT_VANNES';
+
+                itowns.Fetcher.json(pointcloudUrl + '/metadata/pivotTHREE.json').then((pivot) => {
+                    const loader = new THREE.ObjectLoader();
+                    return loader.parse(pivot);
+                }).then((pivotTHREE) => {
+                    Potree.loadPointCloud(pointcloudUrl + '/ept/ept.json', "pointcloud", function(e) {
+                        const pointcloud = e.pointcloud;
+                        const material = pointcloud.material;
+                        potreeViewer.scene.addPointCloud(pointcloud);
+                        pointcloud.getAttribute("intensity").range = [0, 10000];
+                        material.size = 1.0;
+                        material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                        material.intensityRange = [0, 10000];
+                        material.shape = Potree.PointShape.CIRCLE
+                        // material.activeAttributeName = "classification";
+
+                        const pivot = new itowns.Coordinates('EPSG:4978', 0, 0, 0)
+                        pivot.setFromVector3(pivotTHREE.position);
+
+                        view.controls.lookAtCoordinate({ coord: pivot, range: 1000 }, false);
+
+                        pointcloud.position.copy(pivotTHREE.position);
+                        pointcloud.quaternion.copy(pivotTHREE.quaternion);
+                        pointcloud.updateMatrixWorld(true);
+                    });
+
+                });
+
+                // TODO: metttre ce code plus haut dans le fichier?
+                // controls and camera specific setting.
+                view.controls.minDistanceCollision = 0;
+                view.controls.minDistance = 20;
+                view.camera.camera3D.near = 0.1;
+                view.tileLayer.display = true;
+
+                const terrainHandling = (value) => {
+                    view.tileLayer.visible = true;
+                    view.tileLayer.opacity = value ? 1.0 : 0.001;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    // view.controls.minDistance = value ? 150 : 50;
+                    view.getLayerById('Ortho').visible = value;
+                    view.getLayers(l => l.isElevationLayer).forEach(l => {
+                        l.scale = value ? 1.0 : 0.0;
+                        view.notifyChange(l);
+                    });
+                    potreeViewer.setBackground(value ? 'black' : 'white');
+                };
+                //
+                potreeViewer.onGUILoaded(() => {
+                    // Add entries to object list in sidebar
+                    let tree = $(`#jstree_scene`);
+                    let parentNode = "other";
+
+                    tree.on("uncheck_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(false);
+                        }
+                    });
+
+                    tree.on("check_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(true);
+                        }
+                    });
+                    let terrain = tree.jstree('create_node', parentNode, {
+                            "text": "Terrain",
+                            "icon": `${Potree.resourcePath}/icons/earth_controls.svg`,
+                            "data": view.tileLayer
+                        },
+                        "last", false, false);
+                    tree.jstree(view.tileLayer.visible ? "check_node" : "uncheck_node", terrain);
+                });
+
+                const atmosphere = view.getLayerById('atmosphere');
+                atmosphere.visible = true;
+                atmosphere.setRealisticOn(true);
+                // fix a bug in the atmosphere ( the ground object making a big halo).
+                atmosphere.realisticAtmosphere.children[0].visible = false;
+                view.notifyChange();
+        </script>
+    </body>
+</html>

@@ -1,0 +1,425 @@
+    <head>
+        <title>Lidar Morbihan</title>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="../potree/libs/jquery-ui/jquery-ui.min.css">
+        <link rel="stylesheet" type="text/css" href="../potree/build/potree/potree.css">
+        <link rel="stylesheet" type="text/css" href="../potree/libs/spectrum/spectrum.css">
+        <link rel="stylesheet" type="text/css" href="../potree/libs/jstree/themes/mixed/style.css">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+        <link rel="stylesheet" type="text/css" href="css/potree_itowns.css">
+        <!-- Import stylesheet for itowns Widgets plugin -->
+        <link rel="stylesheet" type="text/css" href="css/widgets.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    </head>
+    <body>
+        <div id="containerAC">
+            <form autocomplete="off">
+                <div class="autocomplete">
+                    <input id="myInput" type="text" name="mySearch" placeholder="Recherche">
+                </div>
+            </form>
+        </div>
+        <div class="potree_container" style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px; ">
+            <div id="potree_render_area"></div>
+            <div id="potree_sidebar_container"> </div>
+        </div>
+        <div id="dialog" title="Aide Lidar HD">
+          <p>ITowns is a javascript framework for 3D geographic data visualisation. It can display a wide range of data such as ortho-images,   Digital Elevation Models (DEM) or 3D models. ITowns is based on Three.js, which is a javascript library that implements WebGL to render sophisticated 3D Geometry on a webpage. In this tutorial, we shall be introduced to the fundamentals of iTowns : how it displays geographic data.</p>
+        </div>
+        <script src="../dist/itowns.js"></script>
+        <script src="../dist/debug.js"></script>
+         <!-- Import iTowns Widgets plugin -->
+        <script src="../dist/itowns_widgets.js"></script>
+        <script src="js/GUI/LoadingScreen.js"></script>
+        <script src="js/GUI/autoComplete.js"></script>
+        <script src="js/potree/potree_gui.js"></script>
+
+        <script type="text/javascript">
+            var THREE = itowns.THREE;
+            THREE.Object3D.DefaultUp.set(0, 0, 1);
+
+            itowns.proj4.defs("EPSG:2154","+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs");
+            var proj4 = itowns.proj4;
+        </script>
+        <script src="../potree/libs/jquery/jquery-3.1.1.min.js"></script>
+        <script src="../potree/libs/i18next/i18next.js"></script>
+        <script src="../potree/libs/jstree/jstree.min.js"></script>
+        <script src="../potree/libs/plasio/js/laslaz.js"></script>
+        <script src="../potree/build/potree/potree.js"></script>
+        <iframe id="dlframe" src=""></iframe>
+
+        <script type="text/javascript">
+                const url = new URL(window.location);
+
+                function setUrlCoordinates(p) {
+                    if (p && p.coord) {
+                        const coord = p.coord.as('EPSG:4326');
+                        url.searchParams.set('longitude', coord.x);
+                        url.searchParams.set('latitude',  coord.y);
+                        url.searchParams.set('range',  p.range);
+                        url.searchParams.set('tilt',  p.tilt);
+                        url.searchParams.set('heading',  p.heading);
+                        window.history.pushState({}, '', url);
+                    }
+                }
+
+                const p = {}
+                p.longitude = Number(url.searchParams.get('longitude'));
+                p.latitude = Number(url.searchParams.get('latitude'));
+                p.range = Number(url.searchParams.get('range'));
+                p.tilt = Number(url.searchParams.get('tilt'));
+                p.heading = Number(url.searchParams.get('heading'));
+                window.history.pushState({}, '', url);
+
+                const geoPosition = new itowns.Coordinates('EPSG:4326', 0.0, 0.0, 0.0);
+                const initialPosition = new itowns.Coordinates('EPSG:4978', 0.0, 0.0, 0.0);
+                const cursorWorldPosition = new itowns.THREE.Vector3();
+                const state = {};
+
+                const coordinates = new itowns.Coordinates('EPSG:4978');
+                const crs = 'EPSG:2154';
+
+                const urlGeocodage = new URL('https://wxs.ign.fr/ayxvok72rcocdyn8xyvy32og/ols/apis/completion?text=&type=StreetAddress,PositionOfInterest')
+
+                const coord =  new itowns.Coordinates('EPSG:4326', 0, 0, 0);
+                function lookAtCoordinate(info) {
+                    if (info.x && info.y) {
+                        coord.setFromValues(info.x, info.y);
+                        view.controls.lookAtCoordinate({ coord, range: 20000 / info.classification, tilt: 45, heading: 0 });
+
+                    }
+                }
+
+                autocomplete(urlGeocodage, document.getElementById('myInput'), lookAtCoordinate);
+
+                Potree.setTHREEShaderChunk(itowns.ShaderChunk.target);
+                const potreeViewer = new Potree.Viewer(document.getElementById("potree_render_area"), {
+                    measureCoordinateCallback: (position) => {
+                        return coordinates.setFromVector3(position).as(crs).toVector3();
+                    },
+                    dynamicNearFar: false,
+                    isGeocentric: true,
+                    crs,
+                });
+                potreeViewer.setEDLEnabled(true);
+                potreeViewer.setPointBudget(1_000_000);
+                potreeViewer.setControls(null);
+                potreeViewer.setDescription("LIDAR HD © IGN - 2022");
+
+                potreeViewer.scene.addEventListener('measurement_added', (e) => {
+                    const { measurement } = e;
+                    if(measurement.name == "Area"); {
+                        // Overide measure area
+                        const areaPoints = [new itowns.Coordinates(crs)];
+
+                        measurement.addEventListener('marker_added', () => {
+                            areaPoints.push(new itowns.Coordinates(crs));
+                        }, false)
+                        measurement.addEventListener('marker_moved', (event) => {
+                            coordinates.setFromVector3(event.position).as(crs, areaPoints[event.index]);
+                        }, false);
+                        measurement.addEventListener('marker_removed', () => {
+                            areaPoints.splice(areaPoints.length - 1, 1);
+                        }, false);
+
+                        // Override potree `Measure.getArea` method to use projected coordinates to compute area
+                        measurement.getArea = () => {
+                            let area = 0;
+                            let j = areaPoints.length - 1;
+
+                            for (let i = 0; i < areaPoints.length; i++) {
+                                let p1 = areaPoints[i];
+                                let p2 = areaPoints[j];
+                                area += (p2.x + p1.x) * (p1.y - p2.y);
+                                j = i
+                            }
+
+                            return Math.abs(area / 2);
+                        };
+
+                        measurement.onExport = () => {
+                            let points_EPSG_2154 = measurement.points.map((point) => {
+                                const pos = point.position;
+                                const coord = new itowns.Coordinates('EPSG:4978', pos).as(crs);
+
+                                // round precision, now we can loose 1 centimeter
+                                coord.x = coord.x.toFixed(2);
+                                coord.y = coord.y.toFixed(2);
+                                coord.z = coord.z.toFixed(2);
+                                return coord;
+                            });
+
+                            console.log(points_EPSG_2154);
+                        };
+
+                        addButtonExport();
+                    }
+                });
+
+                potreeViewer.loadGUI(() => {
+                    potreeViewer.setLanguage('fr');
+                    potreeViewer.toggleSidebar();
+                    setPotreeGui(view);
+                });
+
+                const listeners = potreeViewer.inputHandler.getSortedListeners();
+                const viewerDiv = document.getElementById("potree_render_area");
+
+                const placement = {
+                    coord: new itowns.Coordinates('EPSG:4326', 0, 0, 0),
+                    range: 5000000,
+                    tilt: 23,
+                }
+
+                const view = new itowns.GlobeView(viewerDiv, placement, {
+                    renderer: potreeViewer.renderer,
+                    scene3D: potreeViewer.scene.scene,
+                });
+
+                const itowns_labels_style = view.mainLoop.gfxEngine.label2dRenderer.domElement.style;
+                itowns_labels_style['pointer-events'] = 'none';
+
+                view.render = () => {
+                    // Labels rendering :
+                    view.mainLoop.gfxEngine.label2dRenderer.render(view.scene, view.camera.camera3D);
+                };
+                // Force the view to resize when changing #potree_render_area div size.
+                // This allows view resizing when toggling potree menu.
+                const resizeViewer = new ResizeObserver(() => view.resize())
+                resizeViewer.observe(document.getElementById('potree_render_area'));
+
+                const camera = view.camera.camera3D;
+
+                document.getElementById("potree_render_area").addEventListener('mousemove', () => {
+                    view.controls.states.enabled = potreeViewer.inputHandler.hoveredElements.length == 0;
+                });
+
+                camera.zoomTo = () => {};
+                potreeViewer.scene.cameraP = camera;
+
+                view.controls.dampingMoveFactor = 0.9;
+
+                itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    config.source.zoom = { max: 19, min: 3 };
+
+                    var layer = new itowns.ColorLayer('Ortho', config);
+                    view.addLayer(layer);
+                });
+
+                 function addElevationLayerFromConfig(config) {
+                    config.source = new itowns.WMTSSource(config.source);
+                    var layer = new itowns.ElevationLayer(config.id, config);
+                    view.addLayer(layer);
+                }
+                itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
+                itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json').then(addElevationLayerFromConfig);
+
+                // Add a Vector Tile layer to display places names
+                view.addLayer(new itowns.LabelLayer('MVT_4', {
+                    margin: 20,
+                    source: new itowns.VectorTilesSource({
+                        style: 'https://wxs.ign.fr/essentiels/static/vectorTiles/styles/PLAN.IGN/standard.json',
+                        filter: (layer) => {
+                            if (layer.id == 'toponyme - parcellaire - parcelle' ||
+                                layer.id == 'toponyme - parcellaire - adresse') {
+                                return false;
+                            }
+                            if(layer.paint) {
+                                if (layer.paint['text-halo-color']) {
+                                    layer.paint['text-halo-color'] = 'rgba(240,240,240,0.8)';
+                                }
+                                if (layer.paint['text-halo-width']) {
+                                    layer.paint['text-halo-width'] += 2;
+                                }
+                            }
+                            return true;
+                        },
+                        zoom: { max: 19, min: 3 },
+                    }),
+                }));
+
+                const points = new THREE.Group()
+                view.scene.add(points);
+                let pointclouds = [];
+                let pointcloudUrl = 'http://lidarhd.pocgpf.ovh/data/';
+
+                itowns.Fetcher.json(pointcloudUrl + 'metadata/pivotTHREE.json').then((pivot) => {
+                    const loader = new THREE.ObjectLoader();
+                    return loader.parse(pivot);
+                }).then((pivotTHREE) => {
+                    Potree.loadPointCloud(pointcloudUrl + 'ept/ept.json', "pointcloud", function(e) {
+                        const pointcloud = e.pointcloud;
+                        const material = pointcloud.material;
+                        potreeViewer.scene.addPointCloud(pointcloud);
+                        pointcloud.getAttribute("intensity").range = [0, 10000];
+                        material.size = 1.0;
+                        material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
+                        material.intensityRange = [0, 10000];
+                        material.shape = Potree.PointShape.CIRCLE
+                        // material.activeAttributeName = "intensity";
+
+                        const pivot = new itowns.Coordinates('EPSG:4978', 0, 0, 0)
+                        pivot.setFromVector3(pivotTHREE.position);
+
+                        if (p.longitude) {
+                            p.coord = new itowns.Coordinates('EPSG:4326', p.longitude, p.latitude);
+                            view.controls.lookAtCoordinate(p, false);
+                        } else {
+                            view.controls.lookAtCoordinate({ coord: pivot, range: 500 }, false);
+                            setUrlCoordinates( { coord : pivot.as('EPSG:4326') });
+                        }
+
+                        pointcloud.position.copy(pivotTHREE.position);
+                        pointcloud.quaternion.copy(pivotTHREE.quaternion);
+                        pointcloud.updateMatrixWorld(true);
+
+                        addAttributesGui(pointcloud);
+
+                        view.addEventListener(itowns.GLOBE_VIEW_EVENTS.GLOBE_INITIALIZED, function () {
+                            view.controls.lookAtCoordinate(p, false);
+                        });
+                    });
+                });
+
+                // TODO: metttre ce code plus haut dans le fichier?
+                // controls and camera specific setting.
+                view.controls.minDistanceCollision = 0;
+                view.controls.minDistance = 20;
+                view.camera.camera3D.near = 0.1;
+                view.tileLayer.display = true;
+
+                const terrainHandling = (value) => {
+                    view.tileLayer.visible = true;
+                    view.tileLayer.opacity = value ? 1.0 : 0.001;
+                    view.getLayerById('atmosphere').visible = value;
+                    view.controls.handleCollision = value;
+                    view.notifyChange(view.camera.camera3D, true);
+                    // view.controls.minDistance = value ? 150 : 50;
+                    if (view.getLayerById('Ortho')) {
+                        view.getLayerById('Ortho').visible = value;
+                    }
+                    view.getLayers(l => l.isElevationLayer).forEach(l => {
+                        l.scale = value ? 1.0 : 0.0;
+                        view.notifyChange(l);
+                    });
+                    potreeViewer.setBackground(value ? 'black' : 'white');
+                };
+
+                //
+                potreeViewer.onGUILoaded(() => {
+                    // Add entries to object list in sidebar
+                    let tree = $(`#jstree_scene`);
+                    let parentNode = "other";
+
+                    tree.on("uncheck_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(false);
+                        }
+                    });
+
+                    tree.on("check_node.jstree", (e, data) => {
+                        let object = data.node.data;
+
+                        if(object && object.isTiledGeometryLayer){
+                            terrainHandling(true);
+                        }
+                    });
+                    let terrain = tree.jstree('create_node', parentNode, {
+                            "text": "Terrain",
+                            "icon": `${Potree.resourcePath}/icons/earth_controls.svg`,
+                            "data": view.tileLayer
+                        },
+                        "last", false, false);
+                    tree.jstree(view.tileLayer.visible ? "check_node" : "uncheck_node", terrain);
+                });
+
+                const atmosphere = view.getLayerById('atmosphere');
+                atmosphere.visible = true;
+                atmosphere.setRealisticOn(true);
+                // fix a bug in the atmosphere ( the ground object making a big halo).
+                atmosphere.realisticAtmosphere.children[0].visible = false;
+                view.notifyChange();
+
+                 // ---------- ADD WIDGETS MENU : ----------
+
+                const widgets = new itowns_widgets.Navigation(view, { position: 'bottom-right' });
+                widgets.addButton('Aide', '?', () => $("#dialog").dialog());
+
+                // ---------- ADD MINIMAP WIDGET : ----------
+
+                // Create a ColorLayer that shall be displayed on the minimap.
+                const minimapColorLayer = new itowns.ColorLayer('minimap', {
+                    source: new itowns.VectorTilesSource({
+                        style: 'https://wxs.ign.fr/essentiels/static/vectorTiles/styles/PLAN.IGN/gris.json',
+                        // We don't display mountains and plot related data to ease visualisation
+                        filter: (layer) => !layer['source-layer'].includes('oro_')
+                            && !layer['source-layer'].includes('parcellaire'),
+                    }),
+                    addLabelLayer: true,
+                });
+
+                // Create a minimap.
+                const minimap = new itowns_widgets.Minimap(view, minimapColorLayer, {
+                    cursor: '+',
+                    size: 200,
+                });
+
+                // ---------- ADD INTERACTION WITH MINIMAP : ----------
+
+                // When double-clicking the minimap, travel to the cursor location.
+                const cursorCoordinates = new itowns.Coordinates(minimap.view.referenceCrs);
+                minimap.domElement.addEventListener('dblclick', (event) => {
+                    minimap.view.pickCoordinates(event, cursorCoordinates);
+                    view.controls.lookAtCoordinate({ coord: cursorCoordinates });
+                });
+
+                const customControls = {
+                    // Disable pan movement
+                    PAN: {
+                        enable: false,
+                    },
+                    // Change the key bindings for globe rotation
+                    MOVE_GLOBE: {
+                        enable: true,
+                        mouseButton: itowns.THREE.MOUSE.LEFT,
+                    },
+                    // Change the key bindings for orbit movement (rotation around the camera target)
+                    ORBIT: {
+                        enable: true,
+                        mouseButton: itowns.THREE.MOUSE.MIDDLE,
+                    },
+                    // Change the key bindings for dolly movement
+                    DOLLY: {
+                        enable: true,
+                        mouseButton: itowns.THREE.MOUSE.RIGHT,
+                    },
+                    // Change the key bindings for panoramic movement (rotation around the camera position)
+                    PANORAMIC: {
+                        enable: true,
+                        mouseButton: itowns.THREE.MOUSE.LEFT,
+                        keyboard: 17,  // keyCode for the ctrl key
+                    },
+                    // Allow travel out movement when double right-clicking
+                    TRAVEL_OUT: {
+                        enable: true,
+                        mouseButton: itowns.THREE.MOUSE.RIGHT,
+                        double: true,
+                    },
+                };
+
+                // Modify view's control to be set as the custom controls we just defined
+                view.controls.states.setFromOptions(customControls);
+
+                // ### URL
+                view.addEventListener(itowns.VIEW_EVENTS.CAMERA_MOVED, (event) => {
+                    setUrlCoordinates(event);
+                });
+
+        </script>
+    </body>
+</html>

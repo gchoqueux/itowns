@@ -1,0 +1,107 @@
+{
+    "id":   "Alex",
+    "fx": 1.0,
+    "zoom": {
+        "min": 6,
+        "max": 20
+    },
+    "source": {
+        "url": "https://wxs.ign.fr/an7nvfzojv5wa96dsga5nk8w/geoportail/wmts",
+        "tileMatrixSet": "PM",
+        "name": "ORTHOIMAGERY.ORTHOPHOTOS.URGENCE.ALEX",
+        "crs": "EPSG:3857",
+        "format": "image/jpeg",
+        "tileMatrixSetLimits": {
+            "6": {
+                "minTileRow":23,
+                "maxTileRow":23,
+                "minTileCol":33,
+                "maxTileCol":33
+            },
+            "7": {
+                "minTileRow":46,
+                "maxTileRow":46,
+                "minTileCol":66,
+                "maxTileCol":66
+            },
+            "8": {
+                "minTileRow":92,
+                "maxTileRow":93,
+                "minTileCol":133,
+                "maxTileCol":133
+            },
+            "9": {
+                "minTileRow":185,
+                "maxTileRow":186,
+                "minTileCol":266,
+                "maxTileCol":266
+            },
+            "10": {
+                "minTileRow":371,
+                "maxTileRow":373,
+                "minTileCol":532,
+                "maxTileCol":533
+            },
+            "11": {
+                "minTileRow":743,
+                "maxTileRow":746,
+                "minTileCol":1064,
+                "maxTileCol":1067
+            },
+            "12": {
+                "minTileRow":1486,
+                "maxTileRow":1492,
+                "minTileCol":2128,
+                "maxTileCol":2134
+            },
+            "13": {
+                "minTileRow":2973,
+                "maxTileRow":2984,
+                "minTileCol":4257,
+                "maxTileCol":4269
+            },
+            "14": {
+                "minTileRow":5946,
+                "maxTileRow":5968,
+                "minTileCol":8514,
+                "maxTileCol":8539
+            },
+            "15": {
+                "minTileRow":11893,
+                "maxTileRow":11937,
+                "minTileCol":17029,
+                "maxTileCol":17079
+            },
+            "16": {
+                "minTileRow":23786,
+                "maxTileRow":23874,
+                "minTileCol":34059,
+                "maxTileCol":34158
+            },
+            "17": {
+                "minTileRow":47573,
+                "maxTileRow":47748,
+                "minTileCol":68118,
+                "maxTileCol":68316
+            },
+            "18": {
+                "minTileRow":95146,
+                "maxTileRow":95497,
+                "minTileCol":136236,
+                "maxTileCol":136633
+            },
+            "19": {
+                "minTileRow":190292,
+                "maxTileRow":190995,
+                "minTileCol":272472,
+                "maxTileCol":273266
+            },
+            "20": {
+                "minTileRow":380585,
+                "maxTileRow":381990,
+                "minTileCol":544944,
+                "maxTileCol":546532
+            }
+        }
+    }
+}
