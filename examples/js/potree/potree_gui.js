@@ -114,6 +114,42 @@ function setPotreeGui(view) {
             });
 
             button_mode.click(change_mode);
+
+            console.log($('#menu_nav_img'));
+
+            const IDS = {
+                'left-click': 'path3209-5-5',
+                'right-click': 'path3209-5-2-8',
+                'middle-click': 'rect1113-3-7',
+                'bottom-arrow': 'path2089-3-9',
+                'top-arrow': 'path2089-5',
+            };
+            const config = [
+                {
+                    id: IDS['left-click'],
+                    text: 'Déplacement',
+                    style: { fill: '#45a1b9' },
+                },
+                {
+                    id: IDS['middle-click'],
+                    text: 'Rotation',
+                    style: { fill: '#45a1b9' },
+                },
+                {
+                    id: [IDS['right-click'], IDS['top-arrow'], IDS['bottom-arrow']],
+                    text: 'Zoom',
+                    style: { fill: '#45a1b9' },
+                },
+                {
+                    id: IDS['left-click'],
+                    text: 'Aller au point',
+                    style: {
+                        fill: '#45a1b9',
+                        text: { field: '2X', xOffset: -7, yOffset: -5, shadow: '0 0 1px black, 1px 1px 3px black' },
+                    },
+                },
+            ];
+            $('#menu_nav_img').append(setupMouseInstructions('images/mouse.svg', config));
         });
     });
 }
@@ -171,4 +207,71 @@ function addButtonExport() {
             });
         }
     });
+}
+
+function setupMouseInstructions(svgSource, instructions) {
+    var domElement = document.createElement('div');
+    domElement.id = 'mouse-instructions';
+
+    for (const instruction of instructions) {
+        const instructionContainer = document.createElement('div');
+        instructionContainer.classList.add('instruction');
+        domElement.appendChild(instructionContainer);
+
+        const svgContainer = document.createElement('object');
+        svgContainer.data = instruction.svgSource || svgSource;
+        instructionContainer.appendChild(svgContainer);
+
+        const textContainer = document.createElement('div');
+        textContainer.classList.add('instruction-text');
+        textContainer.innerHTML = instruction.text;
+        instructionContainer.appendChild(textContainer);
+
+        svgContainer.addEventListener('load', () => {
+            if (Array.isArray(instruction.id)) {
+                for (const id of instruction.id) {
+                    updateSvgNode(svgContainer.contentDocument.getElementById(id), instruction.style);
+                }
+            } else {
+                updateSvgNode(svgContainer.contentDocument.getElementById(instruction.id), instruction.style);
+            }
+        });
+    }
+
+    return domElement;
+}
+
+function updateSvgNode(svgNode, style) {
+    svgNode.style.display = 'inline';
+
+    for (const key in style) {
+        if (key === 'text') {
+            const boundingBox = svgNode.getBBox();
+
+            const textNode = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+
+            textNode.style['font-size'] = style[key].size || '1em';
+            textNode.style['font-family'] = 'sans-serif';
+            textNode.style['font-weight'] = 'bold';
+            textNode.style.fill = style[key].color || 'white';
+            textNode.style['text-shadow'] = style[key].shadow;
+            textNode.style['text-anchor'] = 'middle';
+            textNode.style['dominant-baseline'] = 'middle';
+
+            textNode.setAttribute(
+                'x',
+                boundingBox.x + (boundingBox.width / 2) + (style[key].xOffset || 0),
+            );
+            textNode.setAttribute(
+                'y',
+                boundingBox.y + (boundingBox.height / 2) + (style[key].yOffset || 0),
+            );
+
+            textNode.innerHTML = style[key].field;
+
+            svgNode.parentElement.appendChild(textNode);
+        } else {
+            svgNode.style[key] = style[key];
+        }
+    }
 }

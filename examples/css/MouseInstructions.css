@@ -1,0 +1,26 @@
+#mouse-instructions {
+    width: 100%;
+    margin: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: flex-start;
+}
+
+#mouse-instructions > .instruction {
+    width: 25%;
+}
+
+#mouse-instructions > .instruction > object {
+    width: 100%;
+}
+
+#mouse-instructions > .instruction > .instruction-text {
+    width: 100%;
+
+    display: flex;
+    justify-content: center;
+    text-align: center;
+
+    font-family: sans-serif;
+}
