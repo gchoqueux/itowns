@@ -587,6 +587,19 @@ class Extent {
             this.north = sn;
         }
     }
+    /**
+     * Expands all limits by the value.
+     *
+     * @param      {number}  value   The value to expand each limit
+     * @return     {Extent}  return this instance.
+     */
+    expandByValue(value) {
+        this.east += value;
+        this.west -= value;
+        this.north += value;
+        this.south -= value;
+        return this;
+    }
 
     /**
      * Instance Extent with THREE.Box3.
