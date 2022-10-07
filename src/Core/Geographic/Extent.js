@@ -336,10 +336,11 @@ class Extent {
         }
 
         // TODO this ignores altitude
-        return _c.x <= this.east + epsilon &&
-               _c.x >= this.west - epsilon &&
-               _c.y <= this.north + epsilon &&
-               _c.y >= this.south - epsilon;
+        const dilate = _extent.copy(this).expandByValue(epsilon);
+        return _c.x <= dilate.east &&
+               _c.x >= dilate.west &&
+               _c.y <= dilate.north &&
+               _c.y >= dilate.south;
     }
 
     /**
@@ -365,10 +366,11 @@ class Extent {
         } else {
             extent.as(this.crs, _extent);
             epsilon = epsilon == undefined ? CRS.reasonnableEpsilon(this.crs) : epsilon;
-            return this.east - _extent.east <= epsilon &&
-                   _extent.west - this.west <= epsilon &&
-                   this.north - _extent.north <= epsilon &&
-                   _extent.south - this.south <= epsilon;
+            const dilate = _extent.copy(this).expandByValue(-epsilon);
+            return dilate.east - _extent.east <= 0 &&
+                   _extent.west - dilate.west <= 0 &&
+                   dilate.north - _extent.north <= 0 &&
+                   _extent.south - dilate.south <= 0;
         }
     }
 
