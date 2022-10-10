@@ -423,16 +423,20 @@ class Extent {
     /**
      * Return true if this bounding box intersect with the bouding box parameter
      * @param {Extent} extent
+     * @param {number} epsilon
      * @returns {Boolean}
      */
-    intersectsExtent(extent) {
+    intersectsExtent(extent, epsilon = 0) {
         // TODO don't work when is on limit
         const other = extent.crs == this.crs ? extent : extent.as(this.crs, _extent);
-        return !(this.west >= other.east ||
-                 this.east <= other.west ||
-                 this.south >= other.north ||
-                 this.north <= other.south);
+        const dilate = _extent.copy(this).expandByValue(epsilon);
+
+        return !(dilate.west >= other.east ||
+                 dilate.east <= other.west ||
+                 dilate.south >= other.north ||
+                 dilate.north <= other.south);
     }
+
 
     /**
      * Return the intersection of this extent with another one
