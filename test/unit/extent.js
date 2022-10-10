@@ -208,6 +208,18 @@ describe('Extent', function () {
         assert.ok(withValues.isPointInside(coord));
     });
 
+    it('should return false is point is outside extent expected', function () {
+        const withValues = new Extent('EPSG:4326', [minX, maxX, minY, maxY]);
+        const coord = new Coordinates('EPSG:4326', maxX + 1, minY - 1);
+        assert.ok(!withValues.isPointInside(coord));
+    });
+
+    it('should return true is point is inside extent expected, with epsilon', function () {
+        const withValues = new Extent('EPSG:4326', [minX, maxX, minY, maxY]);
+        const coord = new Coordinates('EPSG:4326', maxX + 1, minY - 1);
+        assert.ok(withValues.isPointInside(coord, 1));
+    });
+
     it('should return true is extent is inside extent expected', function () {
         const withValues = new Extent('EPSG:4326', [minX, maxX, minY, maxY]);
         const inside = new Extent('EPSG:4326', [minX + 1, maxX - 1, minY + 1, maxY - 1]);
@@ -246,6 +258,12 @@ describe('Extent', function () {
         const withValues = new Extent('EPSG:4326', [minX, maxX, minY, maxY]);
         const inter = new Extent('EPSG:4326', [minX + 1, maxX - 1, maxY - 1, maxY + 2]);
         assert.ok(withValues.intersectsExtent(inter));
+    });
+
+    it('should return true if intersect other extent, with epsilon', function () {
+        const withValues = new Extent('EPSG:4326', [minX, maxX, minY, maxY]);
+        const inter = new Extent('EPSG:4326', [maxX, maxX + 3, maxY, maxY + 3]);
+        assert.ok(withValues.intersectsExtent(inter, 2));
     });
 
     it('should intersect like expected', function () {
@@ -343,6 +361,15 @@ describe('Extent', function () {
         assert.equal(0, center.x);
         assert.equal(90, center.y);
         assert.equal(0, center.z);
+    });
+
+    it('should get the right center for extrem cases', function () {
+        const extent = new Extent('EPSG:4326', 160, 200, -10, 10);
+        extent.expandByValue(1);
+        assert.equal(159, extent.west);
+        assert.equal(201, extent.east);
+        assert.equal(-11, extent.south);
+        assert.equal(11, extent.north);
     });
 
     it('should throw error when instance with geocentric projection', () => {
