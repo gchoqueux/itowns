@@ -1,4 +1,6 @@
+/* global XRRigidTransform */
 import * as THREE from 'three';
+import { VRButton } from 'three/examples/jsm/webxr/VRButton';
 import Camera from 'Renderer/Camera';
 import MainLoop, { MAIN_LOOP_EVENTS, RENDERING_PAUSED } from 'Core/MainLoop';
 import Capabilities from 'Core/System/Capabilities';
@@ -261,6 +263,37 @@ class View extends THREE.EventDispatcher {
 
         // push all viewer to keep source.cache
         viewers.push(this);
+
+        if (options.noVr == undefined) {
+            document.body.appendChild(VRButton.createButton(this.mainLoop.gfxEngine.renderer));
+            const xr = this.mainLoop.gfxEngine.renderer.xr;
+
+            xr.addEventListener('sessionstart', () => {
+                console.log('Web XR session start'); // eslint-disable-line
+                const scale = 0.005;
+                this.scene.scale.multiplyScalar(scale);
+                this.scene.updateMatrixWorld();
+
+                const camera = this.camera.camera3D;
+                const position = this.camera.position();
+                const geodesicNormal = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), position.geodesicNormal).invert();
+
+                const quat = new THREE.Quaternion(-1, 0, 0, 1).normalize().multiply(geodesicNormal);
+                const trans = camera.position.clone().multiplyScalar(-scale).applyQuaternion(quat);
+                const transform = new XRRigidTransform(trans, quat);
+
+                const baseReferenceSpace = xr.getReferenceSpace();
+                const teleportSpaceOffset = baseReferenceSpace.getOffsetReferenceSpace(transform);
+                xr.setReferenceSpace(teleportSpaceOffset);
+
+                this.camera.camera3D = this.mainLoop.gfxEngine.renderer.xr.getCamera();
+                this.camera.resize(this.camera.width, this.camera.height);
+
+                this.mainLoop.gfxEngine.renderer.xr.setAnimationLoop((timestamp) => {
+                    this.mainLoop.step(this, timestamp);
+                });
+            });
+        }
     }
 
     /**
@@ -440,7 +473,7 @@ class View extends THREE.EventDispatcher {
     notifyChange(changeSource = undefined, needsRedraw = true) {
         if (changeSource) {
             this._changeSources.add(changeSource);
-            if ((changeSource.isTileMesh || changeSource.isCamera)) {
+            if (!this.mainLoop.gfxEngine.renderer.xr.isPresenting && (changeSource.isTileMesh || changeSource.isCamera)) {
                 this.#fullSizeDepthBuffer.needsUpdate = true;
             }
         }

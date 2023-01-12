@@ -132,6 +132,9 @@ class c3DEngine {
         this.renderer.autoClear = false;
         this.renderer.sortObjects = true;
         this.renderer.debug.checkShaderErrors = __DEBUG__;
+        this.renderer.xr.enabled = true;
+        // this.renderer.xr.cameraAutoUpdate = true;
+        this.renderer.xr.getReferenceSpace('local');
 
         if (!renderer) {
             this.renderer.setPixelRatio(viewerDiv.devicePixelRatio);

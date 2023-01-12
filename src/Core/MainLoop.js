@@ -113,7 +113,9 @@ class MainLoop extends EventDispatcher {
                 document.title += ' ⌛';
             }
 
-            requestAnimationFrame((timestamp) => { this.#step(view, timestamp); });
+            if (!this.gfxEngine.renderer.xr.isPresenting) {
+                requestAnimationFrame((timestamp) => { this.step(view, timestamp); });
+            }
         }
     }
 
@@ -163,14 +165,27 @@ class MainLoop extends EventDispatcher {
         }
     }
 
-    #step(view, timestamp) {
+    step(view, timestamp) {
         const dt = timestamp - this.#lastTimestamp;
         view._executeFrameRequestersRemovals();
 
         view.execFrameRequesters(MAIN_LOOP_EVENTS.UPDATE_START, dt, this.#updateLoopRestarted);
 
-        const willRedraw = this.#needsRedraw;
+        const xrIsPresenting = this.gfxEngine.renderer.xr.isPresenting;
+
+        const willRedraw = this.#needsRedraw || xrIsPresenting;
         this.#lastTimestamp = timestamp;
+
+        // update camera
+        if (xrIsPresenting && view.camera.camera3D.cameras[0]) {
+            view.notifyChange(view.camera.camera3D);
+            view.camera.camera3D.updateMatrix();
+            view.camera.camera3D.updateMatrixWorld(true);
+            view.camera.camera3D.cameras[0].layers.disableAll();
+            view.camera.camera3D.cameras[1].layers.disableAll();
+            view.camera.camera3D.cameras[0].layers.enable(0);
+            view.camera.camera3D.cameras[1].layers.enable(0);
+        }
 
         // Reset internal state before calling _update (so future calls to View.notifyChange()
         // can properly change it)
@@ -179,9 +194,7 @@ class MainLoop extends EventDispatcher {
         const updateSources = new Set(view._changeSources);
         view._changeSources.clear();
 
-        // update camera
         const dim = this.gfxEngine.getWindowSize();
-
         view.execFrameRequesters(MAIN_LOOP_EVENTS.BEFORE_CAMERA_UPDATE, dt, this.#updateLoopRestarted);
         view.camera.update(dim.x, dim.y);
         view.execFrameRequesters(MAIN_LOOP_EVENTS.AFTER_CAMERA_UPDATE, dt, this.#updateLoopRestarted);
