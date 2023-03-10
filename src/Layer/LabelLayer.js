@@ -7,10 +7,15 @@ import Extent from 'Core/Geographic/Extent';
 import Label from 'Core/Label';
 import { FEATURE_TYPES } from 'Core/Feature';
 import { readExpression } from 'Core/Style';
+import { ScreenGrid } from 'Renderer/Label2DRenderer';
 
 const coord = new Coordinates('EPSG:4326', 0, 0, 0);
 
 const _extent = new Extent('EPSG:4326', 0, 0, 0, 0);
+
+const planarDimensions = new THREE.Vector2();
+const origin = new THREE.Vector2();
+const position = new THREE.Vector2();
 
 class DomNode {
     #domVisibility = false;
@@ -73,6 +78,14 @@ class LabelsNode extends THREE.Group {
         }
     }
 
+    removeLabel(label) {
+        // remove 3d object
+        this.remove(label);
+
+        // remove dom label
+        this.domElements.labels.dom.removeChild(label.content);
+    }
+
     updatePosition(label) {
         if (this.needsUpdate) {
             // update elevation from elevation layer.
@@ -101,6 +114,7 @@ class LabelsNode extends THREE.Group {
  * internally for optimisation.
  */
 class LabelLayer extends GeometryLayer {
+    #filterGrid = new ScreenGrid();
     /**
      * @constructor
      * @extends Layer
@@ -226,6 +240,9 @@ class LabelLayer extends GeometryLayer {
     preUpdate(context, sources) {
         if (sources.has(this.parent)) {
             this.object3d.clear();
+            this.#filterGrid.width = this.parent.maxScreenSizeNode * 0.5;
+            this.#filterGrid.height = this.parent.maxScreenSizeNode * 0.5;
+            this.#filterGrid.resize();
         }
     }
 
@@ -253,6 +270,28 @@ class LabelLayer extends GeometryLayer {
 
     #hasLabelChildren(object) {
         return object.children.every(c => c.layerUpdateState && c.layerUpdateState[this.id]?.hasFinished());
+    }
+
+    #filter(node) {
+        const labels = node.children.slice();
+        this.#filterGrid.reset();
+        labels.sort((a, b) => b.order - a.order);
+
+        labels.forEach((label) => {
+            node.nodeParent.extent.planarDimensions(planarDimensions);
+            coord.crs = node.nodeParent.extent.crs;
+            coord.setFromValues(node.nodeParent.extent.west, node.nodeParent.extent.north, 0).toVector3(origin);
+            coord.copy(label.coordinates).as(node.nodeParent.extent.crs, coord).toVector3(position);
+            position.sub(origin);
+            position.y += planarDimensions.y;
+            position.divide(planarDimensions).multiplyScalar(this.#filterGrid.width);
+
+            label.updateProjectedPosition(position.x, position.y);
+
+            if (!this.#filterGrid.insert(label)) {
+                node.removeLabel(label);
+            }
+        });
     }
 
     update(context, layer, node, parent) {
@@ -324,11 +363,9 @@ class LabelLayer extends GeometryLayer {
 
                 labelsNode.needsAltitude = labelsNode.needsAltitude || labels.needsAltitude;
 
-                const maxCountLabels = 16;
-
                 // Add all labels for this tile at once to batch it
-                labels.forEach((label, i) => {
-                    if (node.extent.isPointInside(label.coordinates) && i > labels.length - maxCountLabels) {
+                labels.forEach((label) => {
+                    if (node.extent.isPointInside(label.coordinates)) {
                         labelsNode.addLabel(label);
                     }
                 });
@@ -347,6 +384,8 @@ class LabelLayer extends GeometryLayer {
                 if (labelsNode.needsAltitude && node.material.getElevationLayer()) {
                     node.material.getElevationLayer().addEventListener('rasterElevationChanged', () => { labelsNode.needsUpdate = true; });
                 }
+
+                this.#filter(labelsNode);
             }
 
             node.layerUpdateState[this.id].noMoreUpdatePossible();
