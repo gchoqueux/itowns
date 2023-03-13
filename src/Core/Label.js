@@ -66,6 +66,13 @@ class Label extends THREE.Object3D {
                     _visible = v;
                     this.content.style.display = v ? 'block' : 'none';
                     // TODO: add smooth transition for fade in/out
+                    // A way to add fade transition, it's use css transition :
+                    //      this.content.style.opacity = 1;
+                    //      this.content.style.visibility = 'visible';
+                    //      this.content.style.transition = 'visibility 0s, opacity 0.33s linear 0.2s';
+                    //      or
+                    //      this.content.style.transition = 'visibility 0s linear 0.5s,opacity 0.5s linear';
+                    // The transition to hide, needs to update projected position
                 }
             },
             get() {
@@ -89,6 +96,7 @@ class Label extends THREE.Object3D {
         this.content.classList.add('itowns-label');
         this.content.style.userSelect = 'none';
         this.content.style.position = 'absolute';
+
 
         this.baseContent = content;
 
@@ -199,14 +207,12 @@ class Label extends THREE.Object3D {
     }
 
     update3dPosition(crs) {
-        this.coordinates.as(crs, coord);
-        coord.toVector3(this.position);
-        this.parent.worldToLocal(this.position);
+        this.coordinates.as(crs, coord).toVector3(this.position);
         this.updateMatrixWorld();
     }
 
-    updateElevationFromLayer(layer) {
-        const elevation = Math.max(0, DEMUtils.getElevationValueAt(layer, this.coordinates, DEMUtils.FAST_READ_Z));
+    updateElevationFromLayer(layer, nodes) {
+        const elevation = Math.max(0, DEMUtils.getElevationValueAt(layer, this.coordinates, DEMUtils.FAST_READ_Z, nodes));
         if (elevation && elevation != this.coordinates.z) {
             this.coordinates.z = elevation;
             this.updateHorizonCullingPoint();

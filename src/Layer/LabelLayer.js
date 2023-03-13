@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import LayerUpdateState from 'Layer/LayerUpdateState';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
-import Layer from 'Layer/Layer';
+import GeometryLayer from 'Layer/GeometryLayer';
 import Coordinates from 'Core/Geographic/Coordinates';
 import Extent from 'Core/Geographic/Extent';
 import Label from 'Core/Label';
@@ -12,6 +12,85 @@ const coord = new Coordinates('EPSG:4326', 0, 0, 0);
 
 const _extent = new Extent('EPSG:4326', 0, 0, 0, 0);
 
+class DomNode {
+    #domVisibility = false;
+
+    constructor() {
+        this.dom = document.createElement('div');
+
+        this.dom.style.display = 'none';
+
+        this.visible = true;
+    }
+
+    get visible() { return this.#domVisibility; }
+
+    set visible(v) {
+        if (v !== this.#domVisibility) {
+            this.#domVisibility = v;
+            this.dom.style.display = v ? 'block' : 'none';
+        }
+    }
+
+    hide() { this.visible = false; }
+
+    show() { this.visible = true; }
+
+    add(node) {
+        this.dom.append(node.dom);
+    }
+}
+
+// eslint-disable-next-line no-unused-vars
+class LabelsNode extends THREE.Group {
+    constructor(node) {
+        super();
+        this.nodeParent = node;
+        this.needsUpdate = true;
+    }
+    initializeDom() {
+        // create root dom
+        this.domElements = new DomNode();
+        // create labels dom
+        this.domElements.labels = new DomNode();
+
+        this.domElements.add(this.domElements.labels);
+    }
+
+    addLabel(label) {
+        // add 3d object
+        this.add(label);
+
+        // add dom label
+        this.domElements.labels.dom.append(label.content);
+
+        // Batch update the dimensions of labels all at once to avoid
+        // redraw for at least this tile.
+        label.initDimensions();
+
+        if (this.nodeParent.layer.isGlobeLayer && this.nodeParent.level < 4) {
+            label.horizonCullingPoint = new THREE.Vector3();
+        }
+    }
+
+    updatePosition(label) {
+        if (this.needsUpdate) {
+            // update elevation from elevation layer.
+            label.updateElevationFromLayer(this.nodeParent.layer, [this.nodeParent]);
+
+            // update elevation label
+            label.update3dPosition(this.nodeParent.layer.crs);
+
+            // update horizon culling
+            label.updateHorizonCullingPoint();
+        }
+    }
+
+    count() {
+        return this.children.length;
+    }
+}
+
 /**
  * A layer to handle a bunch of `Label`. This layer can be created on its own,
  * but it is better to use the option `addLabelLayer` on another `Layer` to let
@@ -21,7 +100,7 @@ const _extent = new Extent('EPSG:4326', 0, 0, 0, 0);
  * LabelLayer.  Default is true. You should not change this, as it is used
  * internally for optimisation.
  */
-class LabelLayer extends Layer {
+class LabelLayer extends GeometryLayer {
     /**
      * @constructor
      * @extends Layer
@@ -45,15 +124,11 @@ class LabelLayer extends Layer {
      * except for the `Style.text.anchor` parameter which can help place the label.
      */
     constructor(id, config = {}) {
-        super(id, config);
+        super(id, config.object3d || new THREE.Group(), config);
 
         this.isLabelLayer = true;
-        this.domElement = document.createElement('div');
-        this.domElement.id = `itowns-label-${this.id}`;
-        this.defineLayerProperty('visible', true, () => {
-            this.domElement.style.display = this.visible ? 'block' : 'none';
-        });
-
+        this.domElement = new DomNode();
+        this.domElement.dom.id = `itowns-label-${this.id}`;
         this.buildExtent = true;
 
         this.labelDomelement = config.domElement;
@@ -99,6 +174,10 @@ class LabelLayer extends Layer {
             }
 
             const featureField = f.style && f.style.text.field;
+            const altitudeStyle = f.style.point.base_altitude;
+            const isDefaultElevationStyle = altitudeStyle instanceof Function && altitudeStyle.name == 'base_altitudeDefault';
+
+            labels.needsAltitude = labels.needsAltitude || !f.hasRawElevationData || !isDefaultElevationStyle;
 
             f.geometries.forEach((g) => {
                 // NOTE: this only works because only POINT is supported, it
@@ -136,10 +215,6 @@ class LabelLayer extends Layer {
                 label.layerId = this.id;
                 label.padding = this.margin || label.padding;
 
-                if (f.size == 2) {
-                    label.needsAltitude = true;
-                }
-
                 labels.push(label);
             });
         });
@@ -148,43 +223,74 @@ class LabelLayer extends Layer {
     }
 
     // placeholder
-    preUpdate() {}
+    preUpdate(context, sources) {
+        if (sources.has(this.parent)) {
+            this.object3d.clear();
+        }
+    }
+
+    #submitToRendering(labelsNode) {
+        // move this part dans le renderer
+        // =>
+        labelsNode.domElements?.labels.show(); // <=
+
+        this.object3d.add(labelsNode);
+    }
+
+    #disallowToRendering(labelsNode) {
+        labelsNode.domElements?.labels.hide();
+
+        this.object3d.remove(labelsNode);
+    }
+
+    #findClosestDomElement(node) {
+        if (node.parent?.isTileMesh) {
+            return node.parent.link[this.id]?.domElements || this.#findClosestDomElement(node.parent);
+        } else {
+            return this.domElement;
+        }
+    }
+
+    #hasLabelChildren(object) {
+        return object.children.every(c => c.layerUpdateState && c.layerUpdateState[this.id]?.hasFinished());
+    }
 
     update(context, layer, node, parent) {
-        if (!parent && node.children.length) {
+        if (!parent && node.link[layer.id]) {
             // if node has been removed dispose three.js resource
             ObjectRemovalHelper.removeChildrenAndCleanupRecursively(this, node);
             return;
         }
 
+        const labelsNode = node.link[layer.id] || new LabelsNode(node);
+        node.link[layer.id] = labelsNode;
+
         if (this.frozen || !node.visible || !this.visible) {
             return;
+        }
+
+        if (!node.material.visible && this.#hasLabelChildren(node)) {
+            return this.#disallowToRendering(labelsNode);
         }
 
         const extentsDestination = node.getExtentsByProjection(this.source.crs) || [node.extent];
         const zoomDest = extentsDestination[0].zoom;
 
         if (zoomDest < layer.zoom.min || zoomDest > layer.zoom.max) {
-            return;
+            return this.#disallowToRendering(labelsNode);
         }
 
         if (node.layerUpdateState[this.id] === undefined) {
             node.layerUpdateState[this.id] = new LayerUpdateState();
         }
 
-        const elevationLayer = node.material.getElevationLayer();
-        if (elevationLayer && node.layerUpdateState[elevationLayer.id].canTryUpdate()) {
-            node.children.forEach((c) => {
-                if (c.isLabel && c.needsAltitude && c.updateElevationFromLayer(this.parent)) {
-                    c.update3dPosition(context.view.referenceCrs);
-                }
-            });
-        }
-
-        if (!node.layerUpdateState[this.id].canTryUpdate()) {
-            return;
-        } else if (!this.source.extentInsideLimit(node.extent, zoomDest)) {
+        if (!this.source.extentInsideLimit(node.extent, zoomDest)) {
             node.layerUpdateState[this.id].noMoreUpdatePossible();
+            return;
+        } else if (this.#hasLabelChildren(node.parent)) {
+            this.#submitToRendering(labelsNode);
+            return;
+        } else if (!node.layerUpdateState[this.id].canTryUpdate()) {
             return;
         }
 
@@ -201,9 +307,13 @@ class LabelLayer extends Layer {
             if (!result) { return; }
 
             const renderer = context.view.mainLoop.gfxEngine.label2dRenderer;
-            const labelsDiv = [];
+
+            labelsNode.initializeDom();
+
+            this.#findClosestDomElement(node).add(labelsNode.domElements);
 
             result.forEach((labels) => {
+                // Clean if there isnt' parent
                 if (!node.parent) {
                     labels.forEach((l) => {
                         ObjectRemovalHelper.removeChildrenAndCleanupRecursively(this, l);
@@ -212,57 +322,31 @@ class LabelLayer extends Layer {
                     return;
                 }
 
-                labels.forEach((label) => {
-                    if (label.needsAltitude) {
-                        label.updateElevationFromLayer(this.parent);
-                    }
+                labelsNode.needsAltitude = labelsNode.needsAltitude || labels.needsAltitude;
 
-                    const present = node.children.find(l => l.isLabel && l.baseContent == label.baseContent);
+                const maxCountLabels = 16;
 
-                    if (!present) {
-                        node.add(label);
-                        label.update3dPosition(context.view.referenceCrs);
-
-                        if (node.level < 4) {
-                            label.horizonCullingPoint = new THREE.Vector3();
-                            label.updateHorizonCullingPoint();
-                        }
-
-                        labelsDiv.push(label.content);
+                // Add all labels for this tile at once to batch it
+                labels.forEach((label, i) => {
+                    if (node.extent.isPointInside(label.coordinates) && i > labels.length - maxCountLabels) {
+                        labelsNode.addLabel(label);
                     }
                 });
             });
 
-            if (labelsDiv.length > 0) {
-                // Add all labels for this tile at once to batch it
-                let nodeDomElement = node.domElements[this.id];
-                if (!nodeDomElement) {
-                    nodeDomElement = { dom: document.createElement('div'), visible: true };
-                    node.domElements[this.id] = nodeDomElement;
-                }
+            if (labelsNode.count()) {
+                labelsNode.domElements.labels.hide();
 
-                nodeDomElement.dom.append(...labelsDiv);
-                const closestDomElement = node.findClosestDomElement(this.id);
-                ((closestDomElement && closestDomElement.dom) || this.domElement).appendChild(nodeDomElement.dom);
-                nodeDomElement.visible = true;
+                node.addEventListener('show', () => labelsNode.domElements.labels.show());
 
-                // Batch update the dimensions of labels all at once to avoid
-                // redraw for at least this tile.
-                result.forEach(labels => labels.forEach(label => label.initDimensions()));
-                result.forEach(labels => labels.forEach((label) => { label.visible = false; }));
-
-                // Sort labels so they can be the first in the renderer. That
-                // way, we cull labels on parent tile first, and then on
-                // children tile. This allows a z-order priority, and reduce
-                // flickering.
-                node.children.sort(c => (c.isLabel ? -c.order : 1));
+                node.addEventListener('hidden', () => this.#disallowToRendering(labelsNode));
 
                 // Necessary event listener, to remove any Label attached to
-                // this tile
-                node.addEventListener('removed', () => {
-                    result.forEach(labels => labels.forEach(l => node.remove(l)));
-                    this.removeNodeDomElement(node);
-                });
+                node.addEventListener('removed', () => this.removeNodeDomElement(node));
+
+                if (labelsNode.needsAltitude && node.material.getElevationLayer()) {
+                    node.material.getElevationLayer().addEventListener('rasterElevationChanged', () => { labelsNode.needsUpdate = true; });
+                }
             }
 
             node.layerUpdateState[this.id].noMoreUpdatePossible();
@@ -271,21 +355,20 @@ class LabelLayer extends Layer {
 
     removeLabelsFromNodeRecursive(node) {
         node.children.forEach((c) => {
-            if (c.isLabel && c.layerId === this.id) {
-                node.remove(c);
-            } else if (c.isTileMesh) {
-                this.removeLabelsFromNodeRecursive(c);
+            if (c.link[this.id]) {
+                delete c.link[this.id];
             }
+            this.removeLabelsFromNodeRecursive(c);
         });
 
         this.removeNodeDomElement(node);
     }
 
     removeNodeDomElement(node) {
-        if (node.domElements[this.id]) {
-            const child = node.domElements[this.id].dom;
+        if (node.link[this.id]?.domElements) {
+            const child = node.link[this.id].domElements.dom;
             child.parentElement.removeChild(child);
-            delete node.domElements[this.id];
+            delete node.link[this.id].domElements;
         }
     }
 
@@ -297,7 +380,7 @@ class LabelLayer extends Layer {
         if (clearCache) {
             this.cache.clear();
         }
-        this.domElement.parentElement.removeChild(this.domElement);
+        this.domElement.dom.parentElement.removeChild(this.domElement.dom);
 
         this.parent.level0Nodes.forEach(obj => this.removeLabelsFromNodeRecursive(obj));
     }

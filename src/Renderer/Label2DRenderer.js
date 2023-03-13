@@ -1,15 +1,9 @@
 import * as THREE from 'three';
+import GlobeLayer from 'Core/Prefab/Globe/GlobeLayer';
 
 function isIntersectedOrOverlaped(a, b) {
     return !(a.left > b.right || a.right < b.left
         || a.top > b.bottom || a.bottom < b.top);
-}
-
-// find label in children
-function hasLabelChildren(object) {
-    const parent = object.parent;
-    return parent.material && !parent.material.visible &&
-        parent.children.find(c => c.isTileMesh && c.children.find(cc => cc.isLabel));
 }
 
 const frustum = new THREE.Frustum();
@@ -73,7 +67,7 @@ class ScreenGrid {
             for (let j = miny; j <= maxy; j++) {
                 if (this.grid[i][j].length > 0) {
                     if (this.grid[i][j].some(l => isIntersectedOrOverlaped(l.boundaries, obj.boundaries))) {
-                        this.hidden.push(obj);
+                        obj.visible = false;
                         return false;
                     }
                 }
@@ -136,7 +130,7 @@ class Label2DRenderer {
     }
 
     registerLayer(layer) {
-        this.domElement.appendChild(layer.domElement);
+        this.domElement.appendChild(layer.domElement.dom);
     }
 
     render(scene, camera) {
@@ -145,7 +139,20 @@ class Label2DRenderer {
 
         // set camera frustum
         frustum.setFromProjectionMatrix(camera.projectionMatrix);
-        this.culling(scene, this.infoTileLayer.displayed.extent, camera);
+
+        const labelLayer = this.infoTileLayer.layer.attachedLayers.find(l => l.isLabelLayer && l.visible);
+
+        labelLayer.object3d.children.forEach(
+            (node) => {
+                node.children.forEach(
+                    (label) => {
+                        node.updatePosition(label);
+
+                        this.culling(label, camera);
+                    });
+
+                node.needsUpdate = false;
+            });
 
         // sort by order, then by visibility inside those subsets
         // https://docs.mapbox.com/help/troubleshooting/optimize-map-label-placement/#label-hierarchy
@@ -163,86 +170,37 @@ class Label2DRenderer {
             if (this.grid.insert(l)) {
                 l.visible = true;
                 l.updateCSSPosition();
+            } else {
+                l.visible = false;
             }
         });
-
-        this.grid.hidden.forEach((label) => { label.visible = false; });
     }
 
-    culling(object, extent, camera) {
-        if (!object.isLabel) {
-            if (!object.visible) {
-                this.hideNodeDOM(object);
-                return;
-            // Don't go further if the node can't be in the screen space (it
-            // does not need to be rendered to continue the culling)
-            } else if (object.extent && !object.extent.intersectsExtent(extent)) {
-                this.hideNodeDOM(object);
-                return;
-            }
-
-            this.showNodeDOM(object);
-
-            object.children.forEach(c => this.culling(c, extent, camera));
-        // the presence of the label inside the visible extent and if children has label, we can filter more labels.
-        } else if (!extent.isPointInside(object.coordinates) || hasLabelChildren(object)) {
-            this.grid.hidden.push(object);
-        // the presence of the label inside frustum camera.
-        } else if (!frustum.containsPoint(object.getWorldPosition(worldPosition).applyMatrix4(camera.matrixWorldInverse))) {
-            this.grid.hidden.push(object);
+    culling(label, camera) {
+        label.getWorldPosition(worldPosition);
+        if (!frustum.containsPoint(worldPosition.applyMatrix4(camera.matrixWorldInverse))) {
+            label.visible = false;
         // Do some horizon culling (if possible) if the tiles level is small
         // enough. The chosen value of 4 seems to provide a good result.
-        } else if (object.parent.level < 4 && object.parent.layer.horizonCulling && object.parent.layer.horizonCulling(object.horizonCullingPoint)) {
-            this.grid.hidden.push(object);
+        } else if (label.horizonCullingPoint && GlobeLayer.horizonCulling(label.horizonCullingPoint)) {
+            label.visible = false;
+        } else if (this.grid.visible.some(l => l.baseContent.toLowerCase() == label.baseContent.toLowerCase())) {
+            label.visible = false;
         } else {
-            // projecting world position object
+            // projecting world position label
             worldPosition.applyMatrix4(camera.projectionMatrix);
 
-            object.updateProjectedPosition(worldPosition.x * this.halfWidth + this.halfWidth, -worldPosition.y * this.halfHeight + this.halfHeight);
+            label.updateProjectedPosition(worldPosition.x * this.halfWidth + this.halfWidth, -worldPosition.y * this.halfHeight + this.halfHeight);
 
             // Are considered duplicates, labels that have the same screen
             // coordinates and the same base content.
-            if (this.grid.visible.some(l => l.projectedPosition.x == object.projectedPosition.x
-                && l.projectedPosition.y == object.projectedPosition.y
-                && l.baseContent == object.baseContent)) {
-                object.parent.remove(object);
-                this.grid.hidden.push(object);
-            } else {
-                this.grid.visible.push(object);
-            }
+            this.grid.visible.push(label);
         }
     }
 
     removeLabelDOM(label) {
         this.garbage.appendChild(label.content);
         this.garbage.innerHTML = '';
-    }
-
-    hideNodeDOM(node) {
-        if (node.domElements) {
-            const domElements = Object.values(node.domElements);
-            if (domElements.length > 0) {
-                domElements.forEach((domElement) => {
-                    if (domElement.visible == true) {
-                        domElement.dom.style.display = 'none';
-                        domElement.visible = false;
-                    }
-                });
-            } else {
-                node.children.filter(n => n.isTileMesh).forEach(n => this.hideNodeDOM(n));
-            }
-        }
-    }
-
-    showNodeDOM(node) {
-        if (node.domElements) {
-            Object.values(node.domElements).forEach((domElement) => {
-                if (domElement.visible == false) {
-                    domElement.dom.style.display = 'block';
-                    domElement.visible = true;
-                }
-            });
-        }
     }
 }
 
