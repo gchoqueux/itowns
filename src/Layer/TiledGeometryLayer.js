@@ -223,7 +223,7 @@ class TiledGeometryLayer extends GeometryLayer {
      */
     update(context, layer, node) {
         if (!node.parent) {
-            return ObjectRemovalHelper.removeChildrenAndCleanup(this, node);
+            return ObjectRemovalHelper.removeChildrenAndCleanup(node);
         }
         // early exit if parent' subdivision is in progress
         if (node.parent.pendingSubdivision) {
@@ -252,16 +252,16 @@ class TiledGeometryLayer extends GeometryLayer {
 
             if (node.material.visible) {
                 if (!requestChildrenUpdate) {
-                    return ObjectRemovalHelper.removeChildren(this, node);
+                    return ObjectRemovalHelper.removeChildren(node);
                 }
             }
 
-            return requestChildrenUpdate ? node.children.filter(n => n.layer == this) : undefined;
+            return requestChildrenUpdate ? node.children : undefined;
         }
 
         node.material.visible = false;
         this.info.update(node);
-        return ObjectRemovalHelper.removeChildren(this, node);
+        return ObjectRemovalHelper.removeChildren(node);
     }
 
     convert(requester, extent) {
