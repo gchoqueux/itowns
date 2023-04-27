@@ -2,6 +2,7 @@ import { FEATURE_TYPES } from 'Core/Feature';
 import Cache from 'Core/Scheduler/Cache';
 import Fetcher from 'Provider/Fetcher';
 import * as mapbox from '@mapbox/mapbox-gl-style-spec';
+import { rgb2lab, deltaE } from 'Renderer/Color';
 import { Color } from 'three';
 
 import itowns_stroke_single_before from './StyleChunk/itowns_stroke_single_before.css';
@@ -94,13 +95,14 @@ function getImage(source, value) {
                     const imgd = ctx.getImageData(0, 0, img.naturalWidth, img.naturalHeight);
 
                     const pix = imgd.data;
+
+                    const lab_b = rgb2lab([255, 255, 255]);
                     for (var i = 0, n = pix.length; i < n; i += 4) {
-                        if (pix[i] + pix[i + 1] + pix[i + 2] === 255 * 3) {
-                            pix[i] = color.r * 255;
-                            pix[i + 1] = color.g * 255;
-                            pix[i + 2] = color.b * 255;
-                            // pix[i+3] is the transparency.
-                        }
+                        const lab_a = rgb2lab(pix.slice(i, i + 3));
+                        const d = deltaE(lab_a, lab_b) / 100;
+                        pix[i] = (pix[i] * d +  color.r * 255 * (1 - d));
+                        pix[i + 1] = (pix[i + 1] * d +  color.g * 255 * (1 - d));
+                        pix[i + 2] = (pix[i + 2] * d +  color.b * 255 * (1 - d));
                     }
                     ctx.putImageData(imgd, 0, 0);
                     target.src = canvas.toDataURL('image/png');
