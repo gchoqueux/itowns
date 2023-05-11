@@ -1039,6 +1039,38 @@ class View extends THREE.EventDispatcher {
         return target;
     }
 
+    exportDepthBuffer() {
+        const grey = new Uint8Array(4 * this.camera.width * this.camera.height);
+        const pick1 = this.getPickingPositionFromDepth({ x: 0, y: 0 });
+        const pick2 = this.getPickingPositionFromDepth({ x: this.camera.width, y: this.camera.height });
+        const engine = this.mainLoop.gfxEngine;
+
+        const array = [].slice.call(this.#fullSizeDepthBuffer);
+
+        const camera = this.camera.camera3D;
+
+        let buffer;
+        for (var id = 0; id < array.length; id += 4) {
+            buffer = this.#fullSizeDepthBuffer.slice(id, id + 4);
+            const gl_FragCoord_Z = Math.ceil((engine.depthBufferRGBAValueToOrthoZ(buffer, camera) + 1) * 255.0 / 2.0);
+            grey[id + 0] = gl_FragCoord_Z;
+            grey[id + 1] = gl_FragCoord_Z;
+            grey[id + 2] = gl_FragCoord_Z;
+            // grey[id + 0] = buffer[0];
+            // grey[id + 1] = buffer[1];
+            // grey[id + 2] = buffer[2];
+            grey[id + 3] = 255;
+        }
+
+        const image = this.mainLoop.gfxEngine.bufferToImage(grey, engine.width, engine.height);
+        // const image = this.mainLoop.gfxEngine.bufferToImage(this.#fullSizeDepthBuffer, engine.width, engine.height);
+
+        document.getElementById('imgData').setAttribute('src', image.src);
+        document.getElementById('anchor').setAttribute('href', image.src);
+        document.getElementById('anchor').setAttribute('download', `${pick1.x}_${pick1.y}___${pick2.x}_${pick2.y}.png`);
+        document.getElementById('anchor').click();
+    }
+
     /**
      * Returns the world {@link Coordinates} of the terrain at given view coordinates.
      *

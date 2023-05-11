@@ -33,7 +33,7 @@ export { default as DEMUtils } from 'Utils/DEMUtils';
 export { default as CameraUtils } from 'Utils/CameraUtils';
 export { default as OrientationUtils } from 'Utils/OrientationUtils';
 export { default as ShaderChunk } from 'Renderer/Shader/ShaderChunk';
-export { getMaxColorSamplerUnitsCount, colorLayerEffects } from 'Renderer/LayeredMaterial';
+export { default as LayeredMaterial, getMaxColorSamplerUnitsCount, colorLayerEffects } from 'Renderer/LayeredMaterial';
 export { default as Capabilities } from 'Core/System/Capabilities';
 export { CAMERA_TYPE } from 'Renderer/Camera';
 

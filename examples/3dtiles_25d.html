@@ -9,7 +9,12 @@
         <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
     </head>
     <body>
-        <div id="viewerDiv" class="viewer"></div>
+        <div style="display:none;">
+            <img id="imgData" width=200 height=200>
+            <a class="button" id="anchor" download="imageName.jpg">Download image</a>
+        </div>
+        <div id="viewerDiv" class="viewer">
+        </div>
         <script src="../dist/itowns.js"></script>
         <script src="js/GUI/LoadingScreen.js"></script>
         <script src="../dist/debug.js"></script>
@@ -30,8 +35,17 @@
             // Instanciate PlanarView*
             var cameraCoord = new itowns.Coordinates('EPSG:3946', 1841980,
                 5175682, 3000)
-            var view = new itowns.PlanarView(viewerDiv, extent, { placement: {
-                coord: cameraCoord, heading: 30, range: 4000, tilt: 30 } });
+            var view = new itowns.PlanarView(viewerDiv, extent, {
+                camera: { type: itowns.CAMERA_TYPE.ORTHOGRAPHIC },
+                placement: extent,
+                controls: {
+                    // Faster zoom in/out speed
+                    zoomFactor: 3,
+                    // prevent from zooming in too much
+                    maxResolution: 0.005  // a pixel shall not represent a metric size smaller than 5 mm
+                },
+                }
+            );
 
             setupLoadingScreen(viewerDiv, view);
 
@@ -81,40 +95,28 @@
             // extension of gltf. We need to enable it.
             itowns.enableDracoLoader('./libs/draco/');
 
+            const depthMaterial = new itowns.LayeredMaterial({}, 1);
+
+            depthMaterial.mode = 1;
+
             var $3dTilesLayer = new itowns.C3DTilesLayer(
                 '3d-tiles-layer-building', {
                     name: 'Lyon-2015-building',
+                    overrideMaterials: depthMaterial,
                     source: new itowns.C3DTilesSource({
                         url: 'https://raw.githubusercontent.com/iTowns/iTowns2-sample-data/master/' +
                             '3DTiles/lyon_1_3946_textured_draco/tileset.json',
                     }),
                 }, view);
 
-            // Lights
-            var dirLight = new itowns.THREE.DirectionalLight(0xffffff, 1);
-            dirLight.position.set(-0.9, 0.3, 1);
-            dirLight.updateMatrixWorld();
-            view.scene.add( dirLight );
-
-            var ambLight = new itowns.THREE.AmbientLight(0xffffff, 0.2);
-            view.scene.add( ambLight );
-
-            // Pick 3D Tiles features when hovering them with the mouse and
-            // display their semantic information in an html div
-            var pickingArgs = {};
-            pickingArgs.htmlDiv = document.getElementById('featureInfo');
-            pickingArgs.view = view;
-            pickingArgs.layer = $3dTilesLayer;
-            itowns.View.prototype.addLayer.call(view, $3dTilesLayer);
-
-            // Request redraw
-            view.notifyChange();
-
-            // Add a debug UI
-            var menu = new GuiTools('menuDiv', view);
-            var d = new debug.Debug(view, menu.gui);
-            debug.createTileDebugUI(menu.gui, view, view.tileLayer, d);
-            debug.create3dTilesDebugUI(menu.gui, view, $3dTilesLayer, d);
+            itowns.View.prototype.addLayer.call(view, $3dTilesLayer).then(l => {
+                view.tileLayer.object3d.add(l.object3d);
+            });
+            document.addEventListener('keydown', (event) => {
+                if (event.key === 'd') {
+                    view.exportDepthBuffer();
+                }
+            }, false);
         </script>
     </body>
 </html>
