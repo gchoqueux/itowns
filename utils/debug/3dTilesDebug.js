@@ -112,4 +112,8 @@ export default function create3dTilesDebugUI(datDebugTool, view, _3dTileslayer) 
     gui.add(_3dTileslayer, 'sseThreshold', 0, 100).name('sseThreshold').onChange(() => {
         view.notifyChange(view.camera.camera3D);
     });
+
+    gui.add(_3dTileslayer, 'year', 1800, 2050).name('Year').onChange(() => {
+        view.notifyChange(view.camera.camera3D);
+    });
 }
