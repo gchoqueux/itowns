@@ -5,7 +5,7 @@ const conf = {
 export const REVISION = conf.version;
 
 // Geographic tools
-export { Coordinates, Extent, GeoidGrid, CRS, Ellipsoid, ellipsoidSizes, OrientationUtils } from '@itowns/geodesy';
+export { Coordinates, Extent, GeoidGrid, CRS, Ellipsoid, ellipsoidSizes, OrientationUtils, CrsGroup } from '@itowns/geodesy';
 
 export { default as GlobeView, GLOBE_VIEW_EVENTS } from 'Core/Prefab/GlobeView';
 export { default as PlanarView } from 'Core/Prefab/PlanarView';

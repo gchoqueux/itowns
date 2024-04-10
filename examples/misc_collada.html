@@ -47,6 +47,8 @@
                 tilt: 60,
             };
 
+            console.log('misc_collada', itowns.CrsGroup);
+
             // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
             const viewerDiv = document.getElementById('viewerDiv');
 
@@ -91,24 +93,29 @@
 
             const loader = new ColladaLoader();
             loader.load(url, function (collada) {
+
                 const model = collada.scene;
+                model.scale.set(1.2, 1.2, 1.2);
 
                 // building coordinate
                 const coord = new itowns.Coordinates(
                     'EPSG:4326', 4.2165, 44.844, 1417,
                 );
+                const local = new itowns.CrsGroup(coord, view.referenceCrs);
+                local.add(model);
 
-                model.position.copy(coord.as(view.referenceCrs));
-                // align up vector with geodesic normal
-                model.lookAt(model.position.clone().add(coord.geodesicNormal));
-                // user rotate building to align with ortho image
-                model.rotateZ(-Math.PI * 0.2);
-                model.scale.set(1.2, 1.2, 1.2);
+
+                // model.position.copy(coord.as(view.referenceCrs));
+                // // align up vector with geodesic normal
+                // model.lookAt(model.position.clone().add(coord.geodesicNormal));
+                // // user rotate building to align with ortho image
+                // model.rotateZ(-Math.PI * 0.2);
 
                 // update coordinate of the mesh
-                model.updateMatrixWorld();
+                local.updateMatrixWorld(true);
+                console.log('local', local);
 
-                view.scene.add(model);
+                view.scene.add(local);
                 view.notifyChange();
             });
 
