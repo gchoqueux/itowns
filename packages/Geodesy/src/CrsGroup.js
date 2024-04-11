@@ -1,5 +1,7 @@
 import { Group, Quaternion, Vector3, GridHelper, AxesHelper } from 'three';
 import OrientationUtils from 'OrientationUtils';
+// eslint-disable-next-line no-unused-vars
+import calculateHomography3D from 'Homography';
 // import Extent from 'Extent';
 // import { ellipsoidSizes } from 'Ellipsoid';
 
