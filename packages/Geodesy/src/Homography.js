@@ -17,14 +17,18 @@ function calculateHomography3D(cSrcs, cDsts) {
     // const r7 = [srcPts[6], srcPts[7], 1, 0, 0, 0, -1 * dstPts[6] * srcPts[6], -1 * dstPts[6] * srcPts[7]];
     // const r8 = [0, 0, 0, srcPts[6], srcPts[7], 1, -1 * dstPts[7] * srcPts[6], -1 * dstPts[7] * srcPts[7]];
 
-    const mat = {};
+    let mat = [];
 
-    for (let i = 0, a = 0; i < 5; i++, a += 3) {
-        const cSrc = cSrcs[i];
-        const cDst = cDsts[i];
-        mat[a + 0] = [cSrc.x, cSrc.y, cSrc.z, 1,  0, 0, 0, 0,   0, 0, 0, 0,  -cDst.x * cSrc.x, -cDst.x * cSrc.y, -cDst.x * cSrc.z]; // , -X0
-        mat[a + 1] = [0, 0, 0, 0,  cSrc.x, cSrc.y, cSrc.z, 1,   0, 0, 0, 0,  -cDst.y * cSrc.x, -cDst.y * cSrc.y, -cDst.y * cSrc.z]; // , -Y0
-        mat[a + 2] = [0, 0, 0, 0,  0, 0, 0, 0,   cSrc.x, cSrc.y, cSrc.z, 1,  -cDst.z * cSrc.x, -cDst.z * cSrc.y, -cDst.z * cSrc.z]; // , -Z0
+    const cSrc0 = cSrcs[0];
+    const cDst0 = cDsts[0];
+    for (let i = 0; i < cSrcs.length; i++) {
+        const cSrci = cSrcs[i];
+        const cSrc = cSrci.clone().setFromValues(cSrci.x - cSrc0.x, cSrci.y - cSrc0.y, cSrci.z - cSrc0.z);
+        const cDst = cDsts[i].clone().setFromValues(cDsts[i].x - cDst0.x, cDsts[i].y - cDst0.y, cDsts[i].z - cDst0.z);
+        // const cDst = cDsts[i];
+        mat = mat.concat([cSrc.x, cSrc.y, cSrc.z, 1,  0, 0, 0, 0,   0, 0, 0, 0,  -cDst.x * cSrc.x, -cDst.x * cSrc.y, -cDst.x * cSrc.z]); // , -X0
+        mat = mat.concat([0, 0, 0, 0,  cSrc.x, cSrc.y, cSrc.z, 1,   0, 0, 0, 0,  -cDst.y * cSrc.x, -cDst.y * cSrc.y, -cDst.y * cSrc.z]); // , -Y0
+        mat = mat.concat([0, 0, 0, 0,  0, 0, 0, 0,   cSrc.x, cSrc.y, cSrc.z, 1,  -cDst.z * cSrc.x, -cDst.z * cSrc.y, -cDst.z * cSrc.z]); // , -Z0
     }
 
     // mat[12 + 0] = [0, 0, 1, 0,  0, 0, 0, 0,   0, 0, 0, 0,  0, 0, cDsts[4].x]; // , -X0
@@ -48,7 +52,8 @@ function calculateHomography3D(cSrcs, cDsts) {
 
     // const matA = [r1, r2, r3, r4, r5, r6, r7, r8];
 
-    const matA = Object.values(mat);
+    const matA = mat;
+    console.log('matA', matA);
     // const matB = cDsts; // X0,Y0,Z0, X1,Y1,Z1, X2,Y2,Z2, X3,Y3,Z3, 0,0,0
     const matB = cDsts.map(a => a.toArray()).flat(); // .slice(0, -3).concat([0, 0, 0]);
     // let matC;
@@ -56,7 +61,7 @@ function calculateHomography3D(cSrcs, cDsts) {
         const matC = numeric.inv(numeric.dotMMsmall(numeric.transpose(matA), matA));
         const matD = numeric.dotMMsmall(matC, numeric.transpose(matA));
         const matX = numeric.dotMV(matD, matB);
-        console.log('matX', matX.map(a => Math.round(a * 6) / 6));
+        // console.log('matX', matX.map(a => Math.round(a * 6) / 6));
 
         // matX = matX.map(a => Math.round(a * 6) / 6);
         const res = numeric.dotMV(matA, matX);
@@ -71,12 +76,17 @@ function calculateHomography3D(cSrcs, cDsts) {
 }
 
 const srcs = [
-    new Coordinates('EPSG:4326', 4.00005, 44.00008, 10),
+    new Coordinates('EPSG:4326', 4.00005, 44.00008, 0),
     new Coordinates('EPSG:4326', 4.00006, 44.00008, 0),
-    new Coordinates('EPSG:4326', 4.00006, 44.00009, 10),
+    new Coordinates('EPSG:4326', 4.00006, 44.00009, 0),
     new Coordinates('EPSG:4326', 4.00005, 44.00009, 0),
-    new Coordinates('EPSG:4326', 4.000055, 44.000085, 20)].map(a => a.as('EPSG:2154'));
+    new Coordinates('EPSG:4326', 4.00005, 44.00008, 10),
+    new Coordinates('EPSG:4326', 4.00006, 44.00008, 10),
+    new Coordinates('EPSG:4326', 4.00006, 44.00009, 10),
+    new Coordinates('EPSG:4326', 4.00005, 44.00009, 10),
+].map(a => a.as('EPSG:2154'));
 
+const srcs_map = srcs.map(c => c.clone().setFromValues(c.x - srcs[0].x, c.y - srcs[0].y, c.z - srcs[0].z));
 // const srcs = [
 //     new Coordinates('EPSG:4326', 0, 0, 3),
 //     new Coordinates('EPSG:4326', 1, 0, 0),
@@ -92,10 +102,15 @@ const srcs = [
 //     new Coordinates('EPSG:4326', 1, 1, 1)];
 
 const dsts = srcs.map(a => a.as('EPSG:4978'));
-const hMat = calculateHomography3D(srcs, dsts);
+const dsts_map = dsts.map(c => c.clone().setFromValues(c.x - dsts[0].x, c.y - dsts[0].y, c.z - dsts[0].z));
 
-const hCoords = srcs.map(a => a.applyMatrix4(hMat));
-console.log('dsts', dsts.map(a => a.toArray()));
+
+// const hMat = calculateHomography3D(srcs, dsts);
+const hMat = calculateHomography3D(srcs_map, dsts_map);
+
+const hCoords = srcs_map.map(a => a.clone().applyMatrix4(hMat));
+
+console.log('dsts', dsts_map.map(a => a.toArray()));
 console.log('hCoords', hCoords.map(a => a.toArray()));
 
 export default calculateHomography3D;
