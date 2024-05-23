@@ -25,9 +25,10 @@ const replacementPluginConf = babelConf.plugins.find(plugin => Array.isArray(plu
 replacementPluginConf[1].replacements.find(decl => decl.identifierName === '__DEBUG__').replacement.value = debugBuild;
 
 const include = [
-    path.resolve(__dirname, 'src'),
-    path.resolve(__dirname, 'test'),
-    path.resolve(__dirname, 'utils'),
+    path.resolve(__dirname, './packages/Main/src'),
+    path.resolve(__dirname, './packages/Main/test'),
+    path.resolve(__dirname, './packages/Debug/src'),
+    path.resolve(__dirname, './packages/Gui/src'),
 ];
 
 module.exports = () => {
@@ -44,25 +45,31 @@ module.exports = () => {
         mode,
         context: path.resolve(__dirname),
         resolve: {
-            modules: [path.resolve(__dirname, 'src'), 'node_modules'],
+            exportsFields: ['itowns_exports', 'exports'],
+            modules: [
+                path.resolve(__dirname, './packages/Main/src'),
+                path.resolve(__dirname, './packages/Geodesy/src'),
+                path.resolve(__dirname, './packages/Debug/src'),
+                path.resolve(__dirname, './packages/Gui/src'),
+                'node_modules'],
         },
         entry: {
             itowns: [
                 'core-js',
-                './src/MainBundle.js',
+                './packages/Main/src/MainBundle.js',
             ],
             debug: {
-                import: './utils/debug/Main.js',
+                import: './packages/Debug/src/Main.js',
                 dependOn: 'itowns',
             },
             itowns_widgets: {
-                import: './src/Utils/gui/Main.js',
+                import: './packages/Gui/src/Main.js',
                 dependOn: 'itowns',
             },
         },
         devtool: 'source-map',
         output: {
-            path: path.resolve(__dirname, 'dist'),
+            path: path.resolve(__dirname, './packages/Main/dist'),
             filename: '[name].js',
             library: '[name]',
             libraryTarget: 'umd',
@@ -72,6 +79,7 @@ module.exports = () => {
             rules: [
                 {
                     test: /\.js$/,
+                    exclude: path.resolve(__dirname, '/node_modules/'),
                     include,
                     use: babelLoaderOptions,
                 },
@@ -84,7 +92,7 @@ module.exports = () => {
         ],
         devServer: {
             devMiddleware: {
-                publicPath: '/dist/',
+                publicPath: './packages/Main/dist/',
             },
             static: {
                 directory: path.resolve(__dirname, './'),
