@@ -1,5 +1,5 @@
 {
-  "name": "@itowns/geodesy",
+  "name": "@itowns_gc/geodesy",
   "version": "2.43.1",
   "description": "Geodesy",
   "type": "module",
