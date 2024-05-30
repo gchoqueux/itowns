@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 
 import TiledGeometryLayer from 'Layer/TiledGeometryLayer';
-import { CRS, globalExtentTMS } from '@itowns/geodesy';
+import { CRS, globalExtentTMS } from '@itowns_gc/geodesy';
 import PlanarTileBuilder from './PlanarTileBuilder';
 
 /**

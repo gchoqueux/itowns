@@ -3,7 +3,7 @@ import assert from 'assert';
 import { updateLayeredMaterialNodeImagery, updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';
 import FeatureProcessing from 'Process/FeatureProcessing';
 import TileMesh from 'Core/TileMesh';
-import { Extent, globalExtentTMS } from '@itowns/geodesy';
+import { Extent, globalExtentTMS } from '@itowns_gc/geodesy';
 import OBB from 'Renderer/OBB';
 import DataSourceProvider from 'Provider/DataSourceProvider';
 import Fetcher from 'Provider/Fetcher';

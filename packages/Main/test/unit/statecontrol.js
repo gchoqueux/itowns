@@ -1,6 +1,6 @@
 import { MOUSE } from 'three';
 import assert from 'assert';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 import GlobeView from 'Core/Prefab/GlobeView';
 import Renderer from './bootstrap';
 

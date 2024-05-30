@@ -1,5 +1,5 @@
 import { FEATURE_TYPES } from 'Core/Feature';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 
 function pointIsOverLine(point, linePoints, epsilon, offset, count, size) {
     const x0 = point.x;

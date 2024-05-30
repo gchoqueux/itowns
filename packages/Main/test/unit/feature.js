@@ -1,6 +1,6 @@
 import assert from 'assert';
 import Feature, { FeatureCollection, FEATURE_TYPES } from 'Core/Feature';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 
 describe('Feature', function () {
     const options_A = {

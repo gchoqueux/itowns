@@ -1,6 +1,6 @@
 import assert from 'assert';
 import Camera, { CAMERA_TYPE } from 'Renderer/Camera';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 import { compareWithEpsilon } from './utils';
 
 describe('camera', function () {

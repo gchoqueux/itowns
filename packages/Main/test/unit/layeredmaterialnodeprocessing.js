@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import assert from 'assert';
 import { updateLayeredMaterialNodeImagery } from 'Process/LayeredMaterialNodeProcessing';
 import TileMesh from 'Core/TileMesh';
-import { Extent } from '@itowns/geodesy';
+import { Extent } from '@itowns_gc/geodesy';
 import OBB from 'Renderer/OBB';
 import Layer from 'Layer/Layer';
 import Source from 'Source/Source';

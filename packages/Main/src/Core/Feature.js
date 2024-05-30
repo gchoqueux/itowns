@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Extent, Coordinates, CRS } from '@itowns/geodesy';
+import { Extent, Coordinates, CRS } from '@itowns_gc/geodesy';
 import Style from 'Core/Style';
 
 function defaultExtent(crs) {

@@ -1,6 +1,6 @@
 import Source from 'Source/Source';
 import URLBuilder from 'Provider/URLBuilder';
-import { Extent, globalExtentTMS, CRS } from '@itowns/geodesy';
+import { Extent, globalExtentTMS, CRS } from '@itowns_gc/geodesy';
 
 const extent = new Extent(CRS.tms_4326, 0, 0, 0);
 

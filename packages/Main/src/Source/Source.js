@@ -1,4 +1,4 @@
-import { Extent, CRS } from '@itowns/geodesy';
+import { Extent, CRS } from '@itowns_gc/geodesy';
 import GeoJsonParser from 'Parser/GeoJsonParser';
 import KMLParser from 'Parser/KMLParser';
 import GDFParser from 'Parser/GDFParser';

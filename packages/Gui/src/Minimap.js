@@ -1,5 +1,5 @@
-import { Coordinates } from '@itowns/geodesy';
-import { MAIN_LOOP_EVENTS, PlanarView, CAMERA_TYPE } from 'itowns';
+import { Coordinates } from '@itowns_gc/geodesy';
+import { MAIN_LOOP_EVENTS, PlanarView, CAMERA_TYPE } from 'itowns_gc';
 import Widget from './Widget';
 
 

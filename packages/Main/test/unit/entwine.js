@@ -1,7 +1,7 @@
 import assert from 'assert';
 import View from 'Core/View';
 import GlobeView from 'Core/Prefab/GlobeView';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 import EntwinePointTileSource from 'Source/EntwinePointTileSource';
 import EntwinePointTileLayer from 'Layer/EntwinePointTileLayer';
 import EntwinePointTileNode from 'Core/EntwinePointTileNode';
