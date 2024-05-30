@@ -1,4 +1,4 @@
-import { CONTROL_EVENTS, GLOBE_VIEW_EVENTS, PLANAR_CONTROL_EVENT, VIEW_EVENTS } from 'itowns';
+import { CONTROL_EVENTS, GLOBE_VIEW_EVENTS, PLANAR_CONTROL_EVENT, VIEW_EVENTS } from 'itowns_gc';
 import Widget from './Widget';
 
 

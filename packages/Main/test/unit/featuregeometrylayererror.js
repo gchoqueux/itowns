@@ -3,7 +3,7 @@ import assert from 'assert';
 import GlobeView from 'Core/Prefab/GlobeView';
 import FeatureGeometryLayer from 'Layer/FeatureGeometryLayer';
 import FileSource from 'Source/FileSource';
-import { Extent, Coordinates } from '@itowns/geodesy';
+import { Extent, Coordinates } from '@itowns_gc/geodesy';
 import OBB from 'Renderer/OBB';
 import TileMesh from 'Core/TileMesh';
 import Renderer from './bootstrap';

@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { Extent, GeoidGrid } from '@itowns/geodesy';
+import { Extent, GeoidGrid } from '@itowns_gc/geodesy';
 import { BYTES_PER_DOUBLE } from 'Parser/GTXParser';
 
 

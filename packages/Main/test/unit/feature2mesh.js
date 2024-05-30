@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CRS } from '@itowns/geodesy';
+import { CRS } from '@itowns_gc/geodesy';
 import assert from 'assert';
 import GeoJsonParser from 'Parser/GeoJsonParser';
 import Feature2Mesh from 'Converter/Feature2Mesh';

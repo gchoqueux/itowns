@@ -1,6 +1,6 @@
 import assert from 'assert';
 import GeoJsonParser from 'Parser/GeoJsonParser';
-import { Extent, CRS } from '@itowns/geodesy';
+import { Extent, CRS } from '@itowns_gc/geodesy';
 
 import holes from '../data/geojson/holes.geojson';
 import gpx from '../data/geojson/gpx.geojson';

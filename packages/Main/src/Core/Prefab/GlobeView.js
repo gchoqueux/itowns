@@ -2,7 +2,7 @@ import * as THREE from 'three';
 
 import View, { VIEW_EVENTS } from 'Core/View';
 import GlobeControls from 'Controls/GlobeControls';
-import { Coordinates, CRS, ellipsoidSizes } from '@itowns/geodesy';
+import { Coordinates, CRS, ellipsoidSizes } from '@itowns_gc/geodesy';
 
 import GlobeLayer from 'Core/Prefab/Globe/GlobeLayer';
 import Atmosphere from 'Core/Prefab/Globe/Atmosphere';

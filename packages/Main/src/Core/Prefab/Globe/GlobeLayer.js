@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import TiledGeometryLayer from 'Layer/TiledGeometryLayer';
-import { ellipsoidSizes, globalExtentTMS, schemeTiles, CRS } from '@itowns/geodesy';
+import { ellipsoidSizes, globalExtentTMS, schemeTiles, CRS } from '@itowns_gc/geodesy';
 import BuilderEllipsoidTile from 'Core/Prefab/Globe/BuilderEllipsoidTile';
 import { SIZE_DIAGONAL_TEXTURE } from 'Process/LayeredMaterialNodeProcessing';
 

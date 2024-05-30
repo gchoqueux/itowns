@@ -10,7 +10,7 @@ import FileSource from 'Source/FileSource';
 import OrientedImageSource from 'Source/OrientedImageSource';
 import C3DTilesSource from 'Source/C3DTilesSource';
 import C3DTilesIonSource from 'Source/C3DTilesIonSource';
-import { Extent } from '@itowns/geodesy';
+import { Extent } from '@itowns_gc/geodesy';
 import sinon from 'sinon';
 import Fetcher from 'Provider/Fetcher';
 

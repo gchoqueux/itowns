@@ -1,6 +1,6 @@
 import { CameraHelper, Color, Vector3 } from 'three';
-import { Coordinates } from '@itowns/geodesy';
-import { MAIN_LOOP_EVENTS, OBB } from 'itowns';
+import { Coordinates } from '@itowns_gc/geodesy';
+import { MAIN_LOOP_EVENTS, OBB } from 'itowns_gc';
 import * as THREE from 'three';
 import ThreeStatsChart from './charts/ThreeStatsChart';
 import { backgroundChartDiv, color_blue } from './charts/ChartConfig';
