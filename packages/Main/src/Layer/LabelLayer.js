@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import LayerUpdateState from 'Layer/LayerUpdateState';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
 import GeometryLayer from 'Layer/GeometryLayer';
-import { Coordinates, Extent } from '@itowns/geodesy';
+import { Coordinates, Extent } from '@itowns_gc/geodesy';
 import Label from 'Core/Label';
 import { FEATURE_TYPES } from 'Core/Feature';
 import { readExpression, StyleContext } from 'Core/Style';

@@ -2,7 +2,7 @@ import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import DEMUtils from 'Utils/DEMUtils';
 import { MAIN_LOOP_EVENTS } from 'Core/MainLoop';
-import { Coordinates, Ellipsoid } from '@itowns/geodesy';
+import { Coordinates, Ellipsoid } from '@itowns_gc/geodesy';
 import OBB from 'Renderer/OBB';
 import { VIEW_EVENTS } from 'Core/View';
 

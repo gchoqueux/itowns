@@ -3,7 +3,7 @@ import assert from 'assert';
 import TileMesh from 'Core/TileMesh';
 // import PlanarView from 'Core/Prefab/PlanarView';
 import PlanarLayer from 'Core/Prefab/Planar/PlanarLayer';
-import { Extent, globalExtentTMS } from '@itowns/geodesy';
+import { Extent, globalExtentTMS } from '@itowns_gc/geodesy';
 import TileProvider from 'Provider/TileProvider';
 import newTileGeometry from 'Core/Prefab/TileBuilder';
 import OBB from 'Renderer/OBB';

@@ -1,4 +1,4 @@
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 import { FEATURE_TYPES } from 'Core/Feature';
 import Cache from 'Core/Scheduler/Cache';
 import Fetcher from 'Provider/Fetcher';

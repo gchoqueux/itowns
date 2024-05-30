@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import Feature2Texture from 'Converter/Feature2Texture';
-import { Extent, CRS } from '@itowns/geodesy';
+import { Extent, CRS } from '@itowns_gc/geodesy';
 
 const extentTexture = new Extent('EPSG:4326', [0, 0, 0, 0]);
 

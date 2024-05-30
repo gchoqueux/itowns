@@ -1,4 +1,4 @@
-import { Extent } from '@itowns/geodesy';
+import { Extent } from '@itowns_gc/geodesy';
 
 export default class InfoLayer {
     constructor(layer) {

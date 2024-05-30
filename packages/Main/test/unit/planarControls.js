@@ -2,7 +2,7 @@ import assert from 'assert';
 import * as THREE from 'three';
 import PlanarView from 'Core/Prefab/PlanarView';
 import { CAMERA_TYPE } from 'Renderer/Camera';
-import { Extent } from '@itowns/geodesy';
+import { Extent } from '@itowns_gc/geodesy';
 import { keys, STATE } from 'Controls/PlanarControls';
 import Renderer from './bootstrap';
 

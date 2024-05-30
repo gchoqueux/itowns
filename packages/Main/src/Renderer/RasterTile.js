@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import { ELEVATION_MODES } from 'Renderer/LayeredMaterial';
 import { checkNodeElevationTextureValidity, insertSignificantValuesFromParent, computeMinMaxElevation } from 'Parser/XbilParser';
-import { CRS } from '@itowns/geodesy';
+import { CRS } from '@itowns_gc/geodesy';
 
 export const EMPTY_TEXTURE_ZOOM = -1;
 

@@ -1,5 +1,5 @@
 {
-  "name": "@itowns/geodesy",
+  "name": "@itowns_gc/geodesy",
   "version": "2.43.1",
   "description": "Geodesy",
   "type": "module",
@@ -28,7 +28,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iTowns/itowns.git"
+    "url": "git+https://github.com/gchoqueux/itowns.git"
   },
   "license": "(CECILL-B OR MIT)",
   "bugs": {

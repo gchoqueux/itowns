@@ -3,7 +3,7 @@ import ColorLayer from 'Layer/ColorLayer';
 import TMSSource from 'Source/TMSSource';
 import { updateLayeredMaterialNodeImagery } from 'Process/LayeredMaterialNodeProcessing';
 import GlobeView from 'Core/Prefab/GlobeView';
-import { Coordinates, Extent } from '@itowns/geodesy';
+import { Coordinates, Extent } from '@itowns_gc/geodesy';
 import TileMesh from 'Core/TileMesh';
 import * as THREE from 'three';
 import OBB from 'Renderer/OBB';

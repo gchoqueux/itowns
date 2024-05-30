@@ -1,4 +1,4 @@
-import { VIEW_EVENTS } from 'itowns';
+import { VIEW_EVENTS } from 'itowns_gc';
 import Widget from './Widget';
 
 
