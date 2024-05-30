@@ -232,10 +232,12 @@ jobs:
       # !!! To change
       - name: build site
         run: |
-          mkdir -p itowns/dist
+          mkdir -p itowns/packages
+          mkdir -p itowns/packages/Main
+          mkdir -p itowns/packages/Main/dist
           mkdir -p itowns/potree/build
           mkdir -p itowns/potree/libs
-          cp -R dist/*.js itowns/dist/
+          cp -R packages/Main/dist/*.js itowns/packages/Main/dist
           cp -R examples itowns/
           cp -R buildDocs itowns/docs
 
