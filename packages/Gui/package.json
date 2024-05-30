@@ -1,6 +1,6 @@
 {
   "name": "@itowns_gc/gui",
-  "version": "2.43.2-next.0",
+  "version": "2.43.1",
   "description": "Gui",
   "type": "module",
   "main": "lib/Main.js",
@@ -23,7 +23,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iTowns/itowns.git"
+    "url": "git+https://github.com/gchoqueux/itowns.git"
   },
   "license": "(CECILL-B OR MIT)",
   "bugs": {
