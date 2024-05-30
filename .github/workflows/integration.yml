@@ -11,10 +11,22 @@ on:
 
 jobs:
 
+  test-repo:
+    name: test repo name ++
+    if: ${{ github.repository_owner == 'gchoqueux' }}
+    runs-on: ubuntu-latest
+    steps:
+      # Use specific Node.js version
+      - uses: actions/checkout@v3
+      - name: name repo
+        run: echo 'gchoqueux repository'
+
   # Build bundle, doc and check linter
   build:
     name: Build bundle, check Linter and generate documentation
     runs-on: ubuntu-latest
+    needs: test-repo
+
     steps:
 
       # Use specific Node.js version
@@ -44,7 +56,7 @@ jobs:
 
       # Build documentation
       - name: Build documentation
-        if: ${{ success() && github.ref == 'refs/heads/master' }}
+        # if: ${{ success() && github.ref == 'refs/heads/master' }}
         run: npm run doc -- -d buildDocs
 
       # Prepare archive for deploying
@@ -83,9 +95,9 @@ jobs:
     strategy:
       matrix:
         include:
-          - package: "@itowns/geodesy"
+          - package: "@itowns_gc/geodesy"
             path: "Geodesy"
-          - package: "itowns"
+          - package: "itowns_gc"
             path: "Main"
     steps:
 
@@ -129,39 +141,40 @@ jobs:
         parallel-finished: true
         github-token: ${{ secrets.GITHUB_TOKEN }}
   # Functional tests
-  functional-tests:
-    name: Functional tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+  # functional-tests:
+  #   name: Functional tests
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
 
-      # Use specific Node.js version
-      - uses: actions/checkout@v3
-      - name: Use Node.js 18.x
-        uses: actions/setup-node@v3
-        with:
-          node-version: 18.x
-          cache: 'npm'
+  #     # Use specific Node.js version
+  #     - uses: actions/checkout@v3
+  #     - name: Use Node.js 18.x
+  #       uses: actions/setup-node@v3
+  #       with:
+  #         node-version: 18.x
+  #         cache: 'npm'
 
-      # Install packages
-      - name: Install packages
-        run: npm ci
+  #     # Install packages
+  #     - name: Install packages
+  #       run: npm ci
 
-      # Download artifact from build
-      - name: Download itowns bundle
-        uses: actions/download-artifact@v3
-        with:
-          name: dist-itowns
+  #     # Download artifact from build
+  #     - name: Download itowns bundle
+  #       uses: actions/download-artifact@v3
+  #       with:
+  #         name: dist-itowns
 
-      - name: Run functional tests
-        run: npm run test-functional
+  #     - name: Run functional tests
+  #       run: npm run test-functional
 
 
   # Publish NPM package
   publish:
     name: Publish NPM package
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [finish-coverage, functional-tests]
+    # if: ${{ github.ref == 'refs/heads/master' }}
+    # needs: [finish-coverage, functional-tests]
+    needs: [finish-coverage]
     runs-on: ubuntu-latest
     permissions:
         # id-token: write permission is required for npm provenance:
@@ -217,8 +230,9 @@ jobs:
   # Deploy on itowns.github.io website
   deploy:
     name: Deploy to itowns.github.io
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [finish-coverage, functional-tests, check-commit-message]
+    # if: ${{ github.ref == 'refs/heads/master' }}
+    # needs: [finish-coverage, functional-tests, check-commit-message]
+    needs: [finish-coverage, check-commit-message]
     runs-on: ubuntu-latest
     steps:
 
@@ -256,7 +270,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: iTowns/itowns.github.io
+          external_repository: gchoqueux/itowns.github.io
           publish_dir: ./itowns
           destination_dir: ./itowns
           publish_branch: master
@@ -271,7 +285,7 @@ jobs:
         uses: peaceiris/actions-gh-pages@v3
         with:
           deploy_key: ${{ secrets.ACTIONS_DEPLOY_KEY }}
-          external_repository: iTowns/itowns.github.io
+          external_repository: gchoqueux/itowns.github.io
           publish_dir: ./itowns
           destination_dir: ./itowns/dev
           publish_branch: master
@@ -281,8 +295,10 @@ jobs:
   # Create GitHub release
   release:
     name: Release GitHub
-    if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
-    needs: [finish-coverage, functional-tests, check-commit-message]
+    # if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
+    # needs: [finish-coverage, functional-tests, check-commit-message]
+    if: ${{ startsWith( github.event.head_commit.message, 'release v' ) }}
+    needs: [finish-coverage, check-commit-message]
     runs-on: ubuntu-latest
     steps:
 

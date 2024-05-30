@@ -3,7 +3,7 @@ import * as THREE from 'three';
 import Label from 'Core/Label';
 import Style from 'Core/Style';
 import { FeatureCollection, FEATURE_TYPES } from 'Core/Feature';
-import { Coordinates, Extent } from '@itowns/geodesy';
+import { Coordinates, Extent } from '@itowns_gc/geodesy';
 import LabelLayer from 'Layer/LabelLayer';
 import GlobeView from 'Core/Prefab/GlobeView';
 import ColorLayer from 'Layer/ColorLayer';

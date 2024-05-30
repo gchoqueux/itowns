@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import TileGeometry from 'Core/TileGeometry';
 import BuilderEllipsoidTile from 'Core/Prefab/Globe/BuilderEllipsoidTile';
-import { CRS, Coordinates } from '@itowns/geodesy';
+import { CRS, Coordinates } from '@itowns_gc/geodesy';
 
 // get oriented bounding box of tile
 const builder = new BuilderEllipsoidTile({ crs: 'EPSG:4978', uvCount: 1 });

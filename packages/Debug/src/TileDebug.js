@@ -1,7 +1,7 @@
 import * as THREE from 'three';
 import TWEEN from '@tweenjs/tween.js';
 import GeometryLayer from 'Layer/GeometryLayer';
-import { MAIN_LOOP_EVENTS } from 'itowns';
+import { MAIN_LOOP_EVENTS } from 'itowns_gc';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
 import TileObjectChart from './charts/TileObjectChart';
 import TileVisibilityChart from './charts/TileVisibilityChart';

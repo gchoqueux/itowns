@@ -1,5 +1,5 @@
 import * as THREE from 'three';
-import { CRS, Coordinates } from '@itowns/geodesy';
+import { CRS, Coordinates } from '@itowns_gc/geodesy';
 import Camera from 'Renderer/Camera';
 import initializeWebXR from 'Renderer/WebXR';
 import MainLoop, { MAIN_LOOP_EVENTS, RENDERING_PAUSED } from 'Core/MainLoop';

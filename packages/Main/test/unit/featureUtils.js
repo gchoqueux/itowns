@@ -1,7 +1,7 @@
 import assert from 'assert';
 import GeoJsonParser from 'Parser/GeoJsonParser';
 import FeaturesUtils from 'Utils/FeaturesUtils';
-import { Coordinates } from '@itowns/geodesy';
+import { Coordinates } from '@itowns_gc/geodesy';
 import { FEATURE_TYPES } from 'Core/Feature';
 
 import geojson from '../data/geojson/simple.geojson';

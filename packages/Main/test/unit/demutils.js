@@ -4,7 +4,7 @@ import WMTSSource from 'Source/WMTSSource';
 import Fetcher from 'Provider/Fetcher';
 import assert from 'assert';
 import GlobeView from 'Core/Prefab/GlobeView';
-import { Coordinates, Extent } from '@itowns/geodesy';
+import { Coordinates, Extent } from '@itowns_gc/geodesy';
 import { updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';
 import TileMesh from 'Core/TileMesh';
 import OBB from 'Renderer/OBB';

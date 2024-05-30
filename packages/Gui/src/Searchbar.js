@@ -1,4 +1,4 @@
-import { Fetcher } from 'itowns';
+import { Fetcher } from 'itowns_gc';
 import Widget from './Widget';
 
 

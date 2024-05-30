@@ -1,6 +1,6 @@
 import Source from 'Source/Source';
 import Cache from 'Core/Scheduler/Cache';
-import { CRS } from '@itowns/geodesy';
+import { CRS } from '@itowns_gc/geodesy';
 
 /**
  * @classdesc

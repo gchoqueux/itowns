@@ -1,4 +1,4 @@
-import { Extent } from '@itowns/geodesy';
+import { Extent } from '@itowns_gc/geodesy';
 
 const extent = new Extent('EPSG:4326', [0, 0, 0, 0]);
 

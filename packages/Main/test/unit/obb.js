@@ -1,6 +1,6 @@
 import * as THREE from 'three';
 import assert from 'assert';
-import { Extent, CRS } from '@itowns/geodesy';
+import { Extent, CRS } from '@itowns_gc/geodesy';
 import PlanarTileBuilder from 'Core/Prefab/Planar/PlanarTileBuilder';
 import BuilderEllipsoidTile from 'Core/Prefab/Globe/BuilderEllipsoidTile';
 import newTileGeometry from 'Core/Prefab/TileBuilder';
