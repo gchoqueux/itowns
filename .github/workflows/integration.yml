@@ -56,7 +56,7 @@ jobs:
 
       # Build documentation
       - name: Build documentation
-        # if: ${{ success() && github.ref == 'refs/heads/master' }}
+        if: ${{ success() && github.ref == 'refs/heads/master' }}
         run: npm run doc -- -d buildDocs
 
       # Prepare archive for deploying
@@ -172,7 +172,7 @@ jobs:
   # Publish NPM package
   publish:
     name: Publish NPM package
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     # needs: [finish-coverage, functional-tests]
     needs: [finish-coverage]
     runs-on: ubuntu-latest
@@ -220,7 +220,7 @@ jobs:
         if: ${{ !startsWith(github.event.head_commit.message, 'release v' ) }}
         run: |
           git checkout next
-          git merge master
+          git merge origin/master
           npm run publish-next
           git push
         env:
@@ -230,7 +230,7 @@ jobs:
   # Deploy on itowns.github.io website
   deploy:
     name: Deploy to itowns.github.io
-    # if: ${{ github.ref == 'refs/heads/master' }}
+    if: ${{ github.ref == 'refs/heads/master' }}
     # needs: [finish-coverage, functional-tests, check-commit-message]
     needs: [finish-coverage, check-commit-message]
     runs-on: ubuntu-latest
@@ -295,9 +295,8 @@ jobs:
   # Create GitHub release
   release:
     name: Release GitHub
-    # if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
+    if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
     # needs: [finish-coverage, functional-tests, check-commit-message]
-    if: ${{ startsWith( github.event.head_commit.message, 'release v' ) }}
     needs: [finish-coverage, check-commit-message]
     runs-on: ubuntu-latest
     steps:
