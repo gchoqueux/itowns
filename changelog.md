@@ -1,3 +1,55 @@
+<a name="2.44.0"></a>
+# [2.44.0](https://github.com/iTowns/itowns/compare/v2.43.1...v2.44.0) (2024-05-31)
+
+
+### Features
+
+* Add support for Cloud Optimized Point Clouds (COPC) ([f1e014f](https://github.com/iTowns/itowns/commit/f1e014f))
+* **COG:** Allow tileWidth, tileHeight & resampleMethod parameter ([24ab82f](https://github.com/iTowns/itowns/commit/24ab82f))
+* **examples:** add COPC url loader ([6b4a5f2](https://github.com/iTowns/itowns/commit/6b4a5f2))
+* **LasParser:** add parsing of chunks of LAS files ([eec3197](https://github.com/iTowns/itowns/commit/eec3197))
+
+
+### Bug Fixes
+
+* **3dTilesLayer:** fix transparency for 3dTilesLayer ([af4d061](https://github.com/iTowns/itowns/commit/af4d061))
+* **COG:** Fix AggregateError (retry if error occur) ([038dedd](https://github.com/iTowns/itowns/commit/038dedd))
+* **COG:** Fix COG example ([aaa9691](https://github.com/iTowns/itowns/commit/aaa9691))
+* **COG:** Fix COG levels parsing ([921bc03](https://github.com/iTowns/itowns/commit/921bc03))
+* **COG:** Fix selectLevel (incorrect level selection when source extent is huge) ([809a4ad](https://github.com/iTowns/itowns/commit/809a4ad))
+* **COG:** Fix texture width & height (use source.tileWidth & source.tileHeight) ([e03caf5](https://github.com/iTowns/itowns/commit/e03caf5))
+* **entwine:** change transparency settings ([47f859d](https://github.com/iTowns/itowns/commit/47f859d))
+* **example:** change klokantech url in 3dtile_ion.html ([14891fd](https://github.com/iTowns/itowns/commit/14891fd))
+* **test-functional:** fixes on hooks_functional.js ([bc41708](https://github.com/iTowns/itowns/commit/bc41708))
+* **test:** fetcher.js augment timeout limit ([5668334](https://github.com/iTowns/itowns/commit/5668334))
+* **test:** fix change on id for test functional ([3780c56](https://github.com/iTowns/itowns/commit/3780c56))
+
+
+### Examples
+
+* **COG:** Set maxSubdivisionLevel to 10 (default is 5) ([1de7124](https://github.com/iTowns/itowns/commit/1de7124))
+
+
+### Code Refactoring
+
+* **3dTilesDebug:** add properties hasPnts for pnts fields in GUI ([ff0ff3d](https://github.com/iTowns/itowns/commit/ff0ff3d))
+* **3dTiles:** supp unused parameter in debug set up ([5bf62f2](https://github.com/iTowns/itowns/commit/5bf62f2))
+* **PotreeDebug:** rename PotreeDebug to PointCloudDebug ([d1eb374](https://github.com/iTowns/itowns/commit/d1eb374))
+* **test-functional:** reworks on hooks-functional.js: better gestion of errors and save initial camera position only once ([488d6a1](https://github.com/iTowns/itowns/commit/488d6a1))
+
+
+### Workflow and chores
+
+* release v2.44.0 ([31c62a8](https://github.com/iTowns/itowns/commit/31c62a8))
+
+
+### Documentation
+
+* Add link to governance repo in the README ([d3a317b](https://github.com/iTowns/itowns/commit/d3a317b))
+* **COPC:** expose doc for COPCLayer and COPCSource ([48fb9df](https://github.com/iTowns/itowns/commit/48fb9df))
+
+
+
 <a name="2.43.1"></a>
 ## [2.43.1](https://github.com/iTowns/itowns/compare/v2.43.0...v2.43.1) (2024-04-30)
 
