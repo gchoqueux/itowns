@@ -235,7 +235,7 @@ jobs:
           mkdir -p itowns/dist
           mkdir -p itowns/potree/build
           mkdir -p itowns/potree/libs
-          cp -R dist/*.js itowns/dist/
+          cp -R packages/Main/dist/*.js itowns/dist
           cp -R examples itowns/
           cp -R buildDocs itowns/docs
 
