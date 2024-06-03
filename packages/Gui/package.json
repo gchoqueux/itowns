@@ -1,6 +1,6 @@
 {
   "name": "@itowns_gc/gui",
-  "version": "2.46.0",
+  "version": "2.47.0",
   "description": "Gui",
   "type": "module",
   "main": "lib/Main.js",
