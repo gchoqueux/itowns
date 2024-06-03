@@ -1,3 +1,14 @@
+<a name="2.48.0"></a>
+# [2.48.0](https://github.com/iTowns/itowns/compare/v2.47.0...v2.48.0) (2024-06-03)
+
+
+### Workflow and chores
+
+* release v2.48.0 ([cf39d4c](https://github.com/iTowns/itowns/commit/cf39d4c))
+* fix github releasing ([c55db83](https://github.com/iTowns/itowns/commit/c55db83))
+
+
+
 <a name="2.47.0"></a>
 # [2.47.0](https://github.com/iTowns/itowns/compare/v2.43.1...v2.47.0) (2024-06-03)
 
