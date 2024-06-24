@@ -14,8 +14,8 @@
         <script type="importmap">
             {
                 "imports": {
-                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/"
-                }
+                    "three": "https://cdn.jsdelivr.net/npm/three@0.159.0/build/three.module.js",
+                    "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.159.0/examples/jsm/"                }
             }
         </script>
 
@@ -24,6 +24,8 @@
 
         <script type="module">
 
+            const three = itowns.THREE;
+
             import { VRButton } from 'three/addons/webxr/VRButton.js';
 
             // ---------- SETUP THE VR VIEW : ----------
@@ -31,9 +33,9 @@
             // Define camera initial position
             const placement = {
                 coord: new itowns.Coordinates('EPSG:4326', 6.227, 45.167),
-                range: 15000,
-                tilt: 5,
-                heading: 62,
+                range: 2000,
+                // tilt: 5,
+                // heading: 10,
             }
 
             // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
@@ -41,8 +43,11 @@
 
             // Create a GlobeView
             const view = new itowns.GlobeView(viewerDiv, placement, {
-                webXR: { scale: 0.005 },
+                webXR: { scale: 1.0 },
             });
+
+            const atmosphere = view.getLayerById('atmosphere');
+            atmosphere.setRealisticOn(true);
 
             // Instantiate three's VR Button
             const vrButton = VRButton.createButton(view.renderer);
@@ -69,10 +74,9 @@
                     new itowns.ElevationLayer(config.id, config),
                 );
             }
-            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT_HIGHRES.json')
-                .then(addElevationLayerFromConfig);
-            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json')
-                .then(addElevationLayerFromConfig);
+
+            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNS_HIGHRES.json').then(addElevationLayerFromConfig);
+            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json').then(addElevationLayerFromConfig);
         </script>
     </body>
 </html>
