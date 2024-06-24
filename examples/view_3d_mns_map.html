@@ -74,6 +74,9 @@
             }
             itowns.Fetcher.json('./layers/JSONLayers/IGN_MNS_HIGHRES.json').then(addElevationLayerFromConfig);
 
+            itowns.Fetcher.json('./layers/JSONLayers/WORLD_DTM.json')
+                .then(addElevationLayerFromConfig);
+
             // ---------- ADD SOME WIDGETS : ----------
 
             // ADD A SCALE :

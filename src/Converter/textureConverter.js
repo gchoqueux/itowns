@@ -5,12 +5,7 @@ import CRS from 'Core/Geographic/Crs';
 
 const extentTexture = new Extent('EPSG:4326', [0, 0, 0, 0]);
 
-const textureLayer = (texture, layer) => {
-    texture.generateMipmaps = false;
-    texture.magFilter = layer.magFilter || THREE.LinearFilter;
-    texture.minFilter = layer.minFilter || THREE.LinearFilter;
-    return texture;
-};
+const textureLayer = texture =>  texture;
 
 function textureColorLayer(texture, layer) {
     texture.anisotropy = 16;
