@@ -8,6 +8,7 @@ import { ImageryLayers } from 'Layer/Layer';
 import { CACHE_POLICIES } from 'Core/Scheduler/Cache';
 
 const subdivisionVector = new THREE.Vector3();
+const worldPosition = new THREE.Vector3();
 const boundingSphereCenter = new THREE.Vector3();
 
 /**
@@ -433,7 +434,7 @@ class TiledGeometryLayer extends GeometryLayer {
         boundingSphereCenter.copy(node.boundingSphere.center).applyMatrix4(node.matrixWorld);
         const distance = Math.max(
             0.0,
-            context.camera.camera3D.position.distanceTo(boundingSphereCenter) - node.boundingSphere.radius * subdivisionVector.x);
+            context.camera.camera3D.getWorldPosition(worldPosition).distanceTo(boundingSphereCenter) - node.boundingSphere.radius * subdivisionVector.x);
 
         // Size projection on pixel of bounding
         if (context.camera.camera3D.isOrthographicCamera) {
