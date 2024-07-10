@@ -193,7 +193,7 @@ class c3DEngine {
 
         this.renderer.setRenderTarget(target);
         this.renderer.clear(true, true, false);
-        this.renderer.render(view.scene, view.camera.camera3D);
+        this.renderer.render(view.scene, view.camera);
         this.renderer.setRenderTarget(current);
 
         this.fullSizeRenderTarget.scissorTest = false;
