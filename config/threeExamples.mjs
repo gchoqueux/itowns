@@ -12,5 +12,6 @@ export default {
         './libs/zstddec.module.js',
         './libs/motion-controllers.module.js',
         './webxr/XRControllerModelFactory.js',
+        './geometries/BoxLineGeometry.js',
     ],
 };

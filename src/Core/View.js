@@ -15,6 +15,8 @@ import Picking from 'Core/Picking';
 import LabelLayer from 'Layer/LabelLayer';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
 
+let cameraRay;
+
 export const VIEW_EVENTS = {
     /**
      * Fires when all the layers of the view are considered initialized.
@@ -255,6 +257,11 @@ class View extends THREE.EventDispatcher {
         if (options.webXR) {
             initializeWebXR(this, options.webXR);
         }
+
+
+        cameraRay = new THREE.OrthographicCamera(-0.5, 0.5, 0.5, -0.5, 0.1, this.camera.camera3D.far);
+        const helper = new THREE.CameraHelper(cameraRay);
+        this.scene.add(helper);
     }
 
     /**
@@ -967,7 +974,7 @@ class View extends THREE.EventDispatcher {
         return result;
     }
 
-    readDepthBuffer(x, y, width, height, buffer) {
+    readDepthBuffer(x, y, width, height, buffer, camera = this.camera.camera3D) {
         const g = this.mainLoop.gfxEngine;
         const currentWireframe = this.tileLayer.wireframe;
         const currentOpacity = this.tileLayer.opacity;
@@ -984,7 +991,7 @@ class View extends THREE.EventDispatcher {
 
         const restore = this.tileLayer.level0Nodes.map(n => RenderMode.push(n, RenderMode.MODES.DEPTH));
         buffer = g.renderViewToBuffer(
-            { camera: this.camera, scene: this.tileLayer.object3d },
+            { camera, scene: this.tileLayer.object3d },
             { x, y, width, height, buffer });
         restore.forEach(r => r());
 
@@ -1066,6 +1073,37 @@ class View extends THREE.EventDispatcher {
             target.set(screen.x, screen.y, gl_FragCoord_Z);
             target.unproject(this.camera3D);
         }
+
+        if (target.length() > 10000000) { return undefined; }
+
+        return target;
+    }
+
+    getIntersectFromDepth(ray, target = new THREE.Vector3()) {
+        if (!this.tileLayer || this.tileLayer.level0Nodes.length == 0 || (!this.tileLayer.level0Nodes[0])) {
+            target = undefined;
+            return;
+        }
+        const g = this.mainLoop.gfxEngine;
+        const dim = g.getWindowSize();
+
+        cameraRay.position.copy(ray.origin);
+        cameraRay.updateMatrixWorld(true);
+        cameraRay.lookAt(new THREE.Vector3().addVectors(ray.origin, ray.direction));
+        // Render/Read to buffer
+
+        const mouse =  dim.clone().multiplyScalar(0.5);
+        mouse.x = Math.floor(mouse.x);
+        mouse.y = Math.floor(mouse.y);
+
+        const buffer = this.readDepthBuffer(mouse.x, mouse.y, 1, 1, this.#pixelDepthBuffer, cameraRay);
+        const gl_FragCoord_Z = g.depthBufferRGBAValueToOrthoZ(buffer, cameraRay);
+
+        screen.x = (mouse.x) * 2 - 1;
+        screen.y = -(mouse.y) * 2 + 1;
+
+        target.set(screen.x, screen.y, gl_FragCoord_Z);
+        target.unproject(this.camera3D);
 
         if (target.length() > 10000000) { return undefined; }
 

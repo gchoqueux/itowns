@@ -71,7 +71,7 @@
   },
   "peerDependencies": {
     "proj4": "^2.9.2",
-    "three": "^0.159.0"
+    "three": "^0.166.0"
   },
   "devDependencies": {
     "@babel/cli": "^7.24.6",
@@ -115,7 +115,7 @@
     "q": "^1.5.1",
     "replace-in-file": "^7.0.2",
     "sinon": "^17.0.1",
-    "three": "^0.159.0",
+    "three": "^0.166.0",
     "typescript": "^5.3.3",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4",
