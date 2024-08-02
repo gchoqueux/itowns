@@ -13,10 +13,6 @@ import { geoidLayerIsVisible } from 'Layer/GeoidLayer';
 const dimensions = new THREE.Vector2();
 
 function setTileFromTiledLayer(tile, tileLayer) {
-    if (tileLayer.diffuse) {
-        tile.material.diffuse = tileLayer.diffuse;
-    }
-
     if (__DEBUG__) {
         tile.material.showOutline = tileLayer.showOutline || false;
     }
@@ -55,6 +51,9 @@ export default {
             result.geometry._count++;
             const crsCount = layer.tileMatrixSets.length;
             const material = new LayeredMaterial(layer.materialOptions, crsCount);
+
+            material.uniformsGroups = [layer.geometryLayerUG, layer.rasterLayerUG];
+
             ReferLayerProperties(material, layer);
 
             const tile = new TileMesh(result.geometry, material, layer, extent, level);

@@ -1,5 +1,4 @@
 import * as THREE from 'three';
-import { ELEVATION_MODES } from 'Renderer/LayeredMaterial';
 import { checkNodeElevationTextureValidity, insertSignificantValuesFromParent, computeMinMaxElevation } from 'Parser/XbilParser';
 import CRS from 'Core/Geographic/Crs';
 
@@ -41,10 +40,6 @@ class RasterTile extends THREE.EventDispatcher {
         this.offsetScales = [];
         this.level = EMPTY_TEXTURE_ZOOM;
         this.material = material;
-
-        this._handlerCBEvent = () => { this.material.layersNeedUpdate = true; };
-        layer.addEventListener('visible-property-changed', this._handlerCBEvent);
-        layer.addEventListener('opacity-property-changed', this._handlerCBEvent);
     }
 
     get id() {
@@ -81,8 +76,6 @@ class RasterTile extends THREE.EventDispatcher {
 
     dispose(removeEvent = true) {
         if (removeEvent) {
-            this.layer.removeEventListener('visible-property-changed', this._handlerCBEvent);
-            this.layer.removeEventListener('opacity-property-changed', this._handlerCBEvent);
             // dispose all events
             this._listeners = {};
         }
@@ -115,62 +108,23 @@ class RasterTile extends THREE.EventDispatcher {
 
 export default RasterTile;
 
-export class RasterColorTile extends RasterTile {
-    get effect_type() {
-        return this.layer.effect_type;
-    }
-    get effect_parameter() {
-        return this.layer.effect_parameter;
-    }
-    get transparent() {
-        return this.layer.transparent;
-    }
-}
+export class RasterColorTile extends RasterTile {}
 
 export class RasterElevationTile extends RasterTile {
     constructor(material, layer) {
         super(material, layer);
-        const defaultEle = {
-            bias: 0,
-            mode: ELEVATION_MODES.DATA,
-            zmin: -Infinity,
-            zmax: Infinity,
-        };
-
-        this.scaleFactor = 1.0;
-
-        // Define elevation properties
+        this.min = 0;
+        this.max = 0;
         if (layer.useRgbaTextureElevation) {
-            defaultEle.mode = ELEVATION_MODES.RGBA;
-            defaultEle.zmax = 5000;
             throw new Error('Restore this feature');
         } else if (layer.useColorTextureElevation) {
-            this.scaleFactor = layer.colorTextureElevationMaxZ - layer.colorTextureElevationMinZ;
-            defaultEle.mode = ELEVATION_MODES.COLOR;
-            defaultEle.bias = layer.colorTextureElevationMinZ;
             this.min = this.layer.colorTextureElevationMinZ;
             this.max = this.layer.colorTextureElevationMaxZ;
-        } else {
-            this.min = 0;
-            this.max = 0;
         }
-        this.bias = layer.bias ?? defaultEle.bias;
-        this.mode = layer.mode ?? defaultEle.mode;
-        this.zmin = layer.zmin ?? defaultEle.zmin;
-        this.zmax = layer.zmax ?? defaultEle.zmax;
-
-        layer.addEventListener('scale-property-changed', this._handlerCBEvent);
     }
 
     get scale() {
         return this.layer.scale * this.scaleFactor;
-    }
-
-    dispose(removeEvent) {
-        super.dispose(removeEvent);
-        if (removeEvent) {
-            this.layer.removeEventListener('scale-property-changed', this._handlerCBEvent);
-        }
     }
 
     initFromParent(parent, extents) {

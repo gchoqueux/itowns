@@ -7,12 +7,22 @@ struct Layer {
     bool transparent;
 };
 
+uniform geometryLayerData {
+    float opacity;
+    vec3 diffuse;
+    vec3 overlayColor;
+    float outlineWidth;
+    vec3 outlineColors[2];
+    vec3 lightPosition;
+    bool lightingEnabled;
+    float fogDistance;
+    vec3 fogColor;
+} GeometryLayer;
+
 #include <itowns/custom_header_colorLayer>
 
 uniform sampler2D   colorTextures[NUM_FS_TEXTURES];
 uniform vec4        colorOffsetScales[NUM_FS_TEXTURES];
-uniform Layer       colorLayers[NUM_FS_TEXTURES];
-uniform int         colorTextureCount;
 
 vec3 uvs[NUM_CRS];
 
@@ -40,28 +50,53 @@ vec4 applyLightColorToInvisibleEffect(vec4 color, float intensity) {
 
 #if defined(DEBUG)
 uniform bool showOutline;
-uniform vec3 outlineColors[NUM_CRS];
-uniform float outlineWidth;
 
 vec4 getOutlineColor(vec3 outlineColor, vec2 uv) {
-    float alpha = 1. - clamp(getBorderDistance(uv) / outlineWidth, 0., 1.);
+    float alpha = 1. - clamp(getBorderDistance(uv) / GeometryLayer.outlineWidth, 0., 1.);
     return vec4(outlineColor, alpha);
 }
 #endif
 
-uniform float minBorderDistance;
-vec4 getLayerColor(int textureOffset, sampler2D tex, vec4 offsetScale, Layer layer) {
-    if ( textureOffset >= colorTextureCount ) return vec4(0);
-
-    vec3 uv;
-    // #pragma unroll_loop
-    for ( int i = 0; i < NUM_CRS; i ++ ) {
-        if ( i == layer.crs ) uv = uvs[ i ];
+vec4 getColorTexture(int id, vec2 uv) {
+    vec4 texColor;
+    switch (id){
+        case 0:
+            texColor = texture2D(colorTextures[0], uv);
+            break;
+        case 1:
+            texColor = texture2D(colorTextures[1], uv);
+            break;
+        case 2:
+            texColor = texture2D(colorTextures[2], uv);
+            break;
+        case 3:
+            texColor = texture2D(colorTextures[3], uv);
+            break;
+        case 4:
+            texColor = texture2D(colorTextures[4], uv);
+            break;
+        case 5:
+            texColor = texture2D(colorTextures[5], uv);
+            break;
+        case 6:
+            texColor = texture2D(colorTextures[6], uv);
+            break;
+        case 7:
+            texColor = texture2D(colorTextures[7], uv);
+            break;
+        case 8:
+            texColor = texture2D(colorTextures[8], uv);
+            break;
+        case 9:
+            texColor = texture2D(colorTextures[9], uv);
+            break;
     }
+    return texColor;
+}
 
-    float borderDistance = getBorderDistance(uv.xy);
-    if (textureOffset != layer.textureOffset + int(uv.z) || borderDistance < minBorderDistance ) return vec4(0);
-    vec4 color = texture2D(tex, pitUV(uv.xy, offsetScale));
+
+vec4 getLayerColor(Layer layer, int idTexture, vec2 uv) {
+    vec4 color = getColorTexture(idTexture, uv);
     if (layer.effect_type == 3) {
         #include <itowns/custom_body_colorLayer>
     } else {

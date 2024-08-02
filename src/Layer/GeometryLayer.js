@@ -1,7 +1,89 @@
+import * as THREE from 'three';
 import Layer from 'Layer/Layer';
 import Picking from 'Core/Picking';
 import { CACHE_POLICIES } from 'Core/Scheduler/Cache';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
+import { UniformsGroup, Uniform, Color } from 'three';
+import Capabilities from 'Core/System/Capabilities';
+import CRS from 'Core/Geographic/Crs';
+import { ELEVATION_MODES } from 'Renderer/LayeredMaterial';
+
+export const colorLayerEffects = {
+    noEffect: 0,
+    removeLightColor: 1,
+    removeWhiteColor: 2,
+    customEffect: 3,
+};
+
+const defaultStructLayer = {
+    //  0
+    bias: 0.0,
+    zmin: -Infinity,
+    zmax: Infinity,
+    scale: 1.0,
+    //  1
+    mode: ELEVATION_MODES.DATA,
+    opacity: 1.0,
+    crs: 0,
+    effect_parameter: 0,
+    //  2
+    effect_type: colorLayerEffects.noEffect,
+    transparent: false,
+};
+
+const keys = Object.keys(defaultStructLayer);
+
+class uniformRasterLayer extends THREE.Matrix4 {
+    constructor(layer = defaultStructLayer) {
+        super();
+        this.set(layer);
+    }
+    set(layer, tileMatrixSets) {
+        keys.forEach((key, id) => {
+            const uniform = this.elements;
+            if (key == 'crs') {
+                const crs = tileMatrixSets ? tileMatrixSets.indexOf(CRS.formatToTms(layer.crs)) : 0;
+                Object.defineProperty(uniform, `${id}`, {
+                    get() {
+                        return crs;
+                    },
+                });
+            } else if (key == 'transparent') {
+                Object.defineProperty(uniform, `${id}`, {
+                    get() {
+                        return layer[key] == true ? 1 : 0;
+                    },
+                });
+            } else if (key == 'scale') {
+                Object.defineProperty(uniform, `${id}`, {
+                    get() {
+                        return layer.scale * layer.scaleFactor;
+                    },
+                });
+            } else {
+                const l = layer[key] ? layer : defaultStructLayer;
+                Object.defineProperty(uniform, `${id}`, {
+                    get() {
+                        return l[key];
+                    },
+                });
+            }
+        });
+    }
+}
+
+
+// Max sampler color count to LayeredMaterial
+// Because there's a statement limitation to unroll, in getColorAtIdUv method
+const maxSamplersColorCount = 15;
+const samplersElevationCount = 1;
+
+function getMaxColorSamplerUnitsCount() {
+    const maxSamplerUnitsCount = Capabilities.getMaxTextureUnitsCount();
+    return Math.min(maxSamplerUnitsCount - samplersElevationCount, maxSamplersColorCount);
+}
+
+let nbSamplers;
 
 /**
  * Fires when the opacity of the layer has changed.
@@ -79,7 +161,6 @@ class GeometryLayer extends Layer {
             configurable: true,
         });
 
-        this.opacity = 1.0;
         this.wireframe = false;
 
         this.attachedLayers = [];
@@ -92,6 +173,82 @@ class GeometryLayer extends Layer {
         // Feature options
         this.filteringExtent = !this.source.isFileSource;
         this.structure = '3d';
+
+        this.geometryLayerUG = new UniformsGroup();
+        this.geometryLayerUG.setName('geometryLayerData');
+
+        const opacityUniform = new Uniform(1.0);
+        const diffuseUniform = new Uniform(new Color(0.04, 0.23, 0.35));
+        const overlayColor = new Uniform(new Color(1.0, 0.3, 0.0));
+        const outlineWidth = new Uniform(0.008);
+        const outlineColors = [new Uniform(new THREE.Vector3(1.0, 0.0, 0.0)), new Uniform(new THREE.Vector3(1.0, 0.5, 0.0))];
+        const lightPosition = new Uniform(new THREE.Vector3(-0.5, 0.0, 1.0));
+        const lightingEnabled = new Uniform(false);
+        const fogDistance = new Uniform(1000000000);
+        const fogColor = new Uniform(new THREE.Color(0.76, 0.85, 1.0));
+
+        this.geometryLayerUG.add(opacityUniform);   // opacity
+        this.geometryLayerUG.add(diffuseUniform);   // diffuse
+        this.geometryLayerUG.add(overlayColor);     // overlayColor
+        this.geometryLayerUG.add(outlineWidth);     // outlineWidth
+        this.geometryLayerUG.add(outlineColors);    // outlineColors
+        this.geometryLayerUG.add(lightPosition);    // lightPosition
+        this.geometryLayerUG.add(lightingEnabled);  // lightingEnabled
+
+        // Misc properties
+        this.geometryLayerUG.add(fogDistance);      // fogDistance
+        this.geometryLayerUG.add(fogColor);         // fogColor
+
+        Object.defineProperty(this, 'opacity', {
+            get: () => opacityUniform.value,
+            set: (value) => {
+                if (opacityUniform.value != value) {
+                    opacityUniform.value = value;
+                }
+            },
+        });
+
+        Object.defineProperty(this, 'lightingEnabled', {
+            get: () => lightingEnabled.value,
+            set: (value) => {
+                if (lightingEnabled.value != value) {
+                    lightingEnabled.value = value;
+                }
+            },
+        });
+
+        Object.defineProperty(this, 'fogDistance', {
+            get: () => fogDistance.value,
+            set: (value) => {
+                if (fogDistance.value != value) {
+                    fogDistance.value = value;
+                }
+            },
+        });
+
+        Object.defineProperty(this, 'diffuse', {
+            get: () => diffuseUniform.value,
+        });
+
+        Object.defineProperty(this, 'lightPosition', {
+            get: () => lightPosition.value,
+        });
+
+        nbSamplers = nbSamplers || [samplersElevationCount, getMaxColorSamplerUnitsCount()];
+
+        const NUM_VS_TEXTURES = nbSamplers[0];
+        const NUM_FS_TEXTURES = nbSamplers[1];
+
+        this.rasterLayerUG = new UniformsGroup();
+        this.rasterLayerUG.setName('RasterLayerData');
+
+        const data = [];
+
+        for (let i = 0; i < NUM_VS_TEXTURES + NUM_FS_TEXTURES; i++) {
+            data.push(new Uniform(new uniformRasterLayer()));
+        }
+
+        this.rasterLayerUG.add(data);
     }
 
     get visible() {
@@ -149,6 +306,14 @@ class GeometryLayer extends Layer {
         this.attachedLayers.push(layer);
         // To traverse GeometryLayer object3d attached
         layer.parent = this;
+        if (layer.isRasterLayer) {
+            if (layer.isColorLayer) {
+                const id = Math.max(this.attachedLayers.filter(l => l.isColorLayer).length - 1, 0) + 1;
+                this.rasterLayerUG.uniforms[0][id].value.set(layer, this.tileMatrixSets);
+            } else {
+                this.rasterLayerUG.uniforms[0][0].value.set(layer, this.tileMatrixSets);
+            }
+        }
     }
 
     /**

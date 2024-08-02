@@ -7,6 +7,7 @@ class RasterLayer extends Layer {
     constructor(id, config) {
         config.cacheLifeTime = config.cacheLifeTime ?? CACHE_POLICIES.TEXTURE;
         super(id, config);
+        this.isRasterLayer = true;
     }
 
     convert(data, extentDestination) {

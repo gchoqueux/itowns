@@ -9,10 +9,54 @@
 #endif
 #include <itowns/mode_pars_fragment>
 
-uniform vec3        diffuse;
-uniform float       opacity;
+uniform RasterLayerData {
+    mat4 parameters[NUM_FS_TEXTURES+1];
+} layer;
+
+uniform float colorTextureOffset[NUM_FS_TEXTURES];
+uniform float layerCount;
+
+Layer getColorLayer(int id) {
+    mat4 m = layer.parameters[id+1];
+    Layer l;
+
+    l.opacity = m[1].y;
+    l.crs = int(m[1].z);
+    l.effect_parameter = m[1].w;
+    l.effect_type = int(m[2].x);
+    l.transparent = bool(m[2].y);
+
+    return l;
+}
+
+// uniform RasterLayerData {
+//     float bias[16];
+//     float zmin[16];
+//     float zmax[16];
+//     float scale[16];
+//
+//     float mode[16];
+//     float opacity[16];
+//     float crs[16];
+//     float effect_parameter[16];
+//
+//     float effect_type[16];
+//     float transparent[16];
+// } layers;
+
 varying vec3        vUv; // uv.x/uv_1.x, uv.y, uv_1.y
 varying vec2        vHighPrecisionZW;
+
+void layerColor(int i){
+    if (i < int(layerCount)) {
+        Layer layer = getColorLayer(i);
+        vec3 uv = uvs[layer.crs];
+        int id_tex = int(colorTextureOffset[i]) + int(uv.z);
+        vec2 uv_tex = pitUV(uv.xy, colorOffsetScales[id_tex]);
+        vec4 color = getLayerColor(layer, id_tex, uv_tex);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
+    }
+}
 
 void main() {
     #include <logdepthbuf_fragment>
@@ -27,7 +71,7 @@ void main() {
 
 #else
 
-    gl_FragColor = vec4(diffuse, opacity);
+    gl_FragColor = vec4(GeometryLayer.diffuse, GeometryLayer.opacity);
 
     uvs[0] = vec3(vUv.xy, 0.);
 
@@ -35,22 +79,21 @@ void main() {
     uvs[1] = vec3(vUv.x, fract(vUv.z), floor(vUv.z));
 #endif
 
-    vec4 color;
     #pragma unroll_loop
-    for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
-        color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
-        gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
+    for (int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
+        layerColor(i);
     }
 
-  #if defined(DEBUG)
+    #if defined(DEBUG)
     if (showOutline) {
+        vec4 color;
         #pragma unroll_loop
         for ( int i = 0; i < NUM_CRS; i ++) {
-            color = getOutlineColor( outlineColors[ i ], uvs[ i ].xy);
+            color = getOutlineColor( GeometryLayer.outlineColors[i], uvs[ i ].xy);
             gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
         }
     }
-  #endif
+    #endif
 
     #include <itowns/fog_fragment>
     #include <itowns/lighting_fragment>

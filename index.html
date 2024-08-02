@@ -40,18 +40,18 @@ and open the template in the editor.
             }
 
             itowns.Fetcher.json('examples/layers/JSONLayers/Ortho.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Region.json')
-                .then(function _(config) {
-                    config.source = new itowns.WMSSource(config.source);
-                    return config;
-                }).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/ScanEX.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/Region.json')
+            //     .then(function _(config) {
+            //         config.source = new itowns.WMSSource(config.source);
+            //         return config;
+            //     }).then(addColorLayerFromConfig);
 
-            itowns.Fetcher.json('examples/layers/JSONLayers/Cada.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/Cada.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
             itowns.Fetcher.json('examples/layers/JSONLayers/Administrative.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Transport.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Railways.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
-            itowns.Fetcher.json('examples/layers/JSONLayers/Denomination.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/Transport.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/Railways.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
+            // itowns.Fetcher.json('examples/layers/JSONLayers/Denomination.json').then(createWMTSSourceFromConfig).then(addColorLayerFromConfig);
 
             function addElevationLayerFromConfig(config) {
                 var layer = new itowns.ElevationLayer(config.id, config);

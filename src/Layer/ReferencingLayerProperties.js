@@ -6,16 +6,6 @@ function ReferLayerProperties(material, layer) {
         let transparent = material.transparent;
         material.layer = layer;
 
-        if (material.uniforms && material.uniforms.opacity != undefined) {
-            Object.defineProperty(material.uniforms.opacity, 'value', {
-                get: () => material.layer.opacity,
-            });
-        } else if (material.opacity != undefined) {
-            Object.defineProperty(material, 'opacity', {
-                get: () => material.layer.opacity,
-            });
-        }
-
         if (material.uniforms && material.uniforms.mode != undefined) {
             Object.defineProperty(material.uniforms.mode, 'value', {
                 get: () => material.layer.pntsMode,

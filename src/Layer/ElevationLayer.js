@@ -1,6 +1,7 @@
 import RasterLayer from 'Layer/RasterLayer';
 import { updateLayeredMaterialNodeElevation } from 'Process/LayeredMaterialNodeProcessing';
 import { RasterElevationTile } from 'Renderer/RasterTile';
+import { ELEVATION_MODES } from 'Renderer/LayeredMaterial';
 
 /**
  * @property {boolean} isElevationLayer - Used to checkout whether this layer is
@@ -64,10 +65,37 @@ class ElevationLayer extends RasterLayer {
         if (config.zmin || config.zmax) {
             console.warn('Config using zmin and zmax are deprecated, use {clampValues: {min, max}} structure.');
         }
+
         this.zmin = config.clampValues?.min ?? config.zmin;
         this.zmax = config.clampValues?.max ?? config.zmax;
         this.isElevationLayer = true;
+
         this.defineLayerProperty('scale', this.scale || 1.0);
+
+        const defaultEle = {
+            bias: 0,
+            mode: ELEVATION_MODES.DATA,
+            zmin: -Infinity,
+            zmax: Infinity,
+        };
+
+        this.scaleFactor = 1.0;
+
+        // Define elevation properties
+        if (this.useRgbaTextureElevation) {
+            defaultEle.mode = ELEVATION_MODES.RGBA;
+            defaultEle.zmax = 5000;
+            throw new Error('Restore this feature');
+        } else if (this.useColorTextureElevation) {
+            this.scaleFactor = this.colorTextureElevationMaxZ - this.colorTextureElevationMinZ;
+            defaultEle.mode = ELEVATION_MODES.COLOR;
+            defaultEle.bias = this.colorTextureElevationMinZ;
+        }
+
+        this.bias = this.bias ?? defaultEle.bias;
+        this.mode = this.mode ?? defaultEle.mode;
+        this.zmin = this.zmin ?? defaultEle.zmin;
+        this.zmax = this.zmax ?? defaultEle.zmax;
     }
 
     /**

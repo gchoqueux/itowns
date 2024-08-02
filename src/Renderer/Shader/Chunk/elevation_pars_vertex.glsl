@@ -7,7 +7,6 @@
         float zmax;
     };
 
-    uniform Layer       elevationLayers[NUM_VS_TEXTURES];
     uniform sampler2D   elevationTextures[NUM_VS_TEXTURES];
     uniform vec4        elevationOffsetScales[NUM_VS_TEXTURES];
     uniform int         elevationTextureCount;

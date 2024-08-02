@@ -6,8 +6,23 @@
 attribute float     uv_1;
 #endif
 
-uniform bool lightingEnabled;
 varying vec2 vHighPrecisionZW;
+
+uniform RasterLayerData {
+    mat4 parameters[NUM_FS_TEXTURES+1];
+} layer;
+
+Layer getLayer() {
+    mat4 m = layer.parameters[0];
+    Layer l;
+
+    l.bias = m[0].x;
+    l.zmin = m[0].y;
+    l.zmax = m[0].z;
+    l.scale = m[0].w;
+    l.mode = int(m[1].x);
+    return l;
+}
 
 #if MODE == MODE_FINAL
 #include <fog_pars_vertex>

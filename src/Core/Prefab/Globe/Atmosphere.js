@@ -138,12 +138,7 @@ class Atmosphere extends GeometryLayer {
         this.object3d.updateMatrixWorld();
     }
 
-    update(context, layer, node) {
-        // update uniforms
-        node.material.fogDistance = this.fog.distance;
-        node.material.lightingEnabled = this.realisticAtmosphere.visible;
-        node.material.lightPosition = this.realisticLightingPosition;
-    }
+    update() {}
 
     // eslint-disable-next-line no-unused-vars
     preUpdate(context, srcs) {
@@ -154,8 +149,10 @@ class Atmosphere extends GeometryLayer {
             // Compute fog distance, this function makes it possible to have a shorter distance
             // when the camera approaches the ground
             this.fog.distance = mfogDistance * ((len - ellipsoidSizes.x * 0.99) * 0.25 / ellipsoidSizes.x) ** 1.5;
+            context.view.tileLayer.fogDistance = this.fog.distance;
         } else {
             this.fog.distance = 10e10;
+            context.view.tileLayer.fogDistance = this.fog.distance;
         }
 
         const renderer = context.view.mainLoop.gfxEngine.renderer;
@@ -172,6 +169,12 @@ class Atmosphere extends GeometryLayer {
             renderer.setClearColor(colorSky, renderer.getClearAlpha());
         } else {
             renderer.setClearColor(spaceColor, renderer.getClearAlpha());
+        }
+
+        context.view.tileLayer.lightingEnabled = this.realisticAtmosphere.visible;
+
+        if (this.realisticAtmosphere.visible) {
+            context.view.tileLayer.lightPosition.copy(this.realisticLightingPosition);
         }
     }
 

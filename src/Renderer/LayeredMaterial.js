@@ -38,40 +38,27 @@ export const colorLayerEffects = {
     customEffect: 3,
 };
 
-const defaultStructLayer = {
-    bias: 0,
-    noDataValue: -99999,
-    zmin: 0,
-    zmax: 0,
-    scale: 0,
-    mode: 0,
-    textureOffset: 0,
-    opacity: 0,
-    crs: 0,
-    effect_parameter: 0,
-    effect_type: colorLayerEffects.noEffect,
-    transparent: false,
-};
-
 function updateLayersUniforms(uniforms, olayers, max) {
     // prepare convenient access to elevation or color uniforms
-    const layers = uniforms.layers.value;
     const textures = uniforms.textures.value;
     const offsetScales = uniforms.offsetScales.value;
-    const textureCount = uniforms.textureCount;
+    const textureOffset = uniforms.textureOffset.value;
+    const textureCount = uniforms.textureCount || { value: 0 };
 
     // flatten the 2d array [i,j] -> layers[_layerIds[i]].textures[j]
     let count = 0;
+    let id = 0;
     for (const layer of olayers) {
         // textureOffset property is added to RasterTile
-        layer.textureOffset = count;
+        textureOffset[id] = count;
+
         for (let i = 0, il = layer.textures.length; i < il; ++i, ++count) {
             if (count < max) {
                 offsetScales[count] = layer.offsetScales[i];
                 textures[count] = layer.textures[i];
-                layers[count] = layer;
             }
         }
+        id++;
     }
     if (count > max) {
         console.warn(`LayeredMaterial: Not enough texture units (${max} < ${count}), excess textures have been discarded.`);
@@ -83,7 +70,6 @@ function updateLayersUniforms(uniforms, olayers, max) {
     for (let i = count; i < textures.length; i++) {
         textures[i] = defaultTex;
         offsetScales[i] = identityOffsetScale;
-        layers[i] = defaultStructLayer;
     }
 }
 
@@ -108,21 +94,12 @@ class LayeredMaterial extends THREE.ShaderMaterial {
         // behavior?
         this.defines.USE_FOG = 1;
         this.defines.NUM_CRS = crsCount;
+        this.defines.COUNT = 0;
 
         CommonMaterial.setDefineMapping(this, 'ELEVATION', ELEVATION_MODES);
         CommonMaterial.setDefineMapping(this, 'MODE', RenderMode.MODES);
         CommonMaterial.setDefineProperty(this, 'mode', 'MODE', RenderMode.MODES.FINAL);
 
-        if (__DEBUG__) {
-            this.defines.DEBUG = 1;
-            const outlineColors = [new THREE.Vector3(1.0, 0.0, 0.0)];
-            if (crsCount > 1) {
-                outlineColors.push(new THREE.Vector3(1.0, 0.5, 0.0));
-            }
-            CommonMaterial.setUniformProperty(this, 'showOutline', true);
-            CommonMaterial.setUniformProperty(this, 'outlineWidth', 0.008);
-            CommonMaterial.setUniformProperty(this, 'outlineColors', outlineColors);
-        }
 
         this.vertexShader = TileVS;
         // three loop unrolling of ShaderMaterial only supports integer bounds,
@@ -130,28 +107,14 @@ class LayeredMaterial extends THREE.ShaderMaterial {
         fragmentShader[crsCount] = fragmentShader[crsCount] || ShaderUtils.unrollLoops(TileFS, this.defines);
         this.fragmentShader = fragmentShader[crsCount];
 
-        // Color uniforms
-        CommonMaterial.setUniformProperty(this, 'diffuse', new THREE.Color(0.04, 0.23, 0.35));
-        CommonMaterial.setUniformProperty(this, 'opacity', this.opacity);
+        if (__DEBUG__) {
+            this.defines.DEBUG = 1;
+            CommonMaterial.setUniformProperty(this, 'showOutline', true);
+        }
 
-        // Lighting uniforms
-        CommonMaterial.setUniformProperty(this, 'lightingEnabled', false);
-        CommonMaterial.setUniformProperty(this, 'lightPosition', new THREE.Vector3(-0.5, 0.0, 1.0));
-
-        // Misc properties
-        CommonMaterial.setUniformProperty(this, 'fogDistance', 1000000000.0);
-        CommonMaterial.setUniformProperty(this, 'fogColor', new THREE.Color(0.76, 0.85, 1.0));
         CommonMaterial.setUniformProperty(this, 'overlayAlpha', 0);
-        CommonMaterial.setUniformProperty(this, 'overlayColor', new THREE.Color(1.0, 0.3, 0.0));
         CommonMaterial.setUniformProperty(this, 'objectId', 0);
-
         CommonMaterial.setUniformProperty(this, 'geoidHeight', 0.0);
-
-        // > 0 produces gaps,
-        // < 0 causes oversampling of textures
-        // = 0 causes sampling artefacts due to bad estimation of texture-uv gradients
-        // best is a small negative number
-        CommonMaterial.setUniformProperty(this, 'minBorderDistance', -0.01);
 
         // LayeredMaterialLayers
         this.layers = [];
@@ -159,16 +122,18 @@ class LayeredMaterial extends THREE.ShaderMaterial {
         this.colorLayerIds = [];
 
         // elevation layer uniforms, to be updated using updateUniforms()
-        this.uniforms.elevationLayers = new THREE.Uniform(new Array(nbSamplers[0]).fill(defaultStructLayer));
+        // this.uniforms.elevationLayers = new THREE.Uniform(new Array(nbSamplers[0]).fill(defaultStructLayer));
         this.uniforms.elevationTextures = new THREE.Uniform(new Array(nbSamplers[0]).fill(defaultTex));
         this.uniforms.elevationOffsetScales = new THREE.Uniform(new Array(nbSamplers[0]).fill(identityOffsetScale));
         this.uniforms.elevationTextureCount = new THREE.Uniform(0);
+        this.uniforms.elevationTextureOffset = new THREE.Uniform(new Array(nbSamplers[0]).fill(0));
 
         // color layer uniforms, to be updated using updateUniforms()
-        this.uniforms.colorLayers = new THREE.Uniform(new Array(nbSamplers[1]).fill(defaultStructLayer));
         this.uniforms.colorTextures = new THREE.Uniform(new Array(nbSamplers[1]).fill(defaultTex));
         this.uniforms.colorOffsetScales = new THREE.Uniform(new Array(nbSamplers[1]).fill(identityOffsetScale));
-        this.uniforms.colorTextureCount = new THREE.Uniform(0);
+        this.uniforms.colorTextureOffset = new THREE.Uniform(new Array(16).fill(0));
+
+        this.uniforms.layerCount = new THREE.Uniform(0);
 
         // can't do an ES6 setter/getter here
         Object.defineProperty(this, 'visible', {
@@ -193,9 +158,9 @@ class LayeredMaterial extends THREE.ShaderMaterial {
 
     getUniformByType(type) {
         return {
-            layers: this.uniforms[`${type}Layers`],
             textures: this.uniforms[`${type}Textures`],
             offsetScales: this.uniforms[`${type}OffsetScales`],
+            textureOffset: this.uniforms[`${type}TextureOffset`],
             textureCount: this.uniforms[`${type}TextureCount`],
         };
     }
@@ -250,6 +215,9 @@ class LayeredMaterial extends THREE.ShaderMaterial {
             console.warn('The "{layer.id}" layer was already present in the material, overwritting.');
         }
         this.layers.push(rasterNode);
+        if (rasterNode.layer.isColorLayer) {
+            this.uniforms.layerCount.value++;
+        }
     }
 
     getLayer(id) {

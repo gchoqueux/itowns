@@ -1,1 +1,1 @@
-gl_FragColor.rgb = mix(gl_FragColor.rgb, overlayColor, overlayAlpha);
+gl_FragColor.rgb = mix(gl_FragColor.rgb, GeometryLayer.overlayColor, overlayAlpha);
