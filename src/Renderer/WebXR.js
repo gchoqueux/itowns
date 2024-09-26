@@ -1,12 +1,12 @@
 import * as THREE from 'three';
-import Raycaster from 'Renderer/Raycaster';
-import Coordinates from 'Core/Geographic/Coordinates';
+// import Coordinates from 'Core/Geographic/Coordinates';
 import OrientationUtils from 'Utils/OrientationUtils';
 import { XRControllerModelFactory } from 'ThreeExtended/webxr/XRControllerModelFactory';
+import Raycaster from 'Renderer/Raycaster';
 // import { BoxLineGeometry } from 'ThreeExtended/geometries/BoxLineGeometry';
 
 
-const coord = new Coordinates('EPSG:4978');
+// const coord = new Coordinates('EPSG:4978');
 
 async function shutdownXR(session) {
     if (session) {
@@ -40,6 +40,7 @@ async function shutdownXR(session) {
 //     }
 // }
 
+/*
 function updatePreSse(camera, height, fov) {
     if (camera.camera3D.isOrthographicCamera) {
         camera._preSSE = height;
@@ -48,6 +49,7 @@ function updatePreSse(camera, height, fov) {
         camera._preSSE = height / (2.0 * Math.tan(verticalFOV * 0.5));
     }
 }
+*/
 
 const initializeWebXR = (view, options) => {
     const scale = options.scale || 1.0;
@@ -77,8 +79,8 @@ const initializeWebXR = (view, options) => {
         xr.enabled = true;
         // xr.getReferenceSpace('local');
 
-        const position = view.camera.position();
-        const geodesicNormal = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), position.geodesicNormal).invert();
+        // const position = view.camera.position();
+        // const geodesicNormal = new THREE.Quaternion().setFromUnitVectors(new THREE.Vector3(0, 0, 1), position.geodesicNormal).invert();
 
         // const quat = new THREE.Quaternion(-1, 0, 0, 1).normalize().multiply(geodesicNormal);
         // const quat = new THREE.Quaternion();
@@ -183,11 +185,11 @@ const initializeWebXR = (view, options) => {
         // }
 
         let INTERSECTION;
-        let baseReferenceSpace;
+        // let baseReferenceSpace;
         const renderer = view.mainLoop.gfxEngine.renderer;
 
         renderer.xr.addEventListener('sessionstart', () => {
-            baseReferenceSpace = renderer.xr.getReferenceSpace();
+            // baseReferenceSpace = renderer.xr.getReferenceSpace();
         });
 
         function onSelectStart() {
@@ -280,10 +282,12 @@ const initializeWebXR = (view, options) => {
 
         const model_1 = controllerModelFactory.createControllerModel(controllerGrip1);
         controllerGrip1.add(model_1);
+        /*
         let gamepad;
         controllerGrip1.addEventListener('connected', (e) => {
             gamepad = e.data.gamepad;
         });
+        */
         controllerGrip1.updateMatrixWorld(true);
         h.add(controllerGrip1);
         const controllerGrip2 = view.mainLoop.gfxEngine.renderer.xr.getControllerGrip(1);
