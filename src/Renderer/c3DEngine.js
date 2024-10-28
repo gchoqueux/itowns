@@ -11,6 +11,68 @@ import WEBGL from 'ThreeExtended/capabilities/WebGL';
 import Label2DRenderer from 'Renderer/Label2DRenderer';
 import { deprecatedC3DEngineWebGLOptions } from 'Core/Deprecated/Undeprecator';
 
+const postprocessScene = new THREE.Scene();
+const quad = new THREE.Mesh(new THREE.PlaneGeometry(2, 2), null);
+quad.frustumCulled = false;
+
+const postProcessCam = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 10);
+postprocessScene.add(quad);
+
+const vertexShader =
+    `
+    varying vec2 vUv;
+
+    void main() {
+        vUv = uv;
+        gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+    }
+    `;
+
+const fragmentShader =
+    `
+   #include <packing>
+
+    uniform vec2 center;
+    uniform float angle;
+    uniform float scale;
+    uniform vec2 tSize;
+    uniform float cameraNear;
+    uniform float cameraFar;
+
+    uniform sampler2D tDiffuse;
+
+    varying vec2 vUv;
+
+    float readDepth( sampler2D depthSampler, vec2 coord ) {
+        float fragCoordZ = texture2D( depthSampler, coord ).x;
+        float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
+        return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
+    }
+
+    void main() {
+
+        float depth = readDepth( tDiffuse, vUv );
+
+        gl_FragColor.rgb = 1.0 - vec3( depth );
+        gl_FragColor.a = 1.0;
+
+        gl_FragColor = texture2D( tDiffuse, vUv );
+
+    }
+    `;
+
+quad.material = new THREE.ShaderMaterial({
+    uniforms: {
+        tDiffuse: { value: null },
+        tSize: { value: new THREE.Vector2(256, 256) },
+        center: { value: new THREE.Vector2(0.5, 0.5) },
+        angle: { value: 1.57 },
+        scale: { value: 1.0 },
+    },
+    vertexShader,
+    fragmentShader,
+});
+
 const depthRGBA = new THREE.Vector4();
 class c3DEngine {
     constructor(rendererOrDiv, options = {}) {
@@ -48,11 +110,13 @@ class c3DEngine {
         this._nextThreejsLayer = 1;
 
         this.fullSizeRenderTarget = new THREE.WebGLRenderTarget(this.width, this.height);
-        this.fullSizeRenderTarget.texture.minFilter = THREE.LinearFilter;
-        this.fullSizeRenderTarget.texture.magFilter = THREE.NearestFilter;
+        // this.fullSizeRenderTarget.texture.minFilter = THREE.LinearFilter;
+        // this.fullSizeRenderTarget.texture.magFilter = THREE.NearestFilter;
+        // this.fullSizeRenderTarget.samples = 8;
+
         this.fullSizeRenderTarget.depthBuffer = true;
-        this.fullSizeRenderTarget.depthTexture = new THREE.DepthTexture();
-        this.fullSizeRenderTarget.depthTexture.type = THREE.UnsignedShortType;
+        this.fullSizeRenderTarget.depthTexture = new THREE.DepthTexture(this.width, this.height);
+        this.fullSizeRenderTarget.depthTexture.type = THREE.FloatType;
 
         this.renderView = function _(view) {
             this.renderer.clear();

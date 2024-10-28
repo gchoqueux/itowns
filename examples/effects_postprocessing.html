@@ -24,35 +24,41 @@
         </script>
 
         <script type="x-shader/x-fragment" id="fragmentshader">
+            #include <packing>
+
             uniform vec2 center;
             uniform float angle;
             uniform float scale;
             uniform vec2 tSize;
+            uniform float cameraNear;
+            uniform float cameraFar;
 
             uniform sampler2D tDiffuse;
 
             varying vec2 vUv;
 
-            float pattern() {
-
-                float s = sin( angle ), c = cos( angle );
-
-                vec2 tex = vUv * tSize - center;
-                vec2 point = vec2( c * tex.x - s * tex.y, s * tex.x + c * tex.y ) * scale;
-
-                return ( sin( point.x ) * sin( point.y ) ) * 4.0;
+            float readDepth( sampler2D depthSampler, vec2 coord ) {
+                float fragCoordZ = texture2D( depthSampler, coord ).x;
+                float viewZ = perspectiveDepthToViewZ( fragCoordZ, cameraNear, cameraFar );
+                return viewZToOrthographicDepth( viewZ, cameraNear, cameraFar );
             }
+
             void main() {
-                vec4 color = texture2D( tDiffuse, vUv );
-                float average = ( color.r + color.g + color.b ) / 3.0;
-                gl_FragColor = vec4( vec3( average * 10.0 - 5.0 + pattern() ), color.a );
+
+                float depth = readDepth( tDiffuse, vUv );
+
+                gl_FragColor.rgb = 1.0 - vec3( depth );
+                gl_FragColor.a = 1.0;
+
+                gl_FragColor = texture2D( tDiffuse, vUv );
+
             }
         </script>
 
         <script type="text/javascript">
             var placement = {
                 coord: new itowns.Coordinates('EPSG:4326', 2.351323, 48.856712),
-                range: 25000000,
+                range: 250,
             }
 
 
@@ -68,6 +74,13 @@
 
             setupLoadingScreen(viewerDiv, view);
 
+            const rt = new itowns.THREE.WebGLRenderTarget(
+                view.camera.width,
+                view.camera.height,
+                {
+                    type: itowns.THREE.FloatType
+                });
+
             quad.frustumCulled = false;
             quad.material = new itowns.THREE.ShaderMaterial({
                 uniforms: {
@@ -76,38 +89,122 @@
                     center: { value: new itowns.THREE.Vector2(0.5, 0.5) },
                     angle: { value: 1.57 },
                     scale: { value: 1.0 },
+                    cameraNear: { value: view.camera.camera3D.near },
+                    cameraFar: { value: view.camera.camera3D.far },
                 },
                 vertexShader: document.getElementById('vertexshader').textContent,
                 fragmentShader: document.getElementById('fragmentshader').textContent,
             });
             postprocessScene.add(quad);
 
-            view.render = function render() {
-                var g = view.mainLoop.gfxEngine;
-                var r = g.renderer;
-                r.setRenderTarget(g.fullSizeRenderTarget);
-                r.clear();
-                r.render(view.scene, view.camera3D);
+            const g = view.mainLoop.gfxEngine;
+            quad.material.uniforms.tSize.value.set(g.fullSizeRenderTarget.width, g.fullSizeRenderTarget.height);
 
-                quad.material.uniforms.tDiffuse.value = g.fullSizeRenderTarget.texture;
-                quad.material.uniforms.tSize.value.set(
-                    g.fullSizeRenderTarget.width, g.fullSizeRenderTarget.height);
+            // view.tileLayer.wireframe = true;
+
+            const buffer = new Float32Array(4);
+
+            const screen = new itowns.THREE.Vector2();
+
+            const firstRendering = view.render;
+
+            // mouse position
+            const dim = g.getWindowSize();
+            const mouse = dim.clone().multiplyScalar(0.5);
+            mouse.x = Math.floor(mouse.x);
+            mouse.y = view.camera.height - (mouse.y + 1);
+
+            const postRenderingScene = new itowns.THREE.Scene();
+
+            view.tileLayer.wireframe = true;
+
+            postRenderingScene.overrideMaterial = new itowns.THREE.MeshBasicMaterial();
+            quad.material.uniforms.tDiffuse.value = g.fullSizeRenderTarget.depthTexture;
+
+            const ray = new itowns.THREE.Ray();
+            const matrix = new itowns.THREE.Matrix4();
+            const direction = new itowns.THREE.Vector3();
+            const target = new itowns.THREE.Vector3();
+
+            const geometry = new itowns.THREE.BoxGeometry( 1, 1, 1 );
+            const material = new itowns.THREE.MeshBasicMaterial( {color: 0x00ff00} );
+            const cube = new itowns.THREE.Mesh( geometry, material );
+            view.scene.add(cube);
+
+            this.view.domElement.addEventListener('mousemove',(e) => {
+                const r = g.renderer;
+                const mouse = view.eventToViewCoords(e);
+                mouse.y = view.camera.height - mouse.y;
+                const camera = view.camera.camera3D;
+
+                 // objects rendering
+                r.setRenderTarget(g.fullSizeRenderTarget);
+                g.fullSizeRenderTarget.scissor.set(mouse.x, mouse.y, 1, 1);
+                g.fullSizeRenderTarget.scissorTest = true;
+                r.clear();
+                postRenderingScene.add(view.tileLayer.object3d);
+
+                r.render(postRenderingScene, camera);
+                view.scene.add(view.tileLayer.object3d);
+                g.fullSizeRenderTarget.scissorTest = false;
 
                 r.setRenderTarget(null);
+
+                // depth rendering
+                r.setRenderTarget(rt);
+                rt.scissor.set(mouse.x, mouse.y, 1, 1);
+                rt.scissorTest = true;
                 r.clear();
                 r.render(postprocessScene, cam);
-            };
+                rt.scissorTest = false;
+                r.setRenderTarget(null);
 
-            itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ColorLayer('Ortho', config);
-                view.addLayer(layer);
-            });
-            itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT.json').then(function _(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ElevationLayer(config.id, config);
-                view.addLayer(layer);
-            });
+                // read depth
+                r.readRenderTargetPixels(rt, mouse.x, mouse.y, 1, 1, buffer);
+
+                const gl_FragDepthEXT = buffer[0];
+                const logDepthBufFC = 2.0 / (Math.log(camera.far + 1.0) / Math.LN2);
+                const depth = 2 ** (2 * gl_FragDepthEXT / logDepthBufFC) - 1;
+
+                screen.x = mouse.x / dim.x * 2 - 1;
+                screen.y = mouse.y / dim.y * 2 - 1;
+                // const ndc = view.viewToNormalizedCoords(mouse);
+
+                ray.origin.copy(camera.position);
+
+                // Direction
+                ray.direction.set(screen.x, screen.y, 0.5);
+                // Unproject
+                matrix.multiplyMatrices(camera.matrixWorld, matrix.copy(camera.projectionMatrix).invert());
+                ray.direction.applyMatrix4(matrix);
+                ray.direction.sub(ray.origin);
+
+                direction.set(0, 0, 1.0);
+                direction.applyMatrix4(matrix);
+                direction.sub(ray.origin);
+
+                const angle = direction.angleTo(ray.direction);
+                // const orthoZ = g.depthBufferRGBAValueToOrthoZ(buffer, camera);
+                const length = depth / Math.cos(angle);
+                target.addVectors(camera.position, ray.direction.setLength(length));
+
+                cube.position.copy(target);
+                console.log('target', target);
+                cube.updateMatrixWorld(true);
+                view.notifyChange(true);
+                // console.log('depth', depth);
+            }, false);
+
+            // itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ColorLayer('Ortho', config);
+            //     view.addLayer(layer);
+            // });
+            // itowns.Fetcher.json('./layers/JSONLayers/IGN_MNT.json').then(function _(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ElevationLayer(config.id, config);
+            //     view.addLayer(layer);
+            // });
         </script>
     </body>
 </html>
