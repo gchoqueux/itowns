@@ -1,7 +1,6 @@
 const MODES = {
     FINAL: 0, // final color
-    DEPTH: 1, // depth buffer
-    ID: 2,    // id object
+    ID: 1,    // id object
 };
 
 function push(object3d, mode) {

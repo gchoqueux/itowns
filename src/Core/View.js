@@ -1,11 +1,10 @@
 import * as THREE from 'three';
+import ThreeJsBufferPicker from 'ThreeJsBufferPicker';
 import Camera from 'Renderer/Camera';
 import initializeWebXR from 'Renderer/WebXR';
 import MainLoop, { MAIN_LOOP_EVENTS, RENDERING_PAUSED } from 'Core/MainLoop';
-import Capabilities from 'Core/System/Capabilities';
 import { COLOR_LAYERS_ORDER_CHANGED } from 'Renderer/ColorLayersOrdering';
 import c3DEngine from 'Renderer/c3DEngine';
-import RenderMode from 'Renderer/RenderMode';
 import CRS from 'Core/Geographic/Crs';
 import Coordinates from 'Core/Geographic/Coordinates';
 import FeaturesUtils from 'Utils/FeaturesUtils';
@@ -110,10 +109,6 @@ function _preprocessLayer(view, layer, parentLayer) {
     return layer;
 }
 const _eventCoords = new THREE.Vector2();
-const matrix = new THREE.Matrix4();
-const screen = new THREE.Vector2();
-const ray = new THREE.Ray();
-const direction = new THREE.Vector3();
 const positionVector = new THREE.Vector3();
 const coordinates = new Coordinates('EPSG:4326');
 const viewers = [];
@@ -262,6 +257,8 @@ class View extends THREE.EventDispatcher {
         if (options.webXR) {
             initializeWebXR(this, options.webXR);
         }
+
+        this.picker = new ThreeJsBufferPicker(this.mainLoop.gfxEngine.renderer);
     }
 
     /**
@@ -975,40 +972,6 @@ class View extends THREE.EventDispatcher {
         return result;
     }
 
-    readDepthBuffer(x, y, width, height, buffer) {
-        const g = this.mainLoop.gfxEngine;
-        const currentWireframe = this.tileLayer.wireframe;
-        const currentOpacity = this.tileLayer.opacity;
-        const currentVisibility = this.tileLayer.visible;
-        if (currentWireframe) {
-            this.tileLayer.wireframe = false;
-        }
-        if (currentOpacity < 1.0) {
-            this.tileLayer.opacity = 1.0;
-        }
-        if (!currentVisibility) {
-            this.tileLayer.visible = true;
-        }
-
-        const restore = this.tileLayer.level0Nodes.map(n => RenderMode.push(n, RenderMode.MODES.DEPTH));
-        buffer = g.renderViewToBuffer(
-            { camera: this.camera, scene: this.tileLayer.object3d },
-            { x, y, width, height, buffer });
-        restore.forEach(r => r());
-
-        if (this.tileLayer.wireframe !== currentWireframe) {
-            this.tileLayer.wireframe = currentWireframe;
-        }
-        if (this.tileLayer.opacity !== currentOpacity) {
-            this.tileLayer.opacity = currentOpacity;
-        }
-        if (this.tileLayer.visible !== currentVisibility) {
-            this.tileLayer.visible = currentVisibility;
-        }
-
-        return buffer;
-    }
-
     /**
      * Returns the world position on the terrain (view's crs: referenceCrs) under view coordinates.
      * This position is computed with depth buffer.
@@ -1023,60 +986,43 @@ class View extends THREE.EventDispatcher {
             target = undefined;
             return;
         }
-        const l = this.mainLoop;
-        const viewPaused = l.scheduler.commandsWaitingExecutionCount() == 0 && l.renderingState == RENDERING_PAUSED;
-        const g = l.gfxEngine;
-        const dim = g.getWindowSize();
+
+        const dim = this.mainLoop.gfxEngine.getWindowSize();
 
         mouse = mouse || dim.clone().multiplyScalar(0.5);
         mouse.x = Math.floor(mouse.x);
-        mouse.y = Math.floor(mouse.y);
 
-        // Render/Read to buffer
-        let buffer;
-        if (viewPaused) {
-            if (this.#fullSizeDepthBuffer.needsUpdate) {
-                this.readDepthBuffer(0, 0, dim.x, dim.y, this.#fullSizeDepthBuffer);
-                this.#fullSizeDepthBuffer.needsUpdate = false;
-            }
-            const id = ((dim.y - mouse.y - 1) * dim.x + mouse.x) * 4;
-            buffer = this.#fullSizeDepthBuffer.slice(id, id + 4);
-        } else {
-            buffer = this.readDepthBuffer(mouse.x, mouse.y, 1, 1, this.#pixelDepthBuffer);
+        // /////////////////////////////////////////////
+        mouse.y = dim.y - Math.floor(mouse.y);
+
+        const currentWireframe = this.tileLayer.wireframe;
+        const currentOpacity = this.tileLayer.opacity;
+        const currentVisibility = this.tileLayer.visible;
+        if (currentWireframe) {
+            this.tileLayer.wireframe = false;
+        }
+        if (currentOpacity < 1.0) {
+            this.tileLayer.opacity = 1.0;
+        }
+        if (!currentVisibility) {
+            this.tileLayer.visible = true;
         }
 
-        screen.x = (mouse.x / dim.x) * 2 - 1;
-        screen.y = -(mouse.y / dim.y) * 2 + 1;
+        this.picker.pickingFromDepthBuffer(mouse, this.tileLayer.object3d, this.camera3D, target);
 
-        if (Capabilities.isLogDepthBufferSupported() && this.camera3D.type == 'PerspectiveCamera') {
-            // TODO: solve this part with gl_FragCoord_Z and unproject
-            // Origin
-            ray.origin.copy(this.camera3D.position);
-
-            // Direction
-            ray.direction.set(screen.x, screen.y, 0.5);
-            // Unproject
-            matrix.multiplyMatrices(this.camera3D.matrixWorld, matrix.copy(this.camera3D.projectionMatrix).invert());
-            ray.direction.applyMatrix4(matrix);
-            ray.direction.sub(ray.origin);
-
-            direction.set(0, 0, 1.0);
-            direction.applyMatrix4(matrix);
-            direction.sub(ray.origin);
-
-            const angle = direction.angleTo(ray.direction);
-            const orthoZ = g.depthBufferRGBAValueToOrthoZ(buffer, this.camera3D);
-            const length = orthoZ / Math.cos(angle);
-            target.addVectors(this.camera3D.position, ray.direction.setLength(length));
-        } else {
-            const gl_FragCoord_Z = g.depthBufferRGBAValueToOrthoZ(buffer, this.camera3D);
-
-            target.set(screen.x, screen.y, gl_FragCoord_Z);
-            target.unproject(this.camera3D);
+        if (this.tileLayer.wireframe !== currentWireframe) {
+            this.tileLayer.wireframe = currentWireframe;
+        }
+        if (this.tileLayer.opacity !== currentOpacity) {
+            this.tileLayer.opacity = currentOpacity;
+        }
+        if (this.tileLayer.visible !== currentVisibility) {
+            this.tileLayer.visible = currentVisibility;
         }
 
-        if (target.length() > 10000000) { return undefined; }
-
+        if (target.length() > 10000000) {
+            return undefined;
+        }
         return target;
     }
 

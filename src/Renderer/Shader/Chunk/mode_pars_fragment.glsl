@@ -1,4 +1,4 @@
-#if MODE == MODE_ID || MODE == MODE_DEPTH
+#if MODE == MODE_ID
 #include <packing>
 #endif
 

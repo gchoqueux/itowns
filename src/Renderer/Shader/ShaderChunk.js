@@ -8,7 +8,6 @@ import fog_pars_fragment from './Chunk/fog_pars_fragment.glsl';
 import lighting_fragment from './Chunk/lighting_fragment.glsl';
 import lighting_pars_fragment from './Chunk/lighting_pars_fragment.glsl';
 import mode_pars_fragment from './Chunk/mode_pars_fragment.glsl';
-import mode_depth_fragment from './Chunk/mode_depth_fragment.glsl';
 import mode_id_fragment from './Chunk/mode_id_fragment.glsl';
 import overlay_fragment from './Chunk/overlay_fragment.glsl';
 import overlay_pars_fragment from './Chunk/overlay_pars_fragment.glsl';
@@ -32,7 +31,6 @@ const itownsShaderChunk = {
     fog_pars_fragment,
     lighting_fragment,
     lighting_pars_fragment,
-    mode_depth_fragment,
     mode_id_fragment,
     mode_pars_fragment,
     overlay_fragment,

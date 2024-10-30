@@ -21,10 +21,6 @@ void main() {
 
     #include <itowns/mode_id_fragment>
 
-#elif MODE == MODE_DEPTH
-
-    #include <itowns/mode_depth_fragment>
-
 #else
 
     gl_FragColor = vec4(diffuse, opacity);

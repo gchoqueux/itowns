@@ -68,7 +68,8 @@
     "js-priority-queue": "^0.1.5",
     "pbf": "^4.0.1",
     "shpjs": "^6.1.0",
-    "threads": "^1.7.0"
+    "threads": "^1.7.0",
+    "ThreeJsBufferPicker": "../lastig/BufferPicker/"
   },
   "peerDependencies": {
     "proj4": "^2.12.1",
