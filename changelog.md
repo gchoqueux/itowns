@@ -1,3 +1,18 @@
+<a name="2.45.1"></a>
+## [2.45.1](https://github.com/iTowns/itowns/compare/v2.45.0...v2.45.1) (2024-12-06)
+
+
+### Bug Fixes
+
+* **deploy:** wrong dist path folder ([259ee01](https://github.com/iTowns/itowns/commit/259ee01))
+
+
+### Workflow and chores
+
+* release v2.45.1 ([b8d9e0c](https://github.com/iTowns/itowns/commit/b8d9e0c))
+
+
+
 <a name="2.45.0"></a>
 # [2.45.0](https://github.com/iTowns/itowns/compare/v2.44.2...v2.45.0) (2024-12-06)
 
