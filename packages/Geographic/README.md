@@ -10,7 +10,7 @@ The geographic package provides utilities for handling coordinates, ellipsoids, 
 * [Extent](http://www.itowns-project.org/itowns/docs/#api/Geographic/Extent) : Extent is geographical bounding rectangle defined by a crs and 4 limits: west, east, south and north .
 * [OrientationUtils](http://www.itowns-project.org/itowns/docs/#api/Geographic/OrientationUtils) : utilities to compute a rotation quaternion from various rotation conventions, including between different crs.
 
-# Install
+# Install toto
 
 `npm install --save @itowns/geographic`
 
