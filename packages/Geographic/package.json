@@ -1,6 +1,6 @@
 {
   "name": "@gchoqueux/geographic",
-  "version": "2.45.2",
+  "version": "2.45.4-next.0",
   "description": "Geodesy",
   "type": "module",
   "main": "lib/Main.js",
