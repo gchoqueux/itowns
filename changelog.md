@@ -1,3 +1,101 @@
+<a name="2.45.0"></a>
+# [2.45.0](https://github.com/iTowns/itowns/compare/v2.44.2...v2.45.0) (2024-12-06)
+
+
+### Features
+
+* **3dtiles:** add deprecation warning to C3DTilesLayer. Use OGC3DTilesLayer instead ([cbfd1bb](https://github.com/iTowns/itowns/commit/cbfd1bb))
+* **3dtiles:** add tiles-load-start and tiles-load-end events ([3d89169](https://github.com/iTowns/itowns/commit/3d89169))
+* **3dtiles:** update 3d-tiles-renderer to 0.3.39 ([565ba36](https://github.com/iTowns/itowns/commit/565ba36))
+* add publiccode ([#2417](https://github.com/iTowns/itowns/issues/2417)) ([cfb9d0f](https://github.com/iTowns/itowns/commit/cfb9d0f))
+* **ci:** bump node to next LTS (v22) ([#2452](https://github.com/iTowns/itowns/issues/2452)) ([8df42d2](https://github.com/iTowns/itowns/commit/8df42d2))
+* **controls:** add state controls at view init ([868889f](https://github.com/iTowns/itowns/commit/868889f))
+* **controls:** disabled multi actions when zooming ([89bbbd8](https://github.com/iTowns/itowns/commit/89bbbd8))
+* **eslint:** remove preference for default export ([#2447](https://github.com/iTowns/itowns/issues/2447)) ([4e7bcd2](https://github.com/iTowns/itowns/commit/4e7bcd2))
+* **globeControls:** zoom on mouse position while using wheel ([85ce178](https://github.com/iTowns/itowns/commit/85ce178))
+
+
+### Bug Fixes
+
+* **3dtiles:** add layer to object returned by OGC3DTilesLayer.pickObjectsAt ([25467e5](https://github.com/iTowns/itowns/commit/25467e5))
+* **babel:** include ts files in prerequisites ([eb73b45](https://github.com/iTowns/itowns/commit/eb73b45))
+* **C3DTilesLayer:** updateStyle works with new style API ([a4f0d22](https://github.com/iTowns/itowns/commit/a4f0d22))
+* **COG:** Fix extent in COG parser ([452ca7e](https://github.com/iTowns/itowns/commit/452ca7e))
+* **Crs:** correctly renamed reasonableEpsilon function ([205c27f](https://github.com/iTowns/itowns/commit/205c27f))
+* **deploy:** wrong dist path folder ([77697fb](https://github.com/iTowns/itowns/commit/77697fb))
+* **GlobeView:** remove default directional light ([0a098af](https://github.com/iTowns/itowns/commit/0a098af))
+* **i3dm:** use instanceId to get info ([683e55d](https://github.com/iTowns/itowns/commit/683e55d))
+* **OGC3DTilesLayer:** handle multiple views ([#2435](https://github.com/iTowns/itowns/issues/2435)) ([b991878](https://github.com/iTowns/itowns/commit/b991878))
+* **publiccode.yml:** fix the logo URL ([822c63b](https://github.com/iTowns/itowns/commit/822c63b))
+* **source:** support urls already containing query parameters for wms, wmts, and wfs ([4f53025](https://github.com/iTowns/itowns/commit/4f53025))
+* **Terrain:** fix terrain subdivision when a terrain tile only has values that should be clamped ([cb96727](https://github.com/iTowns/itowns/commit/cb96727))
+* **test:** increase time out ([b8a4583](https://github.com/iTowns/itowns/commit/b8a4583))
+* **TiledGeometryLayer:** remove subdivision checking code ([#2344](https://github.com/iTowns/itowns/issues/2344)) ([e386637](https://github.com/iTowns/itowns/commit/e386637))
+* **TiledGeometryLayer:** replace get data by the new getPropertyArray ([ec665c3](https://github.com/iTowns/itowns/commit/ec665c3))
+* **TiledGeometryLayer:** set autoRefreshToken to true ([ebf37dd](https://github.com/iTowns/itowns/commit/ebf37dd))
+* **wms:** take wms 1.1.1 version into account for axis order ([0499f95](https://github.com/iTowns/itowns/commit/0499f95))
+* **xbilparser:** apply zmin / zmax for any texture subsampling size ([745ab2c](https://github.com/iTowns/itowns/commit/745ab2c))
+* **Zoom:** use zoom state ([426fe29](https://github.com/iTowns/itowns/commit/426fe29))
+
+
+### Examples
+
+* **3DTiles:** create an only 3D tiles example that can load any 3D tiles ([3eb7a23](https://github.com/iTowns/itowns/commit/3eb7a23))
+
+
+### Code Refactoring
+
+* **Crs:** cleanup unit handling ([ea397ee](https://github.com/iTowns/itowns/commit/ea397ee))
+* **Crs:** remove tms/epsg family of functions ([83eb0d9](https://github.com/iTowns/itowns/commit/83eb0d9))
+* **Crs:** rename toUnit to getUnit ([2fdf15a](https://github.com/iTowns/itowns/commit/2fdf15a))
+* **Crs:** use named exports instead of default export ([fca5a29](https://github.com/iTowns/itowns/commit/fca5a29))
+* **Layer:** remove Object.assign of config ([cf41e8d](https://github.com/iTowns/itowns/commit/cf41e8d))
+* migrate Crs to typescript ([d884ba6](https://github.com/iTowns/itowns/commit/d884ba6))
+* split Extent between geographic/tiled ([4b57498](https://github.com/iTowns/itowns/commit/4b57498))
+* URLBuilder as pure functions ([8ba1376](https://github.com/iTowns/itowns/commit/8ba1376))
+
+
+### Workflow and chores
+
+* release v2.45.0 ([17af42c](https://github.com/iTowns/itowns/commit/17af42c))
+* **architecture:** monorepo structure ([446e6f0](https://github.com/iTowns/itowns/commit/446e6f0))
+* **Crs:** update and refine documentation ([d467a29](https://github.com/iTowns/itowns/commit/d467a29))
+* **deps:** bump [@tweenjs](https://github.com/tweenjs)/tween.js from 23.1.2 to 25.0.0 ([63e2194](https://github.com/iTowns/itowns/commit/63e2194))
+* **deps:** bump 3d-tiles-renderer from 0.3.37 to 0.3.38 ([837c044](https://github.com/iTowns/itowns/commit/837c044))
+* **deps:** bump cookie and express ([f602ac7](https://github.com/iTowns/itowns/commit/f602ac7))
+* **deps:** bump developer dependencies ([4d034b5](https://github.com/iTowns/itowns/commit/4d034b5))
+* **deps:** bump proj4 from 2.11.0 to 2.12.1 ([804c65f](https://github.com/iTowns/itowns/commit/804c65f))
+* **deps:** bump shpjs from 6.0.1 to 6.1.0 ([4937064](https://github.com/iTowns/itowns/commit/4937064))
+* **deps:** bump three from 0.165.0 to 0.168.0 ([f7303de](https://github.com/iTowns/itowns/commit/f7303de))
+* **deps:** remove node-fetch from dev dependencies ([1d9ffe9](https://github.com/iTowns/itowns/commit/1d9ffe9))
+* **eslint:** add no-use-before-define and change max-len rules ([f8021b4](https://github.com/iTowns/itowns/commit/f8021b4))
+* **eslint:** update config to support TypeScript ([0d6b611](https://github.com/iTowns/itowns/commit/0d6b611))
+* publish temp ([0bcec27](https://github.com/iTowns/itowns/commit/0bcec27))
+* update babel and webpack configs to support TypeScript ([8830d6d](https://github.com/iTowns/itowns/commit/8830d6d))
+
+
+### Documentation
+
+* **contributors:** add Tim Ebben ([b65d8ae](https://github.com/iTowns/itowns/commit/b65d8ae))
+* **Layer:** fix type ?? ([ca285d8](https://github.com/iTowns/itowns/commit/ca285d8))
+* **test:** update command to run one functional test ([c862ca7](https://github.com/iTowns/itowns/commit/c862ca7))
+
+
+### Tests
+
+* **temp:** trying ([a6179f1](https://github.com/iTowns/itowns/commit/a6179f1))
+
+
+### BREAKING CHANGES
+
+* **Crs:** CRS.isEPSG and CRS.isTMS have been removed
+* **Crs:** CRS.formatToESPG and CRS.formatToTMS have been removed
+* **Crs:** CRS.toUnit renamed to CRS.getUnit
+* **Crs:** CRS.reasonnableEspsilon renamed to CRS.reasonableEpsilon
+* **controls:** disabled multi actions when zooming
+
+
+
 <a name="2.44.2"></a>
 ## [2.44.2](https://github.com/iTowns/itowns/compare/v2.44.1...v2.44.2) (2024-09-17)
 
