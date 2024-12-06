@@ -1,3 +1,20 @@
+<a name="2.45.2"></a>
+## [2.45.2](https://github.com/iTowns/itowns/compare/v2.45.0...v2.45.2) (2024-12-06)
+
+
+### Bug Fixes
+
+* **deploy:** latest error tag try add provenance ([f8d2705](https://github.com/iTowns/itowns/commit/f8d2705))
+* **deploy:** wrong dist path folder ([259ee01](https://github.com/iTowns/itowns/commit/259ee01))
+
+
+### Workflow and chores
+
+* release v2.45.2 ([fc4fedb](https://github.com/iTowns/itowns/commit/fc4fedb))
+* release v2.45.1 ([46ce67f](https://github.com/iTowns/itowns/commit/46ce67f))
+
+
+
 <a name="2.45.1"></a>
 ## [2.45.1](https://github.com/iTowns/itowns/compare/v2.45.0...v2.45.1) (2024-12-06)
 
