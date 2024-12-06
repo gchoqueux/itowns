@@ -19,7 +19,7 @@
     "postinstall": "cross-env NO_UPDATE_NOTIFIER=true node ./scripts/prepare.mjs && node ./scripts/replace.config.mjs",
     "prepublishOnly": "npx copyfiles -u 1 \"../../examples/**/*\" ./examples/ && npx copyfiles -u 1 \"../../docs/**/*\" ./docs/ && npx copyfiles -u 1 \"../../dist/**/*\" ./dist/ ",
     "postpublish": "node clean.cjs",
-    "publish-latest": "npm publish --access public --tag=latest --provenance",
+    "publish-latest": "npm publish --access public --tag=latest",
     "publish-next": "npm version prerelease --preid next && npm run update-package",
     "update-package": "npm remove @gchoqueux/geographic && npm install @gchoqueux/geographic@$npm_package_version --save"
   },
