@@ -1,3 +1,29 @@
+<a name="2.45.7"></a>
+## [2.45.7](https://github.com/gchoqueux/itowns/compare/v2.45.4...v2.45.7) (2024-12-11)
+
+
+### Bug Fixes
+
+* **Crs:** typo ([001cac9](https://github.com/gchoqueux/itowns/commit/001cac9))
+* **npm:** clean lock ([646355b](https://github.com/gchoqueux/itowns/commit/646355b))
+* **publish:** add commit ([383b227](https://github.com/gchoqueux/itowns/commit/383b227))
+* **publish:** refactor publish-next ([a3395f7](https://github.com/gchoqueux/itowns/commit/a3395f7))
+* **publish:** revert all latest publish script ([956a611](https://github.com/gchoqueux/itowns/commit/956a611))
+* **publish:** update all next packages ([5a2947d](https://github.com/gchoqueux/itowns/commit/5a2947d))
+* **publish:** wrong next dependencies ([f17024b](https://github.com/gchoqueux/itowns/commit/f17024b))
+* **publish:** wrong update package ([eb7518f](https://github.com/gchoqueux/itowns/commit/eb7518f))
+* **publish:** wrong url ([3a07ffd](https://github.com/gchoqueux/itowns/commit/3a07ffd))
+* **release:** wrong package ([a5e4284](https://github.com/gchoqueux/itowns/commit/a5e4284))
+
+
+### Workflow and chores
+
+* release v2.45.7 ([d57f125](https://github.com/gchoqueux/itowns/commit/d57f125))
+* release v2.45.6 ([e778b4b](https://github.com/gchoqueux/itowns/commit/e778b4b))
+* release v2.45.5 ([ee22f8d](https://github.com/gchoqueux/itowns/commit/ee22f8d))
+
+
+
 <a name="2.45.6"></a>
 ## [2.45.6](https://github.com/gchoqueux/itowns/compare/v2.45.4...v2.45.6) (2024-12-11)
 
