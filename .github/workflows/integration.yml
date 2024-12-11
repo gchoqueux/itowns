@@ -199,6 +199,8 @@ jobs:
         run: |
           git checkout next
           git reset --hard master
+          npm ci
+          npm run prepare
           npm run publish-next
           git commit --message 'Something cool'
           git push -f
