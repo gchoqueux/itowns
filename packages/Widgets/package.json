@@ -14,7 +14,7 @@
     "transpile": "npm run transpileOnly && npm run copy_transpile",
     "watch": "npm run transpileOnly -- --watch",
     "prerelease-next": "npm version prerelease --preid next && npm run update-package",
-    "update-package": "npm remove @gchoqueux/geographic itowns && npm install @gchoqueux/geographic@$npm_package_version @gchoqueux/itowns@$npm_package_version --save"
+    "update-package": "npm remove @gchoqueux/geographic @gchoqueux/itowns && npm install @gchoqueux/geographic@$npm_package_version @gchoqueux/itowns@$npm_package_version --save"
   },
   "files": [
     "*.md",
