@@ -127,6 +127,7 @@ export function isValid(crs: ProjectionLike) {
 
 /**
  * Gives a reasonable epsilon for this CRS.
+ * Try to publish
  *
  * @param crs - The CRS to use.
  * @returns 0.01 if the CRS is EPSG:4326, 0.001 otherwise.
