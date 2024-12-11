@@ -1,3 +1,24 @@
+<a name="2.45.5"></a>
+## [2.45.5](https://github.com/iTowns/itowns/compare/v2.45.4...v2.45.5) (2024-12-11)
+
+
+### Bug Fixes
+
+* **Crs:** typo ([001cac9](https://github.com/iTowns/itowns/commit/001cac9))
+* **publish:** add commit ([383b227](https://github.com/iTowns/itowns/commit/383b227))
+* **publish:** refactor publish-next ([a3395f7](https://github.com/iTowns/itowns/commit/a3395f7))
+* **publish:** revert all latest publish script ([956a611](https://github.com/iTowns/itowns/commit/956a611))
+* **publish:** update all next packages ([5a2947d](https://github.com/iTowns/itowns/commit/5a2947d))
+* **publish:** wrong next dependencies ([f17024b](https://github.com/iTowns/itowns/commit/f17024b))
+* **release:** wrong package ([a5e4284](https://github.com/iTowns/itowns/commit/a5e4284))
+
+
+### Workflow and chores
+
+* release v2.45.5 ([3b6574c](https://github.com/iTowns/itowns/commit/3b6574c))
+
+
+
 <a name="2.45.4"></a>
 ## [2.45.4](https://github.com/iTowns/itowns/compare/v2.45.0...v2.45.4) (2024-12-06)
 
