@@ -18,14 +18,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iTowns/itowns.git"
+    "url": "git+https://github.com/gchoqueux/itowns.git"
   },
   "license": "(CECILL-B OR MIT)",
   "bugs": {
-    "url": "https://github.com/itowns/itowns/issues"
+    "url": "https://github.com/gchoqueux/itowns/issues"
   },
   "homepage": "https://itowns.github.io/",
   "dependencies": {
+    "@gchoqueux/geographic": "^2.44.2",
     "chart.js": "^4.4.4",
     "dat.gui": "^0.7.9",
     "itowns": "^2.44.2",

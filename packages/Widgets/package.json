@@ -22,15 +22,15 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/iTowns/itowns.git"
+    "url": "git+https://github.com/gchoqueux/itowns.git"
   },
   "license": "(CECILL-B OR MIT)",
   "bugs": {
-    "url": "https://github.com/itowns/itowns/issues"
+    "url": "https://github.com/gchoqueux/itowns/issues"
   },
   "dependencies": {
-    "@itowns/geographic": "^2.44.2",
-    "itowns": "^2.44.2"
+    "@gchoqueux/geographic": "^2.45.4",
+    "@gchoqueux/itowns": "^2.45.4"
   },
   "homepage": "https://itowns.github.io/"
 }
