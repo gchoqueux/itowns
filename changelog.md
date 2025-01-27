@@ -1,3 +1,13 @@
+<a name="2.45.11"></a>
+## [2.45.11](https://github.com/gchoqueux/itowns/compare/v2.45.10...v2.45.11) (2025-01-27)
+
+
+### Workflow and chores
+
+* release v2.45.11 ([6a5990a](https://github.com/gchoqueux/itowns/commit/6a5990a))
+
+
+
 <a name="2.45.10"></a>
 ## [2.45.10](https://github.com/gchoqueux/itowns/compare/v2.44.2...v2.45.10) (2025-01-27)
 
