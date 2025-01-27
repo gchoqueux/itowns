@@ -200,6 +200,7 @@ jobs:
           git checkout next
           git reset --hard master
           npm run publish-next
+          git add . --all
           git push -f
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -210,6 +211,7 @@ jobs:
           git checkout next
           git merge master
           npm run publish-next
+          git add . --all
           git push
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
