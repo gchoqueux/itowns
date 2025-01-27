@@ -19,7 +19,9 @@
     "postinstall": "cross-env NO_UPDATE_NOTIFIER=true node ./scripts/prepare.mjs && node ./scripts/replace.config.mjs",
     "prepublishOnly": "npx copyfiles -u 1 \"../../examples/**/*\" ./examples/ && npx copyfiles -u 1 \"../../docs/**/*\" ./docs/ && npx copyfiles -u 1 \"../../dist/**/*\" ./dist/ ",
     "postpublish": "node clean.cjs",
-    "publish-next": "npm version prerelease --preid next && npm run update-package",
+    "publish-latest": "npm publish --access public --tag=latest --provenance",
+    "prerelease-next": "npm version prerelease --preid next && npm run update-package",
+    "publish-next": "npm publish --access public --tag=next --provenance",
     "update-package": "npm remove @itowns/geographic && npm install @itowns/geographic@$npm_package_version --save"
   },
   "c8": {
