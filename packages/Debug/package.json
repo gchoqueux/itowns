@@ -9,7 +9,9 @@
   "scripts": {
     "lint": "eslint \"src/**/*.{js,ts,tsx}\"",
     "transpile": "cross-env BABEL_DISABLE_CACHE=1 babel src --out-dir lib --extensions .js,.ts",
-    "watch": "npm run transpile -- --watch"
+    "watch": "npm run transpile -- --watch",
+    "prerelease-next": "npm version prerelease --preid next && npm run update-package",
+    "update-package": "npm remove @itowns/geographic itowns && npm install @itowns/geographic@$npm_package_version itowns@$npm_package_version --save"
   },
   "files": [
     "*.md",
@@ -26,6 +28,7 @@
   },
   "homepage": "https://itowns.github.io/",
   "dependencies": {
+    "@itowns/geographic": "^2.44.2",
     "chart.js": "^4.4.4",
     "dat.gui": "^0.7.9",
     "itowns": "^2.44.2",
