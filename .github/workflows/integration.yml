@@ -201,8 +201,9 @@ jobs:
           git checkout next
           git reset --hard master
           npm run publish-next
-          git diff --name-only
-          git add . --all
+          git diff --name-only --verbose || true
+          git add . --all --verbose || true
+          git status --verbose || true
           git diff --name-only
           git push -f
         env:
