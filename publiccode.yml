@@ -6,7 +6,7 @@ publiccodeYmlVersion: '0.2'
 name: itowns
 url: 'https://github.com/iTowns/itowns.git'
 landingURL: 'https://github.com/iTowns/itowns'
-softwareVersion: 2.44.2
+softwareVersion: 2.45.7
 releaseDate: '2024-09-17'
 softwareType: library
 logo: 'https://raw.githubusercontent.com/iTowns/itowns/refs/heads/master/examples/images/itowns_logo.png'
