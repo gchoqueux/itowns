@@ -176,6 +176,7 @@ jobs:
         with:
           # fetch all branches
           fetch-depth: 0
+          submodules: 'true'
 
       # Configure git user for later command induced commits
       - uses: fregante/setup-git-user@v1
