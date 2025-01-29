@@ -1,3 +1,14 @@
+<a name="2.46.7"></a>
+## [2.46.7](https://github.com/gchoqueux/itowns/compare/v2.46.6...v2.46.7) (2025-01-29)
+
+
+### Workflow and chores
+
+* release v2.46.7 ([dc35a92](https://github.com/gchoqueux/itowns/commit/dc35a92))
+* try to debug github ([49f7428](https://github.com/gchoqueux/itowns/commit/49f7428))
+
+
+
 <a name="2.46.6"></a>
 ## [2.46.6](https://github.com/gchoqueux/itowns/compare/v2.46.1...v2.46.6) (2025-01-29)
 
