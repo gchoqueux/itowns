@@ -1,3 +1,18 @@
+<a name="2.46.10"></a>
+## [2.46.10](https://github.com/gchoqueux/itowns/compare/v2.46.6...v2.46.10) (2025-01-29)
+
+
+### Workflow and chores
+
+* release v2.46.10 ([83bcbce](https://github.com/gchoqueux/itowns/commit/83bcbce))
+* release v2.46.9 ([48e33f0](https://github.com/gchoqueux/itowns/commit/48e33f0))
+* release v2.46.8 ([6e6d68c](https://github.com/gchoqueux/itowns/commit/6e6d68c))
+* release v2.46.7 ([a9959e5](https://github.com/gchoqueux/itowns/commit/a9959e5))
+* try to debug github ([9fd3404](https://github.com/gchoqueux/itowns/commit/9fd3404))
+* try to debug github ([dfae920](https://github.com/gchoqueux/itowns/commit/dfae920))
+
+
+
 <a name="2.46.9"></a>
 ## [2.46.9](https://github.com/gchoqueux/itowns/compare/v2.46.6...v2.46.9) (2025-01-29)
 
