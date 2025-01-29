@@ -1,3 +1,13 @@
+<a name="2.46.14"></a>
+## [2.46.14](https://github.com/gchoqueux/itowns/compare/v2.46.13...v2.46.14) (2025-01-29)
+
+
+### Workflow and chores
+
+* release v2.46.14 ([cbad257](https://github.com/gchoqueux/itowns/commit/cbad257))
+
+
+
 <a name="2.46.13"></a>
 ## [2.46.13](https://github.com/gchoqueux/itowns/compare/v2.46.6...v2.46.13) (2025-01-29)
 
