@@ -1,3 +1,22 @@
+<a name="2.46.2"></a>
+## [2.46.2](https://github.com/gchoqueux/itowns/compare/v2.46.1...v2.46.2) (2025-01-29)
+
+
+### Bug Fixes
+
+* **publish:** add debug git ([09c6a73](https://github.com/gchoqueux/itowns/commit/09c6a73))
+* **publish:** add submodule checkout ([47613d2](https://github.com/gchoqueux/itowns/commit/47613d2))
+* **publish:** add submodule checkout recursive ([95f9f32](https://github.com/gchoqueux/itowns/commit/95f9f32))
+* **publish:** add submodule checkout recursive ([dad064a](https://github.com/gchoqueux/itowns/commit/dad064a))
+
+
+### Workflow and chores
+
+* release v2.46.2 ([ba91e2b](https://github.com/gchoqueux/itowns/commit/ba91e2b))
+* Update integration.yml ([f838b17](https://github.com/gchoqueux/itowns/commit/f838b17))
+
+
+
 <a name="2.46.1"></a>
 ## [2.46.1](https://github.com/gchoqueux/itowns/compare/v2.46.0...v2.46.1) (2025-01-28)
 
