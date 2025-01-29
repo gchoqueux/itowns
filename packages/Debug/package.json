@@ -1,6 +1,6 @@
 {
   "private": true,
-  "version": "2.46.15",
+  "version": "2.46.16",
   "type": "module",
   "main": "lib/Main.js",
   "exports": {
@@ -28,8 +28,8 @@
   },
   "homepage": "https://itowns.github.io/",
   "dependencies": {
-    "@gchoqueux/geographic": "^2.46.15",
-    "@gchoqueux/itowns": "^2.46.15",
+    "@gchoqueux/geographic": "^2.46.16",
+    "@gchoqueux/itowns": "^2.46.16",
     "@tweenjs/tween.js": "^25.0.0",
     "chart.js": "^4.4.4",
     "dat.gui": "^0.7.9"
