@@ -1,3 +1,29 @@
+<a name="2.46.6"></a>
+## [2.46.6](https://github.com/gchoqueux/itowns/compare/v2.46.1...v2.46.6) (2025-01-29)
+
+
+### Bug Fixes
+
+* **deploy:** remove verbose ([51d6ea7](https://github.com/gchoqueux/itowns/commit/51d6ea7))
+* **publish:** add debug git ([09c6a73](https://github.com/gchoqueux/itowns/commit/09c6a73))
+* **publish:** add submodule checkout ([47613d2](https://github.com/gchoqueux/itowns/commit/47613d2))
+* **publish:** add submodule checkout recursive ([95f9f32](https://github.com/gchoqueux/itowns/commit/95f9f32))
+* **publish:** add submodule checkout recursive ([dad064a](https://github.com/gchoqueux/itowns/commit/dad064a))
+
+
+### Workflow and chores
+
+* release v2.46.6 ([2210fb9](https://github.com/gchoqueux/itowns/commit/2210fb9))
+* release v2.46.5 ([ad5159e](https://github.com/gchoqueux/itowns/commit/ad5159e))
+* release v2.46.4 ([8c230e6](https://github.com/gchoqueux/itowns/commit/8c230e6))
+* release v2.46.3 ([6c03eb9](https://github.com/gchoqueux/itowns/commit/6c03eb9))
+* release v2.46.2 ([28ef771](https://github.com/gchoqueux/itowns/commit/28ef771))
+* enable debug ([1403c90](https://github.com/gchoqueux/itowns/commit/1403c90))
+* try to debug github ([6c3f72e](https://github.com/gchoqueux/itowns/commit/6c3f72e))
+* Update integration.yml ([f838b17](https://github.com/gchoqueux/itowns/commit/f838b17))
+
+
+
 <a name="2.46.5"></a>
 ## [2.46.5](https://github.com/gchoqueux/itowns/compare/v2.46.1...v2.46.5) (2025-01-29)
 
