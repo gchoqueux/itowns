@@ -199,6 +199,8 @@ jobs:
           git checkout next
           git reset --hard master
           npm run publish-next
+          git add .
+          git commit --amend --no-edit
           git push -f
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
@@ -209,10 +211,11 @@ jobs:
           git checkout next
           git merge master
           npm run publish-next
+          git add .
+          git commit --amend --no-edit
           git push
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-
 
   # Deploy on itowns.github.io website
   deploy:
