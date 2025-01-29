@@ -1,3 +1,14 @@
+<a name="2.47.1"></a>
+## [2.47.1](https://github.com/gchoqueux/itowns/compare/v2.47.0...v2.47.1) (2025-01-29)
+
+
+### Workflow and chores
+
+* release v2.47.1 ([c259d64](https://github.com/gchoqueux/itowns/commit/c259d64))
+* add echo ([f48d333](https://github.com/gchoqueux/itowns/commit/f48d333))
+
+
+
 <a name="2.47.0"></a>
 # [2.47.0](https://github.com/gchoqueux/itowns/compare/v2.44.2...v2.47.0) (2025-01-29)
 
