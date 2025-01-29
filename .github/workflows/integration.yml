@@ -1,5 +1,8 @@
 name: integration
 
+env:
+  ACTIONS_RUNNER_DEBUG: true
+
 on:
   push:
     branches:
