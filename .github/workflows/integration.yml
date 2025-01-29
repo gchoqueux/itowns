@@ -211,6 +211,7 @@ jobs:
         run: |
           git status
           git add .
+          git commit --amend --no-edit
           git status
         env:
           ACTIONS_RUNNER_DEBUG: true
