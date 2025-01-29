@@ -176,7 +176,6 @@ jobs:
         with:
           # fetch all branches
           fetch-depth: 0
-          submodules: recursive
 
       # Configure git user for later command induced commits
       - uses: fregante/setup-git-user@v1
@@ -201,13 +200,17 @@ jobs:
           git checkout next
           git reset --hard master
           npm run publish-next
+          git status
+          git push --force
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
           ACTIONS_RUNNER_DEBUG: true
 
-      - name: git status
+      - name: git status AFTER release
         if: ${{ startsWith(github.event.head_commit.message, 'release v' ) }}
         run: |
+          git status
+          git add .
           git status
         env:
           ACTIONS_RUNNER_DEBUG: true
@@ -225,13 +228,26 @@ jobs:
           git checkout next
           git merge master
           npm run publish-next
-          git diff --name-only
-          git add . --all
-          git diff --name-only
           git push
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
+      - name: PUSH itowns@next dsds
+        if: ${{ !startsWith(github.event.head_commit.message, 'release v' ) }}
+        run: |
+          git status
+          git add .
+          git commit --amend
+          git status
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+
+      - name: PUSH itowns@next
+        if: ${{ !startsWith(github.event.head_commit.message, 'release v' ) }}
+        run: |
+          git push --force
+        env:
+          ACTIONS_RUNNER_DEBUG: true
 
   # Deploy on itowns.github.io website
   deploy:
