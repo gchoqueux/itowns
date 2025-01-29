@@ -1,8 +1,5 @@
 name: integration
 
-env:
-  ACTIONS_RUNNER_DEBUG: true
-
 on:
   push:
     branches:
@@ -204,13 +201,23 @@ jobs:
           git checkout next
           git reset --hard master
           npm run publish-next
-          git diff --name-only
-          git add . --all
-          git status
-          git diff --name-only
-          git push -f
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+          ACTIONS_RUNNER_DEBUG: true
+
+      - name: git status
+        if: ${{ startsWith(github.event.head_commit.message, 'release v' ) }}
+        run: |
+          git status
+        env:
+          ACTIONS_RUNNER_DEBUG: true
+
+      - name: push next release
+        if: ${{ startsWith(github.event.head_commit.message, 'release v' ) }}
+        run: |
+          git push --force
+        env:
+          ACTIONS_RUNNER_DEBUG: true
 
       - name: publish itowns@next npm package
         if: ${{ !startsWith(github.event.head_commit.message, 'release v' ) }}
