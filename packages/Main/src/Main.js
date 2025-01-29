@@ -4,7 +4,7 @@ const conf = {
 
 export const REVISION = conf.version;
 
-// Geographic tools
+// Geographic tools --
 export { Coordinates, Extent, CRS, Ellipsoid, ellipsoidSizes, OrientationUtils } from '@itowns/geographic';
 export { default as GeoidGrid } from 'Core/Geographic/GeoidGrid';
 
