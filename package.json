@@ -1,6 +1,6 @@
 {
   "private": true,
-  "version": "2.47.2",
+  "version": "2.47.3",
   "description": "A JS/WebGL framework for 3D geospatial data visualization",
   "type": "module",
   "workspaces": [
