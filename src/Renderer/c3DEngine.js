@@ -4,7 +4,8 @@
  * Description: 3DEngine est l'interface avec le framework webGL.
  */
 
-import * as THREE from 'three';
+/* eslint-disable */
+import * as THREE from 'three/webgpu';
 import Capabilities from 'Core/System/Capabilities';
 import { unpack1K } from 'Renderer/LayeredMaterial';
 import WEBGL from 'ThreeExtended/capabilities/WebGL';
@@ -81,7 +82,7 @@ class c3DEngine {
             this.label2dRenderer.setSize(this.width, this.height);
             viewerDiv.appendChild(this.label2dRenderer.domElement);
 
-            this.renderer = renderer || new THREE.WebGLRenderer({
+            this.renderer = renderer || new THREE.WebGPURenderer({
                 canvas: document.createElement('canvas'),
                 antialias: options.antialias,
                 alpha: options.alpha,
