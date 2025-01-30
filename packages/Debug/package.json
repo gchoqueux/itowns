@@ -1,6 +1,6 @@
 {
   "private": true,
-  "version": "2.47.4",
+  "version": "2.47.5",
   "type": "module",
   "main": "lib/Main.js",
   "exports": {
