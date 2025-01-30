@@ -1,6 +1,6 @@
 {
   "private": true,
-  "version": "2.47.7",
+  "version": "2.47.8-next.0",
   "description": "Widgets",
   "type": "module",
   "main": "lib/Main.js",
@@ -31,7 +31,7 @@
   },
   "homepage": "https://itowns.github.io/",
   "dependencies": {
-    "@gchoqueux/geographic": "^2.47.2",
-    "@gchoqueux/itowns": "^2.47.2"
+    "@gchoqueux/geographic": "^2.47.8-next.0",
+    "@gchoqueux/itowns": "^2.47.8-next.0"
   }
 }
