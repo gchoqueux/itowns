@@ -1,5 +1,6 @@
 #define USE_COLOR_ALPHA
 
+#include <common>
 #include <color_pars_fragment>
 #include <map_particle_pars_fragment>
 #include <alphatest_pars_fragment>
@@ -7,6 +8,7 @@
 #include <fog_pars_fragment>
 #include <logdepthbuf_pars_fragment>
 #include <clipping_planes_pars_fragment>
+#include <proj_texture_pars_fragment>
 
 uniform vec3 diffuse;
 uniform float opacity;
@@ -36,6 +38,8 @@ void main() {
 
     vec3 outgoingLight = diffuseColor.rgb;
 #include <opaque_fragment> // gl_FragColor
+#include <proj_texture_fragment>
+
 #include <tonemapping_fragment>
 #include <fog_fragment>
 #include <premultiplied_alpha_fragment>

@@ -1,7 +1,9 @@
 #include <itowns/precision_qualifier>
+#include <common>
 #include <logdepthbuf_pars_fragment>
 #include <itowns/pitUV>
 #include <itowns/color_layers_pars_fragment>
+#include <proj_texture_pars_fragment>
 #if MODE == MODE_FINAL
 #include <itowns/fog_pars_fragment>
 #include <itowns/overlay_pars_fragment>
@@ -13,6 +15,8 @@ uniform vec3        diffuse;
 uniform float       opacity;
 varying vec3        vUv; // uv.x/uv_1.x, uv.y, uv_1.y
 varying vec2        vHighPrecisionZW;
+
+uniform sampler2D map;
 
 void main() {
     #include <logdepthbuf_fragment>
@@ -36,11 +40,15 @@ void main() {
 #endif
 
     vec4 color;
+    // sampler2D colorTexture
+
     #pragma unroll_loop
     for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
         color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
         gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
     }
+
+    #include <proj_texture_fragment>
 
   #if defined(DEBUG)
     if (showOutline) {

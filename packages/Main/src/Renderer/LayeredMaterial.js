@@ -3,6 +3,7 @@ import ShaderUtils from 'Renderer/Shader/ShaderUtils';
 import Capabilities from 'Core/System/Capabilities';
 import RenderMode from 'Renderer/RenderMode';
 import CommonMaterial from 'Renderer/CommonMaterial';
+import { textureMatrix } from 'photogrammetric-camera';
 import TileVS from '../Renderer/Shader/TileVS.glsl';
 import TileFS from '../Renderer/Shader/TileFS.glsl';
 
@@ -52,6 +53,7 @@ const defaultStructLayer = {
     effect_parameter: 0,
     effect_type: colorLayerEffects.noEffect,
     transparent: false,
+    isColorProjectingLayer: false,
 };
 
 function updateLayersUniforms(uniforms, olayers, max) {
@@ -66,6 +68,7 @@ function updateLayersUniforms(uniforms, olayers, max) {
     for (const layer of olayers) {
         // textureOffset property is added to RasterTile
         layer.textureOffset = count;
+        console.log('layer', layer);
         for (let i = 0, il = layer.textures.length; i < il; ++i, ++count) {
             if (count < max) {
                 offsetScales[count] = layer.offsetScales[i];
@@ -191,6 +194,20 @@ class LayeredMaterial extends THREE.ShaderMaterial {
             },
         });
 
+        this.defines.USE_PROJECTIVE_TEXTURING = '';
+
+        const textureCameraPosition = new THREE.Vector3();
+        const textureCameraPreTransform = new THREE.Matrix4();
+        const textureCameraPostTransform = new THREE.Matrix4();
+        const uvDistortion = { R: new THREE.Vector4(), C: new THREE.Vector3() };
+
+        CommonMaterial.setUniformProperty(this, 'textureCameraPosition', textureCameraPosition);
+        CommonMaterial.setUniformProperty(this, 'textureCameraPreTransform', textureCameraPreTransform);
+        CommonMaterial.setUniformProperty(this, 'textureCameraPostTransform', textureCameraPostTransform);
+        CommonMaterial.setUniformProperty(this, 'uvDistortion', uvDistortion);
+        CommonMaterial.setUniformProperty(this, 'depthMap', null);
+        CommonMaterial.setUniformProperty(this, 'map', null);
+
         this.uniformsNeedUpdate = false;
     }
 
@@ -277,6 +294,22 @@ class LayeredMaterial extends THREE.ShaderMaterial {
     setElevationScale(scale) {
         if (this.elevationLayerIds.length) {
             this.getElevationLayer().scale = scale;
+        }
+    }
+
+    setCamera(camera) {
+        camera.getWorldPosition(this.textureCameraPosition);
+        this.textureCameraPreTransform.copy(camera.matrixWorldInverse);
+        this.textureCameraPreTransform.setPosition(0, 0, 0);
+        this.textureCameraPreTransform.premultiply(camera.preProjectionMatrix);
+        this.textureCameraPostTransform.copy(camera.postProjectionMatrix);
+        this.textureCameraPostTransform.premultiply(textureMatrix);
+
+        if (camera.distos && camera.distos.length == 1 && camera.distos[0].isRadialDistortion) {
+            this.uvDistortion = camera.distos[0];
+        } else {
+            this.uvDistortion = { C: new THREE.Vector2(), R: new THREE.Vector4() };
+            this.uvDistortion.R.w = Infinity;
         }
     }
 }

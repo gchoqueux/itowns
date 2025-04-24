@@ -3,6 +3,7 @@
 #include <morphtarget_pars_vertex>
 #include <logdepthbuf_pars_vertex>
 #include <clipping_planes_pars_vertex>
+#include <proj_texture_pars_vertex>
 varying vec4 vColor; // color_pars_vertex
 
 #ifdef USE_POINTS_UV
@@ -107,6 +108,7 @@ void main() {
 #include <begin_vertex>
 #include <morphtarget_vertex>
 #include <project_vertex>
+#include <proj_texture_vertex>
 
     gl_PointSize = size;
 

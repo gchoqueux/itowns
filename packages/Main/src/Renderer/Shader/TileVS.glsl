@@ -2,6 +2,8 @@
 #include <common>
 #include <itowns/elevation_pars_vertex>
 #include <logdepthbuf_pars_vertex>
+#include <proj_texture_pars_vertex>
+
 #if NUM_CRS > 1
 attribute float     uv_1;
 #endif
@@ -19,6 +21,8 @@ void main() {
         #include <itowns/elevation_vertex>
         #include <itowns/geoid_vertex>
         #include <project_vertex>
+        #include <proj_texture_vertex>
+        #include <morphtarget_vertex>
         #include <logdepthbuf_vertex>
         vHighPrecisionZW = gl_Position.zw;
 #if MODE == MODE_FINAL

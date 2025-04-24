@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Point Cloud Viewer</title>
+
+        <style type="text/css">
+            #info {
+                color: #7ad7ff;
+                font-family: 'Open Sans', sans-serif;
+                position: absolute;
+                top: 0;
+                left: 0;
+                padding: 0.3rem;
+                background-color: #404040;
+                z-index: 1;
+            }
+            @media (max-width: 600px) {
+                #info,
+                .dg {
+                    display: none;
+                }
+            }
+        </style>
+
+        <meta charset="UTF-8">
+        <link rel="stylesheet" type="text/css" href="css/example.css">
+        <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
+
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <script type="importmap">
+        {
+            "imports": {
+                "itowns": "../dist/itowns.js",
+                "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+            }
+        }
+        </script>
+    </head>
+    <body>
+        <div id="viewerDiv">
+            <div id="info"></div>
+        </div>
+
+        <div>
+            <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
+            <!-- <script src="../dist/itowns.js"></script> -->
+            <!-- <script src="js/GUI/LoadingScreen.js"></script> -->
+            <!-- <script src="../dist/debug.js"></script> -->
+            <script type="module">
+                import * as THREE from 'three';
+                import { PLYLoader } from 'three/addons/loaders/PLYLoader'
+                
+                const plyloader = (url) => new Promise((res, rej) => new PLYLoader().load(url, d =>  res(d)));
+
+
+
+                import * as itowns from 'itowns';
+                
+                itowns.CRS.defs('EPSG:3946', '+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+                // var oldPostUpdate;
+                // var viewerDiv;
+                // var debugGui;
+                // var view;
+                // var controls;
+
+                // Define crs projection that we will use (taken from https://epsg.io/3946, Proj4js section)
+                itowns.CRS.defs('EPSG:3946', '+proj=lcc +lat_1=45.25 +lat_2=46.75 +lat_0=46 +lon_0=3 +x_0=1700000 +y_0=5200000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+
+                const extent = new itowns.Extent('EPSG:3946',
+                5000, 15000,
+                5000, 15000);
+
+                const viewerDiv = document.getElementById('viewerDiv');
+                viewerDiv.style.display = 'block';
+
+                const debugGui = new dat.GUI();
+
+                // TODO: do we really need to disable logarithmicDepthBuffer ?
+                const view = new itowns.PlanarView(viewerDiv, extent);
+                view.mainLoop.gfxEngine.renderer.setClearColor(0xcccccc);
+
+                view.tileLayer.object3d.position.z = 80;
+                view.tileLayer.object3d.updateMatrix();
+                view.tileLayer.object3d.updateMatrixWorld(true);
+
+                const fileProject = 'maurepas.json';
+                const pgLayer = new itowns.PhotoGLayer('./photogram/', fileProject);
+
+                const camera = await pgLayer.init('./photogram/', fileProject);
+
+                view.scene.add(camera);
+
+                camera.updateMatrix();
+                camera.updateMatrixWorld(true);
+
+                const helper = new THREE.CameraHelper( camera );
+
+
+                view.scene.add( helper );
+                helper.updateMatrixWorld(true);
+
+                async function placeCamera(position, lookAt) {
+                    // view.camera3D.add(pgLayer.sphere);
+                    // view.scene.add(pgLayer.plane);
+                    pgLayer.plane.rotateY(-Math.PI * 0.5);
+                    pgLayer.plane.position.copy(lookAt);
+                    pgLayer.plane.position.x += 3;
+
+                    
+                    view.camera3D.position.copy(position);
+                    view.camera3D.lookAt(lookAt);
+
+                    const grid = new THREE.GridHelper(10, 10);
+                    const axesHelper = new THREE.AxesHelper( 50 );
+
+                    axesHelper.position.copy(lookAt);
+                    axesHelper.position.z -= 10;
+
+                    grid.position.copy(lookAt);
+                    grid.position.z -= 10;
+                    grid.rotateX(Math.PI * 0.5);
+
+                    view.scene.add( axesHelper, grid );
+                    view.notifyChange(view.camera3D);
+                    view.scene.updateMatrix();
+                    view.scene.updateMatrixWorld(true);
+                    const controls = new itowns.FirstPersonControls(view, { focusOnClick: true });
+
+                    const config = pgLayer.projectFile;
+                    const path = pgLayer.projectFile.url;
+
+                    const urlPly = path + config.ply[0];
+
+                    const pointsGeometry = await plyloader(urlPly);
+                    const poinstMesh = new THREE.Points( pointsGeometry, pgLayer.material );
+                    view.scene.add(poinstMesh);
+                }
+
+                // add potreeLayer to scene
+                function onLayerReady() {
+                    var lookAt = camera.position;
+                    var position  = new THREE.Vector3(-10, 10, 10).add(lookAt);
+
+                    // view.camera3D.far = 20000;
+                    // view.camera3D.updateProjectionMatrix();
+
+                    placeCamera(position, lookAt);
+
+                    const colorProjectingLayer = new itowns.ColorProjectingLayer('proj', { photoGLayer: pgLayer,
+                         source: {
+                            extentInsideLimit: () => true,
+                            onLayerAdded: () => true,
+                        },
+                    });
+
+                    view.addLayer(colorProjectingLayer);
+                }
+                window.view = view;
+
+                onLayerReady();
+            </script>
+    </body>
+</html>
+
