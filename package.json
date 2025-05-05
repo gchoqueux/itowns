@@ -2,7 +2,6 @@
   "private": true,
   "version": "2.45.1",
   "description": "A JS/WebGL framework for 3D geospatial data visualization",
-  "type": "module",
   "workspaces": [
     "packages/Geographic",
     "packages/Main",
@@ -110,6 +109,7 @@
     "q": "^1.5.1",
     "replace-in-file": "^8.3.0",
     "sinon": "^19.0.2",
+    "threads-plugin": "^1.4.0",
     "three": "^0.174.0",
     "typescript": "^5.8.2",
     "undici": "^7.4.0",

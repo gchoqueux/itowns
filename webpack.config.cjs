@@ -1,4 +1,5 @@
 const path = require('path');
+const ThreadsPlugin = require('threads-plugin');
 const ESLintPlugin = require('eslint-webpack-plugin');
 
 const mode = process.env.NODE_ENV;
@@ -52,10 +53,18 @@ module.exports = () => {
         };
 
         if (isESM) {
-            output.filename = '[name].esm.js';
+            output.filename = '[name].js';
             output.libraryTarget = 'module';
+            output.module = true;
+            output.chunkFormat = 'module';
+            output.library = {
+                type: 'module',
+            };
+            output.environment = {
+                module: true,
+            };
         } else {
-            output.filename = '[name].umd.js';
+            output.filename = '[name].js';
             output.libraryTarget = 'umd';
             output.umdNamedDefine = true;
         }
@@ -75,6 +84,7 @@ module.exports = () => {
             },
             externals: {
                 three: 'three',
+                'node:module': '{}',
             },
             entry: {
                 itowns: [
@@ -89,9 +99,9 @@ module.exports = () => {
                     import: './packages/Widgets/src/Main.js',
                     dependOn: 'itowns',
                 },
-                itowns_potree2worker: {
-                    import: './packages/Main/src/Worker/Potree2Worker.js',
-                },
+                // itowns_potree2worker: {
+                //     import: './packages/Main/src/Worker/Potree2Worker.js',
+                // },
                 itowns_lasworker: {
                     import: './packages/Main/src/Worker/LASLoaderWorker.js',
                 },
@@ -112,6 +122,7 @@ module.exports = () => {
                 new ESLintPlugin({
                     files: include,
                 }),
+                new ThreadsPlugin(),
             ],
             devServer: {
                 devMiddleware: {
@@ -134,7 +145,7 @@ module.exports = () => {
         };
 
         if (isESM) {
-            cfg.target = 'es2022';
+            cfg.target = 'web';
             cfg.resolve.fallback = {
                 os: false,
                 fs: false,
@@ -145,6 +156,7 @@ module.exports = () => {
                 util: false,
                 child_process: false,
                 module: false,
+                'node:modules': false,
                 // child_process: require.resolve('child_process'),
                 // path: require.resolve('path-browserify'),
                 // 'https-browserify': require.resolve('https-browserify'),
@@ -154,7 +166,7 @@ module.exports = () => {
                 https: false,
                 stream: false,
             };
-            cfg.resolve.alias['node:module'] = false;
+            // cfg.resolve.alias['node:module'] = false;
             cfg.experiments = {
                 outputModule: isESM,
             };
@@ -163,5 +175,7 @@ module.exports = () => {
         return cfg;
     };
 
-    return debugBuild ? config('esm') : [config('umd'), config('esm')];
+    // return debugBuild ? config('esm') : [config('umd'), config('esm')];
+    return config('esm');
+    // return config('umd');
 };

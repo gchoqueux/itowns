@@ -39,5 +39,9 @@
     "proj4": "^2.15.0",
     "three": "^0.174.0"
   },
-  "homepage": "https://itowns.github.io/"
+  "homepage": "https://itowns.github.io/",
+  "devDependencies": {
+    "itowns": "^2.45.1",
+    "threads-plugin": "^1.4.0"
+  }
 }

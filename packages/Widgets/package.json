@@ -32,7 +32,10 @@
   },
   "homepage": "https://itowns.github.io/",
   "dependencies": {
-    "@itowns/geographic": "^2.45.1",
-    "itowns": "^2.45.1"
+    "@itowns/geographic": "^2.45.1"
+  },
+  "devDependencies": {
+    "itowns": "^2.45.1",
+    "threads-plugin": "^1.4.0"
   }
 }

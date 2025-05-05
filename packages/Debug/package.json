@@ -32,10 +32,13 @@
     "@itowns/geographic": "^2.45.1",
     "@tweenjs/tween.js": "^25.0.0",
     "chart.js": "^4.4.8",
-    "dat.gui": "^0.7.9",
-    "itowns": "^2.45.1"
+    "dat.gui": "^0.7.9"
   },
   "peerDependencies": {
     "three": "^0.174.0"
+  },
+  "devDependencies": {
+    "itowns": "^2.45.1",
+    "threads-plugin": "^1.4.0"
   }
 }

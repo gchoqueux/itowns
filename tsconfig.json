@@ -1,11 +1,13 @@
 {
     "compilerOptions": {
+        "target": "esnext",
         /* Type Checking */
         "strict": true,
         /* Modules */
         "baseUrl": ".",
-        "module": "ESNext",
-        "moduleResolution": "bundler",
+        "module": "esnext",
+        "lib": ["DOM", "esnext"],
+        // "moduleResolution": "Bundler",
         /* Emit */
         /* JavaScript Support */
         "allowJs": true,
@@ -15,9 +17,14 @@
         "esModuleInterop": true,
         "isolatedModules": true,
         /* Language and Environment */
-        "target": "ESNext",
+        // "target": "ESNext",
         /* Completeness */
-        "skipLibCheck": true
+        "skipLibCheck": true,
+        "jsx": "preserve",
+        "sourceMap": true,
+        "noEmit": true,
+        "declarationMap": true,
+        "declaration": true
     },
     "files": [],
     "references": [

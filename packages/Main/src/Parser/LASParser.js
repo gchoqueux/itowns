@@ -1,15 +1,25 @@
 import * as THREE from 'three';
 import { spawn, Thread, Transfer } from 'threads';
 
+
+/* webpackChunkName: "itowns_lasparser" */
+const worker =  new Worker(new URL(new URL('../Worker/LASLoaderWorker.js', import.meta.url)));
+
+console.log('worker', worker);
+
 let _lazPerf;
 let _thread;
 
 function workerInstance() {
-    return new Worker(
-        /* webpackChunkName: "itowns_lasparser" */
-        new URL('../Worker/LASLoaderWorker.js', import.meta.url),
-        { type: 'module' },
-    );
+    /* webpackChunkName: "itowns_lasparser" */
+    const url = new URL(new URL('../Worker/LASLoaderWorker.js', import.meta.url));
+    console.log('url', url);
+
+    return worker;
+
+    // return new Worker(url,
+    //     { type: 'module' },
+    // );
 }
 
 async function loader() {
@@ -138,8 +148,10 @@ export default {
         }
 
         const input = options.in;
+        console.log('input', input);
 
         const lasLoader = await loader();
+        console.log('lasLoader', lasLoader);
         const parsedData = await lasLoader.parseFile(Transfer(data), {
             colorDepth: input?.colorDepth,
         });

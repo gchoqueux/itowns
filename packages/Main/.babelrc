@@ -1,12 +1,12 @@
 {
     "presets": [
-        ["@babel/preset-typescript"],
         ["@babel/preset-env", {
             "targets": {
                 "browsers": "defaults and supports webgl2"
             },
             "modules": false
-        }]
+        }],
+        ["@babel/preset-typescript"]
     ],
     "plugins": [
         ["module-resolver", {

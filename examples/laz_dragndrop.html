@@ -1,7 +1,20 @@
+
 <html>
     <head>
         <title>Itowns - LAZ drag and drop</title>
         <meta charset="UTF-8">
+
+        <script type="importmap">
+            {
+                "imports": {
+                    "itowns": "../dist/itowns.js",
+                    "debug": "../dist/debug.js",
+                    "itowns_widgets": "../dist/itowns_widgets.js",
+                    "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
+                    "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+                }
+            }
+        </script>
         <link rel="stylesheet" type="text/css" href="css/example.css">
         <link rel="stylesheet" type="text/css" href="css/LoadingScreen.css">
 
@@ -12,9 +25,14 @@
         <div id="viewerDiv">
             <div id="description">Drag and drop a LAS/LAZ file</div>
         </div>
-        <script src="../dist/itowns.js"></script>
+        <!-- <script src="../dist/itowns.js"></script> -->
         <script src="js/GUI/LoadingScreen.js"></script>
-        <script type="text/javascript">
+
+        <script type="module">
+
+            import * as THREE from 'three';
+            import * as itowns from 'itowns';
+
             var viewerDiv = document.getElementById('viewerDiv');
             var view = new itowns.View('EPSG:3946', viewerDiv);
             view.mainLoop.gfxEngine.renderer.setClearColor(0xcccccc);
@@ -38,15 +56,15 @@
                         }
 
                         var material = new itowns.PointsMaterial();
-                        var points = new itowns.THREE.Points(geometry, material);
+                        var points = new THREE.Points(geometry, material);
                         points.frustumCulled = false;
                         points.matrixAutoUpdate = false;
                         points.updateMatrix();
                         view.scene.add(points);
                         points.updateMatrixWorld(true);
 
-                        var lookAt = new itowns.THREE.Vector3();
-                        var size = new itowns.THREE.Vector3();
+                        var lookAt = new THREE.Vector3();
+                        var size = new THREE.Vector3();
                         geometry.boundingBox.getSize(size);
                         geometry.boundingBox.getCenter(lookAt);
 
