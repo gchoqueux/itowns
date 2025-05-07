@@ -56,11 +56,27 @@ module.exports = () => {
                 itowns: path.resolve(__dirname, 'packages/Main/src/Main.js'),
                 '@itowns/geographic': path.resolve(__dirname, 'packages/Geographic/src/Main.js'),
             },
+            fallback: {
+                os: false,
+                fs: false,
+                zlib: false,
+                http: false,
+                tty: false,
+                url: false,
+                util: false,
+                child_process: false,
+                module: false,
+                'node:modules': false,
+                path: false,
+                'https-browserify': false,
+                https: false,
+                stream: false,
+            },
         },
         entry: {
             itowns: [
                 'core-js',
-                './packages/Main/src/MainBundle.js',
+                './packages/Main/src/Main.js',
             ],
             debug: {
                 import: './packages/Debug/src/Main.js',
@@ -78,12 +94,16 @@ module.exports = () => {
             },
         },
         devtool: 'source-map',
+        externals: {
+            three: 'three',
+        },
         output: {
             path: path.resolve(__dirname, 'dist'),
             filename: '[name].js',
-            library: '[name]',
-            libraryTarget: 'umd',
-            umdNamedDefine: true,
+            libraryTarget: 'module',
+        },
+        experiments: {
+            outputModule: true,
         },
         module: {
             rules: [

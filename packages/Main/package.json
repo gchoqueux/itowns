@@ -8,6 +8,9 @@
     ".": "./lib/Main.js",
     "./widgets": "./lib/Utils/gui/Main.js"
   },
+  "browser": {
+    "child_process": false
+  },
   "scripts": {
     "lint": "eslint \"src/**/*.{js,ts,tsx}\" \"test/**/*.js\"",
     "transpile": "cross-env BABEL_DISABLE_CACHE=1 babel src --out-dir lib --extensions .js,.ts",

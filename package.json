@@ -2,7 +2,6 @@
   "private": true,
   "version": "2.45.1",
   "description": "A JS/WebGL framework for 3D geospatial data visualization",
-  "type": "module",
   "workspaces": [
     "packages/Geographic",
     "packages/Main",
@@ -60,6 +59,9 @@
   "license": "(CECILL-B OR MIT)",
   "bugs": {
     "url": "https://github.com/iTowns/itowns/issues"
+  },
+  "browser": {
+    "child_process": false
   },
   "homepage": "https://itowns.github.io/",
   "devDependencies": {

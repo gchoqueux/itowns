@@ -69,8 +69,8 @@ export { default as ColorLayersOrdering } from 'Renderer/ColorLayersOrdering';
 export { default as GlobeLayer } from 'Core/Prefab/Globe/GlobeLayer';
 export { default as PlanarLayer } from 'Core/Prefab/Planar/PlanarLayer';
 export { default as LabelLayer } from 'Layer/LabelLayer';
-export { default as EntwinePointTileLayer } from 'Layer/EntwinePointTileLayer';
-export { default as CopcLayer } from 'Layer/CopcLayer';
+// export { default as EntwinePointTileLayer } from 'Layer/EntwinePointTileLayer';
+// export { default as CopcLayer } from 'Layer/CopcLayer';
 export { default as GeoidLayer } from 'Layer/GeoidLayer';
 
 // Sources provided by default in iTowns
@@ -85,15 +85,18 @@ export { default as WMTSSource } from 'Source/WMTSSource';
 export { default as VectorTilesSource } from 'Source/VectorTilesSource';
 export { default as OrientedImageSource } from 'Source/OrientedImageSource';
 export { default as PotreeSource } from 'Source/PotreeSource';
-export { default as Potree2Source } from 'Source/Potree2Source';
+// erreur node:module
+// export { default as Potree2Source } from 'Source/Potree2Source';
 export { default as C3DTilesSource } from 'Source/C3DTilesSource';
 export { default as C3DTilesIonSource } from 'Source/C3DTilesIonSource';
 export { default as C3DTilesGoogleSource } from 'Source/C3DTilesGoogleSource';
 export { default as OGC3DTilesSource } from 'Source/OGC3DTilesSource';
 export { default as OGC3DTilesIonSource } from 'Source/OGC3DTilesIonSource';
 export { default as OGC3DTilesGoogleSource } from 'Source/OGC3DTilesGoogleSource';
-export { default as EntwinePointTileSource } from 'Source/EntwinePointTileSource';
-export { default as CopcSource } from 'Source/CopcSource';
+// erreur node:module
+// export { default as EntwinePointTileSource } from 'Source/EntwinePointTileSource';
+// erreur node:module
+// export { default as CopcSource } from 'Source/CopcSource';
 
 // Parsers provided by default in iTowns
 // Custom parser can be implemented as wanted, as long as the main function
@@ -102,13 +105,14 @@ export { default as GpxParser } from 'Parser/GpxParser';
 export { default as GeoJsonParser } from 'Parser/GeoJsonParser';
 export { default as KMLParser } from 'Parser/KMLParser';
 export { default as CameraCalibrationParser } from 'Parser/CameraCalibrationParser';
-export { default as ShapefileParser } from 'Parser/ShapefileParser';
+// export { default as ShapefileParser } from 'Parser/ShapefileParser';
+// erreur node:module
 export { default as LASParser } from 'Parser/LASParser';
-export { default as ISGParser } from 'Parser/ISGParser';
-export { default as GDFParser } from 'Parser/GDFParser';
-export { default as GTXParser } from 'Parser/GTXParser';
-export { default as B3dmParser } from 'Parser/B3dmParser';
-export { default as iGLTFLoader } from 'Parser/iGLTFLoader';
+// export { default as ISGParser } from 'Parser/ISGParser';
+// export { default as GDFParser } from 'Parser/GDFParser';
+// export { default as GTXParser } from 'Parser/GTXParser';
+// export { default as B3dmParser } from 'Parser/B3dmParser';
+// export { default as iGLTFLoader } from 'Parser/iGLTFLoader';
 
 // 3D Tiles classes and extensions
 // Exported to allow one to implement its own 3D Tiles extension which needs to
@@ -121,3 +125,5 @@ export { default as C3DTExtensions } from './Core/3DTiles/C3DTExtensions';
 export { C3DTilesTypes, C3DTilesBoundingVolumeTypes } from './Core/3DTiles/C3DTilesEnums';
 export { default as C3DTBatchTableHierarchyExtension } from './Core/3DTiles/C3DTBatchTableHierarchyExtension';
 export { process3dTilesNode, $3dTilesCulling, $3dTilesSubdivisionControl } from 'Process/3dTilesProcessing';
+
+
