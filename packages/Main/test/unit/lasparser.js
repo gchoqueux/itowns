@@ -43,7 +43,7 @@ describe('LASParser', function () {
                 },
                 out: {
                     crs: 'EPSG:4978',
-                    center: { x: -2505146.7021798044, y: -3847441.7959745415, z: 4412576.847879505 },
+                    origin: { x: -2505146.7021798044, y: -3847441.7959745415, z: 4412576.847879505 },
                 },
             };
             const bufferGeometry = await LASParser.parse(lasData, options);
@@ -67,7 +67,7 @@ describe('LASParser', function () {
                 },
                 out: {
                     crs: 'EPSG:3857',
-                    center: { x: 746000, y: 6508000, z: 1000 },
+                    origin: { x: 746000, y: 6508000, z: 1000 },
                 },
             };
             const bufferGeometry = await LASParser.parse(lazV14Data, options);
@@ -130,7 +130,7 @@ describe('LASParser', function () {
                 },
                 out: {
                     crs: 'EPSG:3857',
-                    center: { x: 746000, y: 6508000, z: 1000 },
+                    origin: { x: 746000, y: 6508000, z: 1000 },
                 },
             };
             const bufferGeometry = await LASParser.parseChunk(copcData, options);

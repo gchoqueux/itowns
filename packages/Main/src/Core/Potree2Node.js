@@ -108,12 +108,6 @@ class Potree2Node extends PointCloudNode {
         }
     }
 
-    getCenter() {
-        // for potree we send the point use as origin for the data
-        // ie the min corner of the bbox
-        this.center = this._bbox.min;
-    }
-
     networkOptions(byteOffset, byteSize) {
         const first = byteOffset;
         const last = first + byteSize - 1n;
@@ -139,8 +133,6 @@ class Potree2Node extends PointCloudNode {
             await this.loadOctree();
         }
 
-        this.getCenter();
-
         return this.layer.source.fetcher(this.url, this.networkOptions(this.byteOffset, this.byteSize))
             .then(file => this.layer.source.parser(file, {
                 in: {
@@ -150,7 +142,7 @@ class Potree2Node extends PointCloudNode {
                 },
                 out: {
                     ...this.layer,
-                    center: this.center,
+                    origin: this._bbox.min,
                 },
             }))
             .then((data) => {

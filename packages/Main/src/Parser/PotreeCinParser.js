@@ -6,7 +6,7 @@ export default {
      * @function parse
      * @param {ArrayBuffer} buffer - the cin buffer.
      * @param {Object} options
-     * @param {THREE.Vector3} options.out.center - the origin position of the data
+     * @param {THREE.Vector3} options.out.origin - the origin position of the data
      *
      * @return {Promise} - a promise that resolves with a THREE.BufferGeometry.
      */
@@ -31,7 +31,7 @@ export default {
         geometry.setAttribute('color', new THREE.BufferAttribute(colors, 4, true));
         geometry.boundingBox = box;
 
-        geometry.userData.origin = options.out.center;
+        geometry.userData.origin = options.out.origin;
         geometry.userData.rotation = new THREE.Quaternion();
 
         return Promise.resolve(geometry);

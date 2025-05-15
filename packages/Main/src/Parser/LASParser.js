@@ -22,7 +22,7 @@ async function loader() {
 }
 
 function getOrigin(options) {
-    const center = options.out.center;
+    const center = options.out.origin;
     const centerCrsIn = proj4(options.out.crs, options.in.crs).forward(center);
     return proj4(options.in.crs, options.out.crs).forward([centerCrsIn.x, centerCrsIn.y, 0]);
 }

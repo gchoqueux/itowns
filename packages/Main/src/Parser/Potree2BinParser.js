@@ -38,7 +38,7 @@ export default {
      * @param {Object} options
      * @param {string[]} options.in.pointAttributes - the point attributes information contained in metadata.js
      * @param {THREE.Box3} options.in.bbox - the bbox of the node
-     * @param {THREE.Vector3} options.out.center - the origin position of the data
+     * @param {THREE.Vector3} options.out.origin - the origin position of the data
      *
      * @return {Promise} - a promise that resolves with a THREE.BufferGeometry.
      */
@@ -97,7 +97,7 @@ export default {
             }
         });
 
-        geometry.userData.origin = options.out.center;
+        geometry.userData.origin = options.out.origin;
         geometry.userData.rotation = new THREE.Quaternion();
 
         geometry.computeBoundingBox();

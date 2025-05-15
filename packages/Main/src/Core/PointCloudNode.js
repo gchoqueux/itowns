@@ -4,6 +4,16 @@ const size = new THREE.Vector3();
 const position = new THREE.Vector3();
 const translation = new THREE.Vector3();
 
+/**
+ * @property {number} numPoints
+ * @property {Layer} layer
+ * @property {array} children
+ * @property {THREE.box3} bbox - bbox in local referential
+ * @property {THREE.box3} _bbox - bbox in worll referential
+ * @property {THREE.Vector3} _position
+ * @property {THREE.quaternion} _quaternion
+ * @property {number} sse
+ */
 class PointCloudNode extends THREE.EventDispatcher {
     constructor(numPoints = 0, layer) {
         super();
@@ -56,13 +66,16 @@ class PointCloudNode extends THREE.EventDispatcher {
         childNode._bbox.max.copy(childNode._bbox.min).add(size);
     }
 
+    /**
+     * Compute the center of the bounding box in the local referential
+     * @returns {THREE.Vector3}
+     */
     getCenter() {
-        // get center of the bbox in the world referentiel
         const centerBbox = new THREE.Vector3();
         this._bbox.getCenter(centerBbox);
-        const rotInv = this._quaternion.clone().invert();
-        const origVector = this._position;
-        this.center = centerBbox.clone().applyQuaternion(rotInv).add(origVector);
+        const inverseRotation = this._quaternion.clone().invert();
+        const originVector = this._position;
+        return centerBbox.clone().applyQuaternion(inverseRotation).add(originVector);
     }
 
     load() {
@@ -71,10 +84,9 @@ class PointCloudNode extends THREE.EventDispatcher {
             this.loadOctree();
         }
 
-        this.getCenter();
-
+        const origin = this.getCenter();
         return this.layer.source.fetcher(this.url, this.layer.source.networkOptions)
-            .then(file => this.layer.source.parse(file, { out: { ...this.layer, center: this.center }, in: this.layer.source }));
+            .then(file => this.layer.source.parse(file, { out: { ...this.layer, origin }, in: this.layer.source }));
     }
 
     findCommonAncestor(node) {

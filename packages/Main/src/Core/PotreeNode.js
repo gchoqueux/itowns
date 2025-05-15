@@ -73,9 +73,10 @@ class PotreeNode extends PointCloudNode {
     }
 
     getCenter() {
-        // for potree we send the point use as origin for the data
-        // ie the min corner of the bbox
-        this.center = this._bbox.min;
+        // With the potree format the node data are already encoded using the min corner of the bbox as origin.
+        // Linked with the reprojection of points, we might need to change that to the real center but it
+        // would need to make changes in the parser.
+        return this._bbox.min;
     }
 
     loadOctree() {
