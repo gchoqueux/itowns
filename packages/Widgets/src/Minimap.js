@@ -118,6 +118,7 @@ class Minimap extends Widget {
             noControls: true,
             maxSubdivisionLevel: view.tileLayer.maxSubdivisionLevel,
             disableFocusOnStart: true,
+            segments: 1,
         });
         this.view.addLayer(layer);  // TODO : should this promise be returned by constructor so that user can use it ?
 
