@@ -1,5 +1,6 @@
 import * as THREE from 'three';
-import { Extent } from '@itowns/geographic';
+// import { Extent } from '@itowns/geographic';
+
 
 let nextuuid = 1;
 function addPickingAttribute(points) {
@@ -26,6 +27,7 @@ function addPickingAttribute(points) {
     return points;
 }
 
+
 export default {
     executeCommand(command) {
         const layer = command.layer;
@@ -33,18 +35,36 @@ export default {
 
         return node.load().then((geometry) => {
             const points = new THREE.Points(geometry, layer.material);
+
+            points.geometry = geometry;
             addPickingAttribute(points);
             points.frustumCulled = false;
             points.matrixAutoUpdate = false;
-            points.scale.copy(layer.scale);
-            points.position.copy(geometry.userData.origin);
 
+            // points.matrixWorld.copy(node.clampOBB.matrixWorld);
+
+            // points.scale.copy(layer.scale)
+
+            // points.parent.getWorldPosition(worldPositionParent);
+            // node.parent.getWorldQuaternion(worldQuaternionParent);
+            // console.log('worldPositionParent', worldPositionParent);
+
+            points.position.copy(geometry.userData.origin);
             const quaternion = geometry.userData.rotation.clone().invert();
             points.quaternion.copy(quaternion);
-            points.updateMatrix();
+            // console.log('geometry.userData.origin', geometry.userData.origin);
 
-            points.layer = layer;
-            points.extent = Extent.fromBox3(command.view.referenceCrs, node.bbox);
+            points.updateMatrix();
+            points.updateMatrixWorld(true);
+            points.sse = () => node.sse;
+            points.notVisibleSince = () => node.notVisibleSince;
+
+            points.voxelKey = node.voxelKey;
+
+
+            // node.layer = layer;
+            // debugger; // eslint-disable-line
+            // node.extent = Extent.fromBox3(command.view.referenceCrs, node.bbox);
             points.userData.node = node;
             return points;
         });

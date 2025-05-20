@@ -413,6 +413,7 @@ export function quaternionFromEnuToCRS(
     const proj = typeof crsOrProj === 'string' ? proj4.defs(crsOrProj) : crsOrProj;
     switch (proj.projName) {
         case 'geocent': return quaternionFromEnuToGeocent();
+        case 'Lambert_Conformal_Conic_2SP':
         case 'lcc': return quaternionFromEnuToLCC(proj as LCCProjection);
         case 'tmerc': return quaternionFromEnuToTMerc(proj as TMercProjection);
         case 'longlat': return quaternionFromEnuToLongLat();
@@ -446,6 +447,7 @@ export function quaternionFromCRSToEnu(
     const proj = typeof crsOrProj === 'string' ? proj4.defs(crsOrProj) : crsOrProj;
     switch (proj.projName) {
         case 'geocent': return quaternionFromGeocentToEnu();
+        case 'Lambert_Conformal_Conic_2SP':
         case 'lcc': return quaternionFromLCCToEnu(proj as LCCProjection);
         case 'tmerc': return quaternionFromTMercToEnu(proj as TMercProjection);
         case 'longlat': return quaternionFromLongLatToEnu();

@@ -4,6 +4,7 @@ import PointsMaterial, { PNTS_MODE } from 'Renderer/PointsMaterial';
 import Picking from 'Core/Picking';
 import proj4 from 'proj4';
 import { Coordinates, OrientationUtils } from '@itowns/geographic';
+import { OBBHelper } from '@itowns/debug';
 
 const point = new THREE.Vector3();
 const bboxMesh = new THREE.Mesh();
@@ -51,35 +52,40 @@ function getCornerPosition(bbox) {
     return array;
 }
 
+// const color =  new THREE.Color(0x00ffff);
+const red =  new THREE.Color(0xff0000);
+
 function initBoundingBox(elt, layer) {
     // bbox in local ref -> cyan
-    const boxHelper = elt.boxHelper;
-    elt.obj.boxHelper = boxHelper;
-    layer.bboxes.add(boxHelper);
-    boxHelper.updateMatrixWorld(true);
+    elt.obj.boxHelper = new THREE.Group();
+    // const a = new OBBHelper(elt.voxelOBB, undefined, color);
+    const b = new OBBHelper(elt.clampOBB, elt.voxelKey, red);
+    elt.obj.boxHelper.add(b);
+    layer.bboxes.add(elt.obj.boxHelper);
 
     // tightbbox in local ref -> blue
     const tightboxHelper = new THREE.BoxHelper(undefined, 0x0000ff);
     tightboxHelper.geometry.attributes.position.array = getCornerPosition(elt.obj.geometry.boundingBox);
     tightboxHelper.applyMatrix4(elt.obj.matrixWorld);
+
     elt.obj.tightboxHelper = tightboxHelper;
     layer.bboxes.add(tightboxHelper);
     tightboxHelper.updateMatrixWorld(true);
 }
 
-function createBoxHelper(bbox, quaternion, origin) {
-    const boxHelper = new THREE.BoxHelper(undefined, 0x00ffff);
-    boxHelper.geometry.attributes.position.array = getCornerPosition(bbox);
+// function createBoxHelper(bbox, quaternion, origin) {
+//     const boxHelper = new THREE.BoxHelper(undefined, 0x00ffff);
+//     boxHelper.geometry.attributes.position.array = getCornerPosition(bbox);
 
-    boxHelper.position.copy(origin);
-    boxHelper.quaternion.copy(quaternion.clone().invert());
-    boxHelper.updateMatrix();
-    boxHelper.updateMatrixWorld();
+//     boxHelper.position.copy(origin);
+//     boxHelper.quaternion.copy(quaternion.clone().invert());
+//     boxHelper.updateMatrix();
+//     boxHelper.updateMatrixWorld();
 
-    boxHelper.geometry.computeBoundingBox();
+//     boxHelper.geometry.computeBoundingBox();
 
-    return boxHelper;
-}
+//     return boxHelper;
+// }
 
 function computeSSEPerspective(context, pointSize, spacing, elt, distance) {
     if (distance <= 0) {
@@ -93,6 +99,7 @@ function computeSSEPerspective(context, pointSize, spacing, elt, distance) {
     //                                  ~ onScreenSpacing (in pixels)
     // <------>                         = pointSize (in pixels)
     return Math.max(0.0, onScreenSpacing - pointSize);
+    // return onScreenSpacing - pointSize;
 }
 
 function computeSSEOrthographic(context, pointSize, spacing, elt) {
@@ -133,7 +140,7 @@ function markForDeletion(elt) {
     if (!elt.notVisibleSince) {
         elt.notVisibleSince = Date.now();
         // Set .sse to an invalid value
-        elt.sse = -1;
+        elt.sse = -Infinity;
     }
     for (const child of elt.children) {
         markForDeletion(child);
@@ -321,8 +328,8 @@ class PointCloudLayer extends GeometryLayer {
         const isGeocentric = proj4.defs(this.crs).projName === 'geocent';
         let rotation = new THREE.Quaternion();
         if (isGeocentric) {
-            const coordOrigin = new Coordinates(this.crs, origin);
-            rotation = OrientationUtils.quaternionFromCRSToCRS(this.crs, 'EPSG:4326')(coordOrigin);
+            const coordOrigin = new Coordinates(this.crs).setFromArray(origin);
+            rotation = OrientationUtils.quaternionFromCRSToCRS(this.crs, this.source.crs)(coordOrigin);
         }
 
         // project corners in local referentiel
@@ -338,11 +345,23 @@ class PointCloudLayer extends GeometryLayer {
         }
 
         // get the bbox containing all cornersLocal => the bboxLocal
-        const _bbox = new THREE.Box3().setFromArray(cornersLocal);
-        this.root._bbox = _bbox;
+        this.root.voxelOBB.box3D.setFromArray(cornersLocal);
+        this.root.voxelOBB.position.set(...origin);
+        this.root.voxelOBB.quaternion.copy(rotation).invert();
+        this.root.voxelOBB.scale.copy(this.root.layer.scale);
 
-        this.root._position = new THREE.Vector3(...origin);
-        this.root._quaternion = rotation;
+        this.root.voxelOBB.updateMatrix();
+        this.root.voxelOBB.updateMatrixWorld(true);
+
+        this.root.voxelOBB.matrixWorldInverse = this.root.voxelOBB.matrixWorld.clone().invert();
+
+        // TODO ce n'est pas la bbox clampée
+        this.root.clampOBB.copy(this.root.voxelOBB);
+        this.root.clampOBB.matrixWorldInverse = this.root.voxelOBB.matrixWorldInverse;
+
+
+        // this.root.position.fromArray(origin);
+        // this.root.quaternion.copy(rotation);
     }
 
     setElevationRange() {
@@ -410,24 +429,12 @@ class PointCloudLayer extends GeometryLayer {
             return;
         }
 
-        // get object on which to measure distance
-        let obj;
-        if (elt.obj) {
-            obj = elt.obj;
-        } else {
-            // get a clamped bbox from the full bbox
-            const bbox = elt._bbox.clone();
-            if (bbox.min.z < layer.zmax) {
-                bbox.max.z = Math.min(bbox.max.z, layer.zmax);
-            }
-            if (bbox.max.z > layer.zmin) {
-                bbox.min.z = Math.max(bbox.min.z, layer.zmin);
-            }
-            elt.boxHelper = createBoxHelper(bbox, elt._quaternion, elt._position);
-            obj = elt.boxHelper;
-        }
-        const bbox = obj.geometry.boundingBox;
-        elt.visible = context.camera.isBox3Visible(obj.geometry.boundingBox, obj.matrixWorld);
+        // const bbox = elt.obj?.geometry.boundingBox || elt.clampOBB.box3D;
+        // const matrixWorld = elt.obj?.matrixWorld || elt.clampOBB.matrixWorld;
+
+        const bbox = elt.clampOBB.box3D;
+        const matrixWorld = elt.clampOBB.matrixWorld;
+        elt.visible = context.camera.isBox3Visible(bbox, matrixWorld);
 
         if (!elt.visible) {
             markForDeletion(elt);
@@ -436,11 +443,10 @@ class PointCloudLayer extends GeometryLayer {
 
         elt.notVisibleSince = undefined;
 
-        point.copy(context.camera.camera3D.position)
-            .sub(obj.getWorldPosition(new THREE.Vector3()))
-            .applyQuaternion(obj.getWorldQuaternion(new THREE.Quaternion()).invert());
+        point.copy(context.camera.camera3D.position).applyMatrix4(elt.clampOBB.matrixWorldInverse);
 
-        const distanceToCamera = bbox.distanceToPoint(point);
+        const distanceToCamera = elt.clampOBB.box3D.distanceToPoint(point);
+        const distance = Math.max(0.001, distanceToCamera);
 
         // only load geometry if this elements has points
         if (elt.numPoints !== 0) {
@@ -453,14 +459,13 @@ class PointCloudLayer extends GeometryLayer {
                             initBoundingBox(elt, layer);
                         }
                         elt.obj.boxHelper.visible = true;
-                        elt.obj.boxHelper.material.color.r = 1 - elt.sse;
-                        elt.obj.boxHelper.material.color.g = elt.sse;
+                        // elt.obj.boxHelper.material.color.r = 1 - elt.sse;
+                        // elt.obj.boxHelper.material.color.g = elt.sse;
 
                         elt.obj.tightboxHelper.visible = true;
                     }
                 }
             } else if (!elt.promise) {
-                const distance = Math.max(0.001, distanceToCamera);
                 // Increase priority of nearest node
                 const priority = computeScreenSpaceError(context, layer.pointSize, layer.spacing, elt, distance) / distance;
                 elt.promise = context.scheduler.execute({
@@ -476,7 +481,6 @@ class PointCloudLayer extends GeometryLayer {
                     // make sure to add it here, otherwise it might never
                     // be added nor cleaned
                     this.group.add(elt.obj);
-                    elt.obj.updateMatrixWorld(true);
                 }).catch((err) => {
                     if (!err.isCancelledCommandException) {
                         return err;
@@ -488,7 +492,7 @@ class PointCloudLayer extends GeometryLayer {
         }
 
         if (elt.children && elt.children.length) {
-            elt.sse = computeScreenSpaceError(context, layer.pointSize, layer.spacing, elt, distanceToCamera) / this.sseThreshold;
+            elt.sse = computeScreenSpaceError(context, layer.pointSize, layer.spacing, elt, distance) / this.sseThreshold;
             if (elt.sse >= 1) {
                 return elt.children;
             } else {
@@ -502,7 +506,7 @@ class PointCloudLayer extends GeometryLayer {
     postUpdate() {
         this.displayedCount = 0;
         for (const pts of this.group.children) {
-            if (pts.visible) {
+            if (pts.visible && pts.geometry.attributes.position) {
                 const count = pts.geometry.attributes.position.count;
                 pts.geometry.setDrawRange(0, count);
                 this.displayedCount += count;
@@ -531,7 +535,13 @@ class PointCloudLayer extends GeometryLayer {
                 // This format doesn't require points to be evenly distributed, so
                 // we're going to sort the nodes by "importance" (= on screen size)
                 // and display only the first N nodes
-                this.group.children.sort((p1, p2) => p2.userData.node.sse - p1.userData.node.sse);
+                this.group.children.sort((p1, p2) => {
+                    if (p2.sse() == 0 && p1.sse() == 0) {
+                        return p2.userData.node.depth - p1.userData.node.depth;
+                    } else {
+                        return p2.sse() - p1.sse();
+                    }
+                });
 
                 let limitHit = false;
                 this.displayedCount = 0;
@@ -550,7 +560,7 @@ class PointCloudLayer extends GeometryLayer {
         const now = Date.now();
         for (let i = this.group.children.length - 1; i >= 0; i--) {
             const obj = this.group.children[i];
-            if (!obj.visible && (now - obj.userData.node.notVisibleSince) > 10000) {
+            if (!obj.visible && (now - obj.notVisibleSince()) > 10000) {
                 // remove from group
                 this.group.children.splice(i, 1);
 
@@ -561,17 +571,17 @@ class PointCloudLayer extends GeometryLayer {
                 obj.userData.node.obj = null;
 
                 if (__DEBUG__) {
-                    if (obj.boxHelper) {
-                        obj.boxHelper.removeMe = true;
-                        if (Array.isArray(obj.boxHelper.material)) {
-                            for (const material of obj.boxHelper.material) {
-                                material.dispose();
-                            }
-                        } else {
-                            obj.boxHelper.material.dispose();
-                        }
-                        obj.boxHelper.geometry.dispose();
-                    }
+                    // if (obj.boxHelper) {
+                    //     obj.boxHelper.removeMe = true;
+                    //     if (Array.isArray(obj.boxHelper.material)) {
+                    //         for (const material of obj.boxHelper.material) {
+                    //             material.dispose();
+                    //         }
+                    //     } else {
+                    //         obj.boxHelper.material.dispose();
+                    //     }
+                    //     obj.boxHelper.geometry.dispose();
+                    // }
                     if (obj.tightboxHelper) {
                         obj.tightboxHelper.removeMe = true;
                         if (Array.isArray(obj.tightboxHelper.material)) {

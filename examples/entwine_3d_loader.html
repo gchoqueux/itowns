@@ -39,11 +39,11 @@
             // Add one imagery layer to the scene and the miniView
             // This layer is defined in a json file but it could be defined as a plain js
             // object. See Layer* for more info.
-            itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
-                config.source = new itowns.WMTSSource(config.source);
-                var layer = new itowns.ColorLayer('Ortho', config);
-                view.addLayer(layer);
-            });
+            // itowns.Fetcher.json('./layers/JSONLayers/Ortho.json').then(function _(config) {
+            //     config.source = new itowns.WMTSSource(config.source);
+            //     var layer = new itowns.ColorLayer('Ortho', config);
+            //     view.addLayer(layer);
+            // });
 
             // Add two elevation layers.
             // These will deform iTowns globe geometry to represent terrain elevation.
@@ -62,11 +62,11 @@
 
             var eptLayer;
             function onLayerReady() {
-                var lookAt = eptLayer.root._position;
+                var lookAt = eptLayer.root.clampOBB.position;
                 var coordLookAt = new itowns.Coordinates(view.referenceCrs).setFromVector3(lookAt);
 
                 var size = new itowns.THREE.Vector3();
-                eptLayer.root._bbox.getSize(size);
+                eptLayer.root.voxelOBB.box3D.getSize(size);
 
                 view.controls.lookAtCoordinate({
                     coord: coordLookAt,
@@ -97,7 +97,10 @@
                 itowns.View.prototype.addLayer.call(view, eptLayer).then(onLayerReady);
 
                 eptLayer.whenReady
-                    .then(() => debug.PointCloudDebug.initTools(view, eptLayer, debugGui));
+                    .then((l) => {
+                        eptLayer.bboxes.visible = true;
+                        debug.PointCloudDebug.initTools(view, eptLayer, debugGui)
+                    });
             }
 
             function load() {
