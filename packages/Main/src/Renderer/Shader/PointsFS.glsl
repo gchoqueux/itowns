@@ -17,6 +17,7 @@ uniform float ambientBoost;
 
 uniform bool picking;
 uniform int shape;
+uniform sampler2D depthMap;
 
 void main() {
 
@@ -45,7 +46,8 @@ void main() {
     outgoingLight = pow(outgoingLight, vec3(1.0 / gamma));
     
 #include <opaque_fragment> // gl_FragColor
-#include <proj_texture_fragment>
+
+gl_FragColor.rgb = projectTexture(map, depthMap, textureCameraPostTransform, vPosition).rgb;
 
 #include <tonemapping_fragment>
 #include <fog_fragment>

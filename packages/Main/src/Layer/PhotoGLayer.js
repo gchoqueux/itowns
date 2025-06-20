@@ -1,9 +1,10 @@
-import { Mesh, PlaneGeometry, TextureLoader, DataTexture, RGBAFormat, SphereGeometry } from 'three';
+import { Vector4, Mesh, PlaneGeometry, TextureLoader, DataTexture, RGBAFormat, SphereGeometry } from 'three';
 import { Parsers } from 'photogrammetric-camera';
 import ProjectingTexturePointsMaterial from 'Renderer/ProjectingTexturePointsMaterial';
 import Fetcher from 'Provider/Fetcher';
 import ColorLayer from 'Layer/ColorLayer';
 import { RasterColorTile } from 'Renderer/RasterTile';
+import Source from 'Source/Source';
 
 const textureLoader = new TextureLoader();
 const uvTexture = textureLoader.load('./images/uv.jpg');
@@ -50,6 +51,29 @@ class PhotoGLayer {
     }
 }
 
+export class PhotogrammetricCameraSource extends Source {
+    constructor(source) {
+        super(source);
+
+        const { path, fileProject } = source;
+        this.zoom = { min: 0, max: 24 };
+
+        this.whenReady = Fetcher.json(path + fileProject, this.networkOptions).then((f) => {
+            this.fetchedData = f;
+            this.urlImage = f.url + f.img[0];
+        });
+    }
+
+    extentInsideLimit() {
+        // to do compute extent projected
+        return true;
+    }
+
+    urlFromExtent() {
+        return this.urlImage;
+    }
+}
+
 export class ColorProjectingLayer extends ColorLayer {
     // This class extends ColorLayer to create a layer that projects color textures
     // onto a 3D surface using photogrammetric data.
@@ -58,28 +82,43 @@ export class ColorProjectingLayer extends ColorLayer {
         this.isColorProjectingLayer = true;
 
         this.photoGLayer = config.photoGLayer;
+
+        this.zoom = { min: 0, max: 24 };
     }
 
-    setupRasterNode(node) {
-        if (!this.rasterColorNode) {
-            this.rasterColorNode = new RasterColorTile(this);
+    // setupRasterNode(node) {
+    //     if (!this.rasterColorNode) {
+    //         this.rasterColorNode = new RasterColorTile(this);
+    //     }
+
+    //     node.material.addLayer(this.rasterColorNode);
+    //     // set up ColorLayer ordering.
+    //     node.material.setSequence(this.parent.colorLayersOrder);
+
+    //     this.rasterColorNode.needsUpdate = true;
+
+    //     return this.rasterColorNode;
+    // }
+
+    update(context, layer, node, parent) {
+        const promise = super.update(context, layer, node, parent);
+
+        if (promise) {
+            promise.then(() => {
+                node.material.setCamera(this.photoGLayer.camera);
+                console.log('this.photoGLayer.camera', this.photoGLayer.camera);
+            });
         }
 
-        node.material.addLayer(this.rasterColorNode);
-        // set up ColorLayer ordering.
-        node.material.setSequence(this.parent.colorLayersOrder);
-
-        this.rasterColorNode.needsUpdate = true;
-
-        return this.rasterColorNode;
-    }
-
-    update(context, layer, node /* , parent */) {
-        if (!node.material.map && this.photoGLayer.material.map.name !== 'uv') {
-            node.material.depthMap = whiteTexture;
-            node.material.map = this.photoGLayer.material.map;
-            node.material.setCamera(this.photoGLayer.camera);
+        // .then(a => console.log(a));
+/*
+        if (this.rasterColorNode && !node.material.map && this.photoGLayer.material.map.name !== 'uv') {
+            // node.material.depthMap = whiteTexture;
+            // node.material.map = this.photoGLayer.material.map;
+            // this.rasterColorNode.setTextures([this.photoGLayer.material.map, whiteTexture], [new Vector4(), new Vector4()]);
+            // node.material.addLayer(this.rasterColorNode);
         }
+*/
     }
 }
 
