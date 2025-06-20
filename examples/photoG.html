@@ -136,6 +136,18 @@
                     const pointsGeometry = await plyloader(urlPly);
                     const poinstMesh = new THREE.Points( pointsGeometry, pgLayer.material );
                     view.scene.add(poinstMesh);
+
+                    const colorProjectingLayer = new itowns.ColorProjectingLayer('proj', { 
+                         photoGLayer: pgLayer,
+                         source: new itowns.PhotogrammetricCameraSource({
+                            crs: 'EPSG:4326',
+                            url: 'lklksd',
+                            path: './photogram/',
+                            fileProject,
+                         }),
+                    });
+
+                    view.addLayer(colorProjectingLayer);
                 }
 
                 // add potreeLayer to scene
@@ -148,14 +160,6 @@
 
                     placeCamera(position, lookAt);
 
-                    const colorProjectingLayer = new itowns.ColorProjectingLayer('proj', { photoGLayer: pgLayer,
-                         source: {
-                            extentInsideLimit: () => true,
-                            onLayerAdded: () => true,
-                        },
-                    });
-
-                    view.addLayer(colorProjectingLayer);
                 }
                 window.view = view;
 

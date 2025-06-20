@@ -15,6 +15,7 @@ uniform float opacity;
 
 uniform bool picking;
 uniform int shape;
+uniform sampler2D depthMap;
 
 void main() {
 
@@ -38,7 +39,8 @@ void main() {
 
     vec3 outgoingLight = diffuseColor.rgb;
 #include <opaque_fragment> // gl_FragColor
-#include <proj_texture_fragment>
+
+gl_FragColor.rgb = projectTexture(map, depthMap, textureCameraPostTransform, vPosition).rgb;
 
 #include <tonemapping_fragment>
 #include <fog_fragment>
