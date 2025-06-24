@@ -19,7 +19,7 @@
     "test-unit": "npm run test-unit --workspaces --if-present",
     "test-functional": "npm run build && mocha -t 100000 --require test/hooks_functional.js --recursive test/functional",
     "test-with-coverage": "npm run test-with-coverage --workspaces --if-present",
-    "test-with-coverage_lcov": "npm run test-with-coverage_lcov --workspaces --if-present && c8 report --reporter=lcov",
+    "test-with-coverage_lcov": "npm run test-with-coverage_lcov --workspaces --dry-run && c8 report --reporter=lcov",
     "build": "npm run transpile && cross-env NODE_ENV=production webpack",
     "build-dev": "cross-env NODE_ENV=development webpack",
     "transpile": "npm run transpile --workspaces",
@@ -32,7 +32,7 @@
     "changelog": "conventional-changelog -n ./config/conventionalChangelog/config.cjs -i changelog.md -s",
     "bump": "cross-env-shell npm version ${npm_config_level:-minor} --workspaces && npm run changelog && git add -A && git commit --amend --no-edit",
     "prerelease-next": "npm version prerelease --workspaces --preid next",
-    "publish-next": "npm run prerelease-next && npm run prepublishOnly && npm run publish-next --workspaces",
+    "publish-next": "npm run prerelease-next && npm run prepublishOnly && npm run publish-next --workspaces --if-present",
     "publish-latest": "npm run prepublishOnly && npm run publish-latest --workspaces"
   },
   "c8": {
