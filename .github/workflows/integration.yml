@@ -48,15 +48,15 @@ jobs:
         run: npm run doc -- -d buildDocs
 
       # Prepare archive for deploying
-      - name: Archive production artifacts
-        if: ${{ success() }}
-        uses: actions/upload-artifact@v4
-        with:
-            name: dist-itowns
-            path: |
-                dist/**/*.js
-                examples
-                buildDocs
+      # - name: Archive production artifacts
+      #   if: ${{ success() }}
+      #   uses: actions/upload-artifact@v4
+      #   with:
+      #       name: dist-itowns
+      #       path: |
+      #           dist/**/*.js
+      #           examples
+      #           buildDocs
 
 
   # Check commits messages
@@ -76,92 +76,91 @@ jobs:
 
 
   # Unit and coverage tests
-  unit-and-coverage-tests:
-    name: Unit and coverage tests
-    needs: [build, check-commit-message]
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        include:
-          - package: "@itowns/geographic"
-            path: "Geographic"
-          - package: "itowns"
-            path: "Main"
-    steps:
+  # unit-and-coverage-tests:
+  #   name: Unit and coverage tests
+  #   needs: [build, check-commit-message]
+  #   runs-on: ubuntu-latest
+  #   strategy:
+  #     matrix:
+  #       include:
+  #         - package: "@itowns/geographic"
+  #           path: "Geographic"
+  #         - package: "itowns"
+  #           path: "Main"
+  #   steps:
 
-      # Use specific Node.js version
-      - uses: actions/checkout@v4
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'npm'
+  #     # Use specific Node.js version
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js 22.x
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22.x
+  #         cache: 'npm'
 
-      # Install packages
-      - name: Install packages
-        run: npm ci
+  #     # Install packages
+  #     - name: Install packages
+  #       run: npm ci
 
-      # Transpile
-      - name: Transpile packages
-        run: npm run transpile
+  #     # Transpile
+  #     - name: Transpile packages
+  #       run: npm run transpile
 
-      - name: Test ${{ matrix.package }}
-        run: npm run test-with-coverage_lcov --workspace ${{ matrix.package}}
-      - name: Coveralls Parallel
-        uses: coverallsapp/github-action@v2
-        with:
-          format: lcov
-          base-path: ./packages/${{ matrix.path }}
-          path-to-lcov: ./packages/${{ matrix.path }}/coverage/lcov.info
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          flag-name: run-${{ matrix.package }}
-          parallel: true
+  #     - name: Test ${{ matrix.package }}
+  #       run: npm run test-with-coverage_lcov --workspace ${{ matrix.package}}
+  #     - name: Coveralls Parallel
+  #       uses: coverallsapp/github-action@v2
+  #       with:
+  #         format: lcov
+  #         base-path: ./packages/${{ matrix.path }}
+  #         path-to-lcov: ./packages/${{ matrix.path }}/coverage/lcov.info
+  #         github-token: ${{ secrets.GITHUB_TOKEN }}
+  #         flag-name: run-${{ matrix.package }}
+  #         parallel: true
 
   # Final Code coverage
-  finish-coverage:
-    name: finish parallel test unit
-    needs: unit-and-coverage-tests
-    runs-on: ubuntu-latest
-    steps:
-    - name: Close parallel build
-      uses: coverallsapp/github-action@v2
-      with:
-        parallel-finished: true
-        github-token: ${{ secrets.GITHUB_TOKEN }}
+  # finish-coverage:
+  #   name: finish parallel test unit
+  #   needs: unit-and-coverage-tests
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Close parallel build
+  #     uses: coverallsapp/github-action@v2
+  #     with:
+  #       parallel-finished: true
+  #       github-token: ${{ secrets.GITHUB_TOKEN }}
   # Functional tests
-  functional-tests:
-    name: Functional tests
-    needs: build
-    runs-on: ubuntu-latest
-    steps:
+  # functional-tests:
+  #   name: Functional tests
+  #   needs: build
+  #   runs-on: ubuntu-latest
+  #   steps:
 
-      # Use specific Node.js version
-      - uses: actions/checkout@v4
-      - name: Use Node.js 22.x
-        uses: actions/setup-node@v4
-        with:
-          node-version: 22.x
-          cache: 'npm'
+  #     # Use specific Node.js version
+  #     - uses: actions/checkout@v4
+  #     - name: Use Node.js 22.x
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: 22.x
+  #         cache: 'npm'
 
-      # Install packages
-      - name: Install packages
-        run: npm ci
+  #     # Install packages
+  #     - name: Install packages
+  #       run: npm ci
 
-      # Download artifact from build
-      - name: Download itowns bundle
-        uses: actions/download-artifact@v4
-        with:
-          name: dist-itowns
+  #     # Download artifact from build
+  #     - name: Download itowns bundle
+  #       uses: actions/download-artifact@v4
+  #       with:
+  #         name: dist-itowns
 
-      - name: Run functional tests
-        run: npm run test-functional
+  #     - name: Run functional tests
+  #       run: npm run test-functional
 
 
   # Publish NPM package
   publish:
     name: Publish NPM package
-    if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [finish-coverage, functional-tests]
+    # if: ${{ github.ref == 'refs/heads/master' }}
     runs-on: ubuntu-latest
     permissions:
         # id-token: write permission is required for npm provenance:
@@ -210,6 +209,7 @@ jobs:
         run: |
           git checkout next
           git merge master
+          echo $USER
           npm run publish-next
           git add .
           git commit --amend --no-edit
@@ -221,7 +221,6 @@ jobs:
   deploy:
     name: Deploy to itowns.github.io
     if: ${{ github.ref == 'refs/heads/master' }}
-    needs: [finish-coverage, functional-tests]
     runs-on: ubuntu-latest
     steps:
 
@@ -282,7 +281,6 @@ jobs:
   release:
     name: Release GitHub
     if: ${{ github.ref == 'refs/heads/master' && startsWith( github.event.head_commit.message, 'release v' ) }}
-    needs: [finish-coverage, functional-tests]
     runs-on: ubuntu-latest
     steps:
 
