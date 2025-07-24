@@ -48,6 +48,7 @@ export { default as Label } from 'Core/Label';
 // See http://www.itowns-project.org/itowns/docs/#api/Layer/Layer
 export { default as Layer, ImageryLayers } from 'Layer/Layer';
 export { default as ColorLayer } from 'Layer/ColorLayer';
+export { ColorProjectingLayer } from 'Layer/PhotoGLayer';
 export { default as ElevationLayer } from 'Layer/ElevationLayer';
 export { default as GeometryLayer } from 'Layer/GeometryLayer';
 export { default as FeatureGeometryLayer } from 'Layer/FeatureGeometryLayer';
@@ -63,6 +64,7 @@ export {
     enableMeshoptDecoder,
 } from 'Layer/OGC3DTilesLayer';
 export { default as TiledGeometryLayer } from 'Layer/TiledGeometryLayer';
+export { default as PhotoGLayer } from 'Layer/PhotoGLayer';
 export { default as OrientedImageLayer } from 'Layer/OrientedImageLayer';
 export { STRATEGY_MIN_NETWORK_TRAFFIC, STRATEGY_GROUP, STRATEGY_PROGRESSIVE, STRATEGY_DICHOTOMY } from 'Layer/LayerUpdateStrategy';
 export { default as ColorLayersOrdering } from 'Renderer/ColorLayersOrdering';
