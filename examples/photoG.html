@@ -31,8 +31,8 @@
         {
             "imports": {
                 "itowns": "../dist/itowns.js",
-                "three": "https://unpkg.com/three@0.170.0/build/three.module.js",
-                "three/addons/": "https://unpkg.com/three@0.170.0/examples/jsm/"
+                "three": "../node_modules/three/build/three.module.js",
+                "three/addons/": "../node_modules/three/examples/jsm/"
             }
         }
         </script>
@@ -43,13 +43,12 @@
         </div>
 
         <div>
-            <script src="https://cdnjs.cloudflare.com/ajax/libs/dat-gui/0.7.6/dat.gui.min.js"></script>
             <!-- <script src="../dist/itowns.js"></script> -->
             <!-- <script src="js/GUI/LoadingScreen.js"></script> -->
             <!-- <script src="../dist/debug.js"></script> -->
             <script type="module">
                 import * as THREE from 'three';
-                import { PLYLoader } from 'three/addons/loaders/PLYLoader'
+                import { PLYLoader } from 'three/addons/loaders/PLYLoader.js'
                 
                 const plyloader = (url) => new Promise((res, rej) => new PLYLoader().load(url, d =>  res(d)));
 
@@ -75,7 +74,7 @@
                 const viewerDiv = document.getElementById('viewerDiv');
                 viewerDiv.style.display = 'block';
 
-                const debugGui = new dat.GUI();
+                // const debugGui = new dat.GUI();
 
                 // TODO: do we really need to disable logarithmicDepthBuffer ?
                 const view = new itowns.PlanarView(viewerDiv, extent);

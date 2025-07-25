@@ -256,6 +256,7 @@ export class LayeredMaterial extends THREE.ShaderMaterial {
 
         fillInProp(defines, 'NUM_VS_TEXTURES', nbSamplers[0]);
         fillInProp(defines, 'NUM_FS_TEXTURES', nbSamplers[1]);
+        fillInProp(defines, 'USE_PROJECTIVE_TEXTURING', 1);
         fillInProp(defines, 'NUM_CRS', crsCount);
 
         initModeDefines(defines);
