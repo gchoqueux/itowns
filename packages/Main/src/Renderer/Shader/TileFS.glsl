@@ -16,9 +16,19 @@ uniform float       opacity;
 varying vec3        vUv; // uv.x/uv_1.x, uv.y, uv_1.y
 varying vec2        vHighPrecisionZW;
 
-// uniform sampler2D map;
+uniform sampler2D map;
+uniform sampler2D depthMap;
 
 
+vec4 getColor(int textureOffset, sampler2D tex) {
+    if ( textureOffset >= colorTextureCount ) return vec4(0);
+
+    vec4 c;
+    c.a = 1.0;
+    c.rgb = projectTexture(colorTextures[ 0 ], depthMap, textureCameraPostTransform, vPosition).rgb;
+
+    return c;
+}
 
 void main() {
     #include <logdepthbuf_fragment>
@@ -44,12 +54,13 @@ void main() {
     vec4 color;
 
     // #pragma unroll_loop
-    // for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
-    //     color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
-    //     gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
-    // }
+    for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
+        // color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
+        color = getColor(i, colorTextures[ 1 ]);
+        gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
+    }
 
-    gl_FragColor.rgb = projectTexture(colorTextures[0], colorTextures[1], textureCameraPostTransform, vPosition).rgb;
+    // gl_FragColor.rgb = projectTexture(map, depthMap, textureCameraPostTransform, vPosition).rgb;
 
   #if DEBUG == 1
     if (showOutline) {

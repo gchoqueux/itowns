@@ -99,26 +99,43 @@ export class ColorProjectingLayer extends ColorLayer {
 
     //     return this.rasterColorNode;
     // }
+    //
+
+    setupRasterNode(node) {
+        const rasterColorTile = new RasterColorTile(this);
+
+        node.material.addColorTile(rasterColorTile);
+        // set up ColorLayer ordering.
+        node.material.setColorTileIds(this.parent.colorLayersOrder);
+
+        return rasterColorTile;
+    }
 
     update(context, layer, node, parent) {
         const promise = super.update(context, layer, node, parent);
 
         if (promise) {
             promise.then(() => {
+                const rasterColorNode = node.material.getColorTile(layer.id);
+                node.material.uniforms.map.value = rasterColorNode.textures[0];
+
+                // console.log('rasterColorNode', rasterColorNode);
+                // this.rasterColorNode.setTextures([this.photoGLayer.material.map, whiteTexture], [new Vector4(), new Vector4()]);
+
                 node.material.setCamera(this.photoGLayer.camera);
-                console.log('this.photoGLayer.camera', this.photoGLayer.camera);
+                node.material.needsUpdate = true;
             });
         }
 
         // .then(a => console.log(a));
-/*
+
         if (this.rasterColorNode && !node.material.map && this.photoGLayer.material.map.name !== 'uv') {
             // node.material.depthMap = whiteTexture;
             // node.material.map = this.photoGLayer.material.map;
             // this.rasterColorNode.setTextures([this.photoGLayer.material.map, whiteTexture], [new Vector4(), new Vector4()]);
+            // console.log('this.rasterColorNode', this.rasterColorNode);
             // node.material.addLayer(this.rasterColorNode);
         }
-*/
     }
 }
 

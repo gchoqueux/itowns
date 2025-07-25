@@ -1,10 +1,17 @@
 import * as THREE from 'three';
+import { textureMatrix } from 'photogrammetric-camera';
 import TileVS from 'Renderer/Shader/TileVS.glsl';
 import TileFS from 'Renderer/Shader/TileFS.glsl';
 import ShaderUtils from 'Renderer/Shader/ShaderUtils';
 import Capabilities from 'Core/System/Capabilities';
 import RenderMode from 'Renderer/RenderMode';
 import { RasterTile, RasterElevationTile, RasterColorTile } from './RasterTile';
+
+const whiteData = new Uint8Array(4);
+whiteData.set([255, 255, 255, 255]);
+const whiteTexture = new THREE.DataTexture(whiteData, 1, 1, THREE.RGBAFormat);
+whiteTexture.name = 'white';
+whiteTexture.needsUpdate = true;
 
 const identityOffsetScale = new THREE.Vector4(0.0, 0.0, 1.0, 1.0);
 const defaultTex = new THREE.Texture();
@@ -360,6 +367,39 @@ export class LayeredMaterial extends THREE.ShaderMaterial {
         });
 
         // setTimeout(() => console.log(this), 2);
+
+        const uvDistortion = { R: new THREE.Vector4(), C: new THREE.Vector3() };
+
+        this.uniforms.textureCameraPostTransform = new THREE.Uniform(new THREE.Matrix4());
+        this.uniforms.textureCameraPreTransform = new THREE.Uniform(new THREE.Matrix4());
+        this.uniforms.uvDistortion = new THREE.Uniform(uvDistortion);
+        this.uniforms.textureCameraPosition = new THREE.Uniform(new THREE.Vector3());
+
+        this.uniforms.depthMap = new THREE.Uniform(new THREE.Texture());
+        this.uniforms.map = new THREE.Uniform(new THREE.Texture());
+    }
+
+    setCamera(camera) {
+        this.uniforms.depthMap.value = whiteTexture;
+
+        // const rasterColorNode = node.material.getColorTile(layer.id);
+        // console.log('rasterColorNode', rasterColorNode);
+        // this.rasterColorNode.setTextures([this.photoGLayer.material.map,
+        //  whiteTexture], [new Vector4(), new Vector4()]);
+
+        camera.getWorldPosition(this.uniforms.textureCameraPosition.value);
+        this.uniforms.textureCameraPreTransform.value.copy(camera.matrixWorldInverse);
+        this.uniforms.textureCameraPreTransform.value.setPosition(0, 0, 0);
+        this.uniforms.textureCameraPreTransform.value.premultiply(camera.preProjectionMatrix);
+        this.uniforms.textureCameraPostTransform.value.copy(camera.postProjectionMatrix);
+        this.uniforms.textureCameraPostTransform.value.premultiply(textureMatrix);
+
+        if (camera.distos && camera.distos.length == 1 && camera.distos[0].isRadialDistortion) {
+            this.uniforms.uvDistortion.value = camera.distos[0];
+        } else {
+            this.uniforms.uvDistortion.value = { C: new THREE.Vector2(), R: new THREE.Vector4() };
+            this.uniforms.uvDistortion.value.R.w = Infinity;
+        }
     }
 
     public get mode(): number {
