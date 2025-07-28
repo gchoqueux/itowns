@@ -14,6 +14,8 @@ whiteData.set([255, 255, 255, 255]);
 const whiteTexture = new DataTexture(whiteData, 1, 1, RGBAFormat);
 whiteTexture.name = 'white';
 whiteTexture.needsUpdate = true;
+whiteTexture.extend = new Vector4();
+const offset = new Vector4(0, 0, 1, 1);
 
 class PhotoGLayer {
     async init(path, fileProject) {
@@ -56,7 +58,7 @@ export class PhotogrammetricCameraSource extends Source {
         super(source);
 
         const { path, fileProject } = source;
-        this.zoom = { min: 0, max: 24 };
+        this.zoom = { min: 0, max: 0 };
 
         this.whenReady = Fetcher.json(path + fileProject, this.networkOptions).then((f) => {
             this.fetchedData = f;
@@ -112,30 +114,11 @@ export class ColorProjectingLayer extends ColorLayer {
     }
 
     update(context, layer, node, parent) {
-        const promise = super.update(context, layer, node, parent);
-
-        if (promise) {
-            promise.then(() => {
-                const rasterColorNode = node.material.getColorTile(layer.id);
-                node.material.uniforms.map.value = rasterColorNode.textures[0];
-
-                // console.log('rasterColorNode', rasterColorNode);
-                // this.rasterColorNode.setTextures([this.photoGLayer.material.map, whiteTexture], [new Vector4(), new Vector4()]);
-
-                node.material.setCamera(this.photoGLayer.camera);
-                node.material.needsUpdate = true;
-            });
-        }
-
-        // .then(a => console.log(a));
-
-        if (this.rasterColorNode && !node.material.map && this.photoGLayer.material.map.name !== 'uv') {
-            // node.material.depthMap = whiteTexture;
-            // node.material.map = this.photoGLayer.material.map;
-            // this.rasterColorNode.setTextures([this.photoGLayer.material.map, whiteTexture], [new Vector4(), new Vector4()]);
-            // console.log('this.rasterColorNode', this.rasterColorNode);
-            // node.material.addLayer(this.rasterColorNode);
-        }
+        super.update(context, layer, node, parent)?.then(() => {
+            const rasterNode = node.material.getColorTile(layer.id);
+            rasterNode.setTexture(1, whiteTexture, offset);
+            return node.material.setCamera(this.photoGLayer.camera);
+        });
     }
 }
 

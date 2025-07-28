@@ -20,14 +20,10 @@ uniform sampler2D map;
 uniform sampler2D depthMap;
 
 
-vec4 getColor(int textureOffset, sampler2D tex) {
+vec4 getColor(int textureOffset, sampler2D tex, sampler2D texdepthMap) {
     if ( textureOffset >= colorTextureCount ) return vec4(0);
 
-    vec4 c;
-    c.a = 1.0;
-    c.rgb = projectTexture(colorTextures[ 0 ], depthMap, textureCameraPostTransform, vPosition).rgb;
-
-    return c;
+    return projectTexture(tex, texdepthMap, textureCameraPostTransform, vPosition);
 }
 
 void main() {
@@ -53,14 +49,12 @@ void main() {
 
     vec4 color;
 
-    // #pragma unroll_loop
+    #pragma unroll_loop
     for ( int i = 0; i < NUM_FS_TEXTURES; i ++ ) {
-        // color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
-        color = getColor(i, colorTextures[ 1 ]);
+        color = getColor(i, colorTextures[ 0 ], colorTextures[ 1 ] );
         gl_FragColor.rgb = mix(gl_FragColor.rgb, color.rgb, color.a);
     }
-
-    // gl_FragColor.rgb = projectTexture(map, depthMap, textureCameraPostTransform, vPosition).rgb;
+    // color = getLayerColor( i , colorTextures[ i ], colorOffsetScales[ i ], colorLayers[ i ]);
 
   #if DEBUG == 1
     if (showOutline) {
