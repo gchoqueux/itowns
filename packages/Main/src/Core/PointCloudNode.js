@@ -194,8 +194,8 @@ class PointCloudNode extends THREE.EventDispatcher {
             childClampBBox.min.z = Math.max(childClampBBox.min.z, this.source.zmin);
         }
 
-        childNode.voxelOBB.matrixWorldInverse = this.voxelOBB.matrixWorldInverse;
-        childNode.clampOBB.matrixWorldInverse = this.clampOBB.matrixWorldInverse;
+        // childNode.voxelOBB.matrixWorldInverse = this.voxelOBB.matrixWorldInverse;
+        // childNode.clampOBB.matrixWorldInverse = this.clampOBB.matrixWorldInverse;
     }
 
     async loadOctree() {

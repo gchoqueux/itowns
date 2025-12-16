@@ -358,7 +358,7 @@ class PointCloudLayer extends GeometryLayer {
             object3d = elt.clampOBB;
             bbox = object3d.box3D;
             matrixWorld = new THREE.Matrix4();
-            matrixWorld.multiplyMatrices(this.object3d.matrixWorld, object3d.matrixWorld);
+            matrixWorld.multiplyMatrices(this.object3d.matrixWorld, object3d.matrix);
         }
 
         elt.visible = context.camera.isBox3Visible(bbox, matrixWorld);
