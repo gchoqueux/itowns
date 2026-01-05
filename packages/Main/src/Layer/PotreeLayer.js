@@ -45,7 +45,6 @@ class PotreeLayer extends PointCloudLayer {
          */
         this.isPotreeLayer = true;
 
-        const resolve = this.addInitializationStep();
         this.whenReady = this.source.whenReady.then((cloud) => {
             const normal = Array.isArray(cloud.pointAttributes) &&
                 cloud.pointAttributes.find(elem => elem.startsWith('NORMAL'));
@@ -62,7 +61,7 @@ class PotreeLayer extends PointCloudLayer {
             this.root.setOBBes([boundingBox.lx, boundingBox.ly, boundingBox.lz],
                 [boundingBox.ux, boundingBox.uy, boundingBox.uz]);
 
-            return this.root.loadOctree().then(resolve);
+            return this.root.loadOctree();
         });
     }
 }

@@ -80,7 +80,6 @@ class Potree2Layer extends PointCloudLayer {
          */
         this.isPotree2Layer = true;
 
-        const resolve = this.addInitializationStep();
         this.whenReady = this.source.whenReady.then((metadata) => {
             this.metadata = metadata;
 
@@ -101,7 +100,7 @@ class Potree2Layer extends PointCloudLayer {
             this.root.hierarchyByteSize = BigInt(hierarchy.firstChunkSize);
             this.root.byteOffset = 0;
 
-            return this.root.loadOctree().then(resolve);
+            return this.root.loadOctree();
         });
     }
 }

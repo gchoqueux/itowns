@@ -5,22 +5,24 @@ import EntwinePointTileNode from 'Core/EntwinePointTileNode';
 import PointCloudLayer from 'Layer/PointCloudLayer';
 import OBB from 'Renderer/OBB';
 
-function _instantiateRootNode(source, crs) {
-    let root;
-    if (source.isCopcSource) {
-        const { info } = source;
-        const { pageOffset, pageLength } = info.rootHierarchyPage;
-        root = new CopcNode(0, 0, 0, 0, pageOffset, pageLength, source, -1, crs);
-        root.setOBBes(info.cube.slice(0, 3), info.cube.slice(3, 6));
-    } else if (source.isEntwinePointTileSource) {
-        root = new EntwinePointTileNode(0, 0, 0, 0, source, -1, crs);
-        root.setOBBes(source.boundsConforming.slice(0, 3), source.boundsConforming.slice(3, 6));
-    } else {
-        const msg = '[VPCLayer]: stack point cloud format not supporter';
-        console.warn(msg);
-        PointCloudLayer.handlingError(msg);
-    }
-    return root;
+function _instantiateRootNode(src, crs) {
+    return src.whenReady.then((source) => {
+        let root;
+        if (source.isCopcSource) {
+            const { info } = source;
+            const { pageOffset, pageLength } = info.rootHierarchyPage;
+            root = new CopcNode(0, 0, 0, 0, pageOffset, pageLength, source, -1, crs);
+            root.setOBBes(info.cube.slice(0, 3), info.cube.slice(3, 6));
+        } else if (source.isEntwinePointTileSource) {
+            root = new EntwinePointTileNode(0, 0, 0, 0, source, -1, crs);
+            root.setOBBes(source.boundsConforming.slice(0, 3), source.boundsConforming.slice(3, 6));
+        } else {
+            const msg = '[VPCLayer]: stack point cloud format not supporter';
+            console.warn(msg);
+            PointCloudLayer.handlingError(msg);
+        }
+        return root;
+    });
 }
 
 /**
@@ -65,8 +67,6 @@ class VpcLayer extends PointCloudLayer {
         this.scale = new THREE.Vector3(1.0, 1.0, 1.0);
         this.offset = new THREE.Vector3(0.0, 0.0, 0.0);
 
-        const resolve = this.addInitializationStep();
-
         // a Vpc layer should be ready when all the child sources are
         this.whenReady = this.source.whenReady.then((/** @type {VpcSource} */ sources) => {
             this.setElevationRange();
@@ -79,6 +79,15 @@ class VpcLayer extends PointCloudLayer {
 
             sources.forEach((source, i) => {
                 const boundsConforming = source.boundsConforming;
+                // As we delayed the intanciation of the source to the moment we need to render a particular node,
+                // we need to wait for the source to be instantiate to be able
+                // to instantiate a node and load the Octree associated.
+                // todo:  factorize _instantiateRootNode in each source
+                const promisedRoot = _instantiateRootNode(source, this.crs);
+
+                promisedRoot.then((r) => { this.root.children[i] = r; });
+
+                // todo : use pointCloudNode
                 const mockRoot = {
                     voxelOBB: new OBB(),
                     clampOBB: new OBB(),
@@ -86,49 +95,37 @@ class VpcLayer extends PointCloudLayer {
                     waitingForSource: true,
                     source,
                     crs: this.crs,
+                    loadOctree: promisedRoot.then(root => root.loadOctree()),
+
+                    // when load() is called on the mockRoot, we need the associated source to be loaded
+                    // as well as the octree, before calling load() on the real root.
+                    load: promisedRoot.then(root => root.load()),
                 };
+
                 PointCloudNode.prototype.setOBBes.call(mockRoot, boundsConforming.slice(0, 3), boundsConforming.slice(3, 6));
 
-                // As we delayed the intanciation of the source to the moment we need to render a particular node,
-                // we need to wait for the source to be instantiate to be able
-                // to instantiate a node and load the Octree associated.
-                const promise =
-                    source.whenReady.then((src) => {
-                        const root = _instantiateRootNode(src, this.crs);
-                        this.root.children[i] = root;
-                        return root.loadOctree().then(resolve)
-                            .then(() => root);
-                    });
-
-                mockRoot.loadOctree = promise;
-                // when load() is called on the mockRoot, we need the associated source to be loaded
-                // as well as the octree, before calling load() on the real root.
-                mockRoot.load = () => promise.then(root => root.load());
-                this.root.children.push(mockRoot);
+                this.root.children[i] = mockRoot;
             });
+
             this.ready = true;
         });
     }
 
     loadData(elt, context, layer, bbox) {
-        if (elt.waitingForSource) {
-            // const cmd = {
-            //     layer,
-            //     callback: {
-            //         executeCommand: () => {
-            //             const source = layer.source.instantiate(elt.source.url, elt.source.sId);
-            //             return source.whenReady;
-            //         },
-            //     },
-            //     view: context.view,
-            // };
-            // context.scheduler.execute(cmd);
-
-            layer.source.needInstantiate(elt.source);
+        if (elt.waitingForSource === true) {
+            elt.waitingForSource = false;
+            const cmd = {
+                requester: layer,
+                layer,
+                callback: {
+                    executeCommand: () => elt.source.instantiate().whenReady,
+                },
+                view: context.view,
+            };
+            context.scheduler.execute(cmd);
             elt.loadOctree
-                .then(eltLoaded => super.loadData(eltLoaded, context, layer, bbox))
-                .then(() => context.view.notifyChange(layer));
-        } else {
+                .then(eltLoaded => super.loadData(eltLoaded, context, layer, bbox));
+        } else if (elt.waitingForSource == undefined) {
             return super.loadData(elt, context, layer, bbox);
         }
     }

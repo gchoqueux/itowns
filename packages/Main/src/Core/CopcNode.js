@@ -108,6 +108,8 @@ class CopcNode extends PointCloudNode {
             node.findAndCreateChild(depth, x,     y + 1, z + 1, hierarchy, stack);
             node.findAndCreateChild(depth, x + 1, y + 1, z + 1, hierarchy, stack);
         }
+
+        return this;
     }
 
     /**
