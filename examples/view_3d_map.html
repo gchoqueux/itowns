@@ -40,8 +40,8 @@
 
             // Define camera initial position
             const placement = {
-                coord: new itowns.Coordinates('EPSG:4326', 2.351323, 48.856712),
-                range: 25000000,
+                coord: new itowns.Coordinates('EPSG:4326', 2.351323, 48.856712, 40),
+                range: 250,
             }
 
             // `viewerDiv` will contain iTowns' rendering area (`<canvas>`)
@@ -158,6 +158,34 @@
             });
 
             debug.createTileDebugUI(debugMenu.gui, view);
+
+            const camera = view.camera.camera3D;
+            const renderer = view.mainLoop.gfxEngine.renderer;
+            const g = new itowns.GeographicGroup('EPSG:4326', view, false);
+
+            g.position.copy(placement.coord);
+            g.add(new THREE.Mesh(new THREE.BoxGeometry(10,10,10)));
+
+            g.as(view.referenceCrs);
+            // attention il faut ajouter apres la convertion car la Scene introduit une erreur
+            view.scene.add(g);
+
+            const gizmo = g.getHelper();
+
+            g.transformControls.addEventListener( 'change', () => {
+                    view.notifyChange(view.camera);
+                    gizmo.updateMatrixWorld();
+                    g.updateMatrixWorld();
+                });
+
+            g.transformControls.addEventListener( 'dragging-changed', function ( event ) {
+                view.controls.enabled = ! event.value;
+                gizmo.updateMatrixWorld();
+                g.updateMatrixWorld();
+            });
+
+            view.scene.add(gizmo);
+            gizmo.updateMatrixWorld();
 
             window.view = view;
             window.itowns = itowns;

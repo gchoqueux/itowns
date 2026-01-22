@@ -177,6 +177,12 @@ class Coordinates {
         return new Coordinates(this.crs, this.x, this.y, this.z);
     }
 
+    setFromMatrixPosition(matrix): Coordinates {
+        v0.setFromMatrixPosition(matrix);
+
+        return this.setFromVector3(v0);
+    }
+
     /**
      * Copies the `(x, y, z)` vector components and crs of the passed coordinate
      * to this coordinate.

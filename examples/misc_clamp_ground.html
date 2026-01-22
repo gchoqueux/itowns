@@ -72,29 +72,25 @@
 
             function addMeshToScene() {
                 // creation of the new mesh (a cylinder)
-                var geometry = new THREE.CylinderGeometry(0, 10, 60, 8);
-                var material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
-                var mesh = new THREE.Mesh(geometry, material);
+                const geometry = new THREE.CylinderGeometry(0, 10, 60, 8);
+                const material = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+                const mesh = new THREE.Mesh(geometry, material);
+                mesh.position.z = 30;
+                mesh.rotateY(Math.PI / 2);
 
                 // get the position on the globe, from the camera
-                var cameraTargetPosition = view.controls.getLookAtCoordinate();
+                const cameraTargetPosition = view.controls.getLookAtCoordinate();
 
-                // position of the mesh
-                var meshCoord = cameraTargetPosition;
-                meshCoord.altitude += 30;
+                const g = new itowns.GeographicGroup('EPSG:4326', false);
 
-                // position and orientation of the mesh
-                mesh.position.copy(meshCoord.as(view.referenceCrs));
-                mesh.lookAt(new THREE.Vector3(0, 0, 0));
-                mesh.rotateX(Math.PI / 2);
+                g.position.copy(cameraTargetPosition.as('EPSG:4326'));
 
-                // update coordinate of the mesh
-                mesh.updateMatrixWorld();
+                g.add(mesh);
 
-                // add the mesh to the scene
-                view.scene.add(mesh);
+                g.as(view.referenceCrs);
 
-                // make the object usable from outside of the function
+                view.scene.add(g);
+
                 view.mesh = mesh;
                 view.notifyChange();
             }

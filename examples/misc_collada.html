@@ -45,7 +45,7 @@
 
             // Define camera initial position
             const placement = {
-                coord: new itowns.Coordinates('EPSG:4326', 4.21655, 44.84415),
+                coord: new itowns.Coordinates('EPSG:4326', 4.21655, 44.84415, 1419),
                 range: 500,
                 heading: 180,
                 tilt: 60,
@@ -95,27 +95,37 @@
 
             const loader = new ColladaLoader();
             loader.load(url, function (collada) {
-                const model = collada.scene;
+                const camera = view.camera.camera3D;
+                const renderer = view.mainLoop.gfxEngine.renderer;
+                const g = new itowns.GeographicGroup('EPSG:4326', view, false);
 
-                // building coordinate
-                const coord = new itowns.Coordinates(
-                    'EPSG:4326', 4.2165, 44.844, 1417,
-                );
+                g.position.copy(placement.coord);
 
-                model.position.copy(coord.as(view.referenceCrs));
-                // align up vector with geodesic normal
-                model.lookAt(model.position.clone().add(coord.geodesicNormal));
-                // user rotate building to align with ortho image
-                model.rotateZ(-Math.PI * 0.2);
-                model.scale.set(1.2, 1.2, 1.2);
+                collada.scene.remove(...collada.scene.children.filter(a => a.isLight)); // remove light
 
-                // update coordinate of the mesh
-                model.updateMatrixWorld();
+                g.add(collada.scene);
 
-                view.scene.add(model);
-                view.notifyChange();
+                g.as(view.referenceCrs);
+
+                view.scene.add(g);
+
+                const gizmo = g.getHelper();
+
+                g.transformControls.addEventListener( 'change', () => {
+                        view.notifyChange(view.camera);
+                        gizmo.updateMatrixWorld();
+                        g.updateMatrixWorld();
+                    });
+
+                g.transformControls.addEventListener( 'dragging-changed', function ( event ) {
+                    view.controls.enabled = ! event.value;
+                    gizmo.updateMatrixWorld();
+                    g.updateMatrixWorld();
+                });
+
+                view.scene.add(gizmo);
+                gizmo.updateMatrixWorld();
             });
-
 
             // Warning: the following code is not part of this example, those
             // variables are only exposed for internal functional test uses.
