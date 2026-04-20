@@ -167,7 +167,7 @@ class GlobeView extends View {
         }
 
         if (options.realisticLighting === true) {
-            this.skyManager = new SkyManager(this);
+            this.skyManager = {};
         }
     }
 

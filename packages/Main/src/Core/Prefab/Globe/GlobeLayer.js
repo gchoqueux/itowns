@@ -96,7 +96,22 @@ class GlobeLayer extends TiledGeometryLayer {
     preUpdate(context, changeSources) {
         // pre-horizon culling
         cameraPosition.copy(context.camera.camera3D.position).applyMatrix4(worldToScaledEllipsoid);
-        magnitudeSquared = cameraPosition.lengthSq() - 1.0;
+
+        const VC = cameraPosition.length();
+
+        magnitudeSquared = (VC ** 2 - 1.0);
+
+        const VP = VC - 1 / VC;
+
+        const PC = 1 / VC;
+
+        // HP is distance to horizon
+
+        const HP = (1.0 - 1 / VC ** 2) ** 0.5;
+
+        const distanceHorizon = (1 / VC ** 2 * magnitudeSquared) ** 0.5;
+
+        console.log('distanceHorizon', distanceHorizon);
 
         return super.preUpdate(context, changeSources);
     }
