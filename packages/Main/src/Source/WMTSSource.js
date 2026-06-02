@@ -1,4 +1,5 @@
 import TMSSource from 'Source/TMSSource';
+import Fetcher from 'Provider/Fetcher';
 
 /**
  * An object defining the source of resources to get from a
@@ -72,7 +73,35 @@ class WMTSSource extends TMSSource {
 
         this.isWMTSSource = true;
 
+        const urlCap = new URL(this.url);
+        urlCap.searchParams.set('SERVICE', 'WMTS');
+        urlCap.searchParams.set('VERSION', source.version || '1.0.0');
+        urlCap.searchParams.set('REQUEST', 'GetCapabilities');
+
+        Fetcher.xml(urlCap.toString())
+            .then((xml) => {
+                const layers = [...xml.getElementsByTagNameNS('*', 'Layer')];
+
+                const layer = layers.find(l => l.getElementsByTagNameNS('*', 'Identifier')[0]?.textContent === source.name);
+
+                const limitsNodes = layer.getElementsByTagNameNS('*', 'TileMatrixLimits');
+
+                const li = {};
+
+                Array.from(limitsNodes).forEach((limit) => {
+                    const tileMatrix = limit.getElementsByTagNameNS('*', 'TileMatrix')[0]?.textContent;
+
+                    li[tileMatrix] = {
+                        minTileRow: Number(limit.getElementsByTagNameNS('*', 'MinTileRow')[0]?.textContent),
+                        maxTileRow: Number(limit.getElementsByTagNameNS('*', 'MaxTileRow')[0]?.textContent),
+                        minTileCol: Number(limit.getElementsByTagNameNS('*', 'MinTileCol')[0]?.textContent),
+                        maxTileCol: Number(limit.getElementsByTagNameNS('*', 'MaxTileCol')[0]?.textContent),
+                    };
+                });
+            });
+
         const urlObj = new URL(this.url);
+
         urlObj.searchParams.set('LAYER', source.name);
         urlObj.searchParams.set('FORMAT', this.format);
         urlObj.searchParams.set('SERVICE', 'WMTS');
