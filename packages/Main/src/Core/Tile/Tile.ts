@@ -363,10 +363,10 @@ export class TileMatrixSetLimits {
             const limit = this.limits[extentOrTile.zoom];
 
             if (limit) {
-                return  extentOrTile.row >= limit.min.row &&
-                    extentOrTile.col >= limit.min.col &&
-                    extentOrTile.row <= limit.max.row &&
-                    extentOrTile.col <= limit.max.col;
+                return  !(extentOrTile.row < limit.min.row ||
+                    extentOrTile.col < limit.min.col ||
+                    extentOrTile.row > limit.max.row ||
+                    extentOrTile.col > limit.max.col);
             } else {
                 // if there are no limits at this zoom level,
                 // the tile is always considered as inside
