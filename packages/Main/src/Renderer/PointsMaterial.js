@@ -1,6 +1,12 @@
 import * as THREE from 'three';
-import PointsVS from 'Renderer/Shader/PointsVS.glsl';
-import PointsFS from 'Renderer/Shader/PointsFS.glsl';
+import { PointsNodeMaterial } from 'three/webgpu';
+import {
+    Fn, If,
+    uniform, attribute, texture,
+    vec2, vec3, vec4, float, int,
+    positionLocal,
+    max, abs, pow,
+} from 'three/tsl';
 import CommonMaterial from 'Renderer/CommonMaterial';
 import Gradients from 'Utils/Gradients';
 
@@ -149,7 +155,7 @@ function recomputeTexture(scheme, texture, nbClass) {
     texture.needsUpdate = true;
 }
 
-class PointsMaterial extends THREE.ShaderMaterial {
+class PointsMaterial extends PointsNodeMaterial {
     /**
      * @class      PointsMaterial
      * @param      {object}  [options={}]  The options
@@ -204,86 +210,179 @@ class PointsMaterial extends THREE.ShaderMaterial {
             gamma = 1.0,
             scale = 0.05 * 0.5 / Math.tan(1.0 / 2.0),
             ambientBoost = 0.0,
-            ...materialOptions
         } = options;
 
         super({
-            ...materialOptions,
             fog: true,
             transparent: true,
-            precision: 'highp',
             vertexColors: true,
         });
         if (__DEBUG__) { this.name = 'PointsMaterial'; }
-        this.uniforms = THREE.UniformsUtils.merge([
-            // THREE.PointsMaterial uniforms
-            THREE.UniformsLib.points,
-            THREE.UniformsLib.fog,
-        ]);
-        this.vertexShader = PointsVS;
-        this.fragmentShader = PointsFS;
+
+        // ---- TSL uniforms ----
+        this._modeNode = uniform(mode, 'int');
+        this._shapeNode = uniform(shape, 'int');
+        this._pickingNode = uniform(false, 'bool');
+        this._opacityUnif = uniform(1.0, 'float');
+        this._intensityRangeNode = uniform(intensityRange);
+        this._elevationRangeNode = uniform(elevationRange);
+        this._angleRangeNode = uniform(angleRange);
+        this._sizeNode = uniform(size, 'float');
+        this._scaleNode = uniform(scale, 'float');
+        this._sizeMode = sizeMode;
+        this._sizeUnif = uniform(size, 'float');
+        this._minAttenuatedSizeNode = uniform(minAttenuatedSize, 'float');
+        this._maxAttenuatedSizeNode = uniform(maxAttenuatedSize, 'float');
+        this._gammaNode = uniform(gamma, 'float');
+        this._ambientBoostNode = uniform(ambientBoost, 'float');
 
         this.gradients = gradients;
-        this.gradientTexture = new THREE.CanvasTexture();
+        this.gradientTexture = new THREE.CanvasTexture(document.createElement('canvas'));
 
+        // Classification / discrete / visibility lookup textures
+        const classData = new Uint8Array(256 * 4);
+        this._classificationTex = new THREE.DataTexture(classData, 256, 1, THREE.RGBAFormat);
+        this._classificationTex.needsUpdate = true;
+        this._classificationTex.magFilter = THREE.NearestFilter;
+
+        const lutData = new Uint8Array(256 * 4);
+        this._discreteTex = new THREE.DataTexture(lutData, 256, 1, THREE.RGBAFormat);
+        this._discreteTex.needsUpdate = true;
+        this._discreteTex.magFilter = THREE.NearestFilter;
+
+        const visiData = new Uint8Array(256);
+        this._visibilityTex = new THREE.DataTexture(visiData, 256, 1, THREE.RedFormat);
+        this._visibilityTex.needsUpdate = true;
+        this._visibilityTex.magFilter = THREE.NearestFilter;
+
+        // Expose via CommonMaterial-compatible accessors
         CommonMaterial.setDefineMapping(this, 'PNTS_MODE', PNTS_MODE);
         CommonMaterial.setDefineMapping(this, 'PNTS_SHAPE', PNTS_SHAPE);
         CommonMaterial.setDefineMapping(this, 'PNTS_SIZE_MODE', PNTS_SIZE_MODE);
 
-        this.size = size;
-        CommonMaterial.setUniformProperty(this, 'mode', mode);
-        CommonMaterial.setUniformProperty(this, 'shape', shape);
-        CommonMaterial.setUniformProperty(this, 'picking', false);
-        CommonMaterial.setUniformProperty(this, 'opacity', this.opacity);
-        CommonMaterial.setUniformProperty(this, 'intensityRange', intensityRange);
-        CommonMaterial.setUniformProperty(this, 'elevationRange', elevationRange);
-        CommonMaterial.setUniformProperty(this, 'angleRange', angleRange);
-        CommonMaterial.setUniformProperty(this, 'sizeMode', sizeMode);
-        CommonMaterial.setUniformProperty(this, 'scale', scale);
-        CommonMaterial.setUniformProperty(this, 'minAttenuatedSize', minAttenuatedSize);
-        CommonMaterial.setUniformProperty(this, 'maxAttenuatedSize', maxAttenuatedSize);
-        CommonMaterial.setUniformProperty(this, 'gamma', gamma);
-        CommonMaterial.setUniformProperty(this, 'ambientBoost', ambientBoost);
-
-        // add classification texture to apply classification lut.
-        const data = new Uint8Array(256 * 4);
-        const texture = new THREE.DataTexture(data, 256, 1, THREE.RGBAFormat);
-        texture.needsUpdate = true;
-        texture.magFilter = THREE.NearestFilter;
-        CommonMaterial.setUniformProperty(this, 'classificationTexture', texture);
-
-        // add texture to applying the discrete lut.
-        const dataLUT = new Uint8Array(256 * 4);
-        const textureLUT = new THREE.DataTexture(dataLUT, 256, 1, THREE.RGBAFormat);
-        textureLUT.needsUpdate = true;
-        textureLUT.magFilter = THREE.NearestFilter;
-        CommonMaterial.setUniformProperty(this, 'discreteTexture', textureLUT);
-
-        // add texture to apply visibility.
-        const dataVisi = new Uint8Array(256 * 1);
-        const textureVisi = new THREE.DataTexture(dataVisi, 256, 1, THREE.RedFormat);
-
-        textureVisi.needsUpdate = true;
-        textureVisi.magFilter = THREE.NearestFilter;
-        CommonMaterial.setUniformProperty(this, 'visibilityTexture', textureVisi);
-
-        // Classification and other discrete values scheme
         this.classificationScheme = classificationScheme;
         this.discreteScheme = discreteScheme;
 
-        // Update classification and discrete Texture
         this.recomputeClassification();
         this.recomputeDiscreteTexture();
         this.recomputeVisibilityTexture();
 
-        // Gradient texture for continuous values
         this.gradient = gradient;
-        CommonMaterial.setUniformProperty(this, 'gradientTexture', this.gradientTexture);
+
+        // Build TSL node graph
+        this._buildNodeGraph();
 
         if (__DEBUG__) {
             this.defines.DEBUG = 1;
         }
     }
+
+    _buildNodeGraph() {
+        const modeN = this._modeNode;
+        const pickingN = this._pickingNode;
+        const gammaNode = this._gammaNode;
+        const ambientBoostNode = this._ambientBoostNode;
+        const intRange = this._intensityRangeNode;
+        const elevRange = this._elevationRangeNode;
+        const angleRange = this._angleRangeNode;
+
+        const classTexNode = uniform(this._classificationTex);
+        const discreteTexNode = uniform(this._discreteTex);
+        const gradTexNode = uniform(this.gradientTexture);
+        const visiTexNode = uniform(this._visibilityTex);
+
+        // Point attributes
+        const intensityAttr = attribute('intensity', 'float');
+        const classificationAttr = attribute('classification', 'float');
+        const pointSourceIDAttr = attribute('pointSourceID', 'float');
+        const returnNumberAttr = attribute('returnNumber', 'float');
+        const numberOfReturnsAttr = attribute('numberOfReturns', 'float');
+        const scanAngleAttr = attribute('scanAngle', 'float');
+        const uniqueIdAttr = attribute('unique_id', 'vec4');
+
+        // -- Color computation (vertex stage) --
+        const classUV = vec2(classificationAttr.div(255.0), 0.5);
+
+        const colorComputeFn = Fn(() => {
+            const c = vec4(1.0).toVar();
+
+            If(pickingN, () => {
+                c.assign(uniqueIdAttr);
+            }).Else(() => {
+                // CLASSIFICATION
+                If(modeN.equal(int(PNTS_MODE.CLASSIFICATION)), () => {
+                    c.assign(texture(classTexNode, classUV));
+                // NORMAL
+                }).ElseIf(modeN.equal(int(PNTS_MODE.NORMAL)), () => {
+                    // normal attribute is not always present — use positionLocal as fallback
+                    c.rgb.assign(abs(positionLocal).normalize());
+                // COLOR
+                }).ElseIf(modeN.equal(int(PNTS_MODE.COLOR)), () => {
+                    // vertexColors are handled by PointsNodeMaterial automatically
+                // RETURN_NUMBER
+                }).ElseIf(modeN.equal(int(PNTS_MODE.RETURN_NUMBER)), () => {
+                    c.assign(texture(discreteTexNode, vec2(returnNumberAttr.div(255.0), 0.5)));
+                // RETURN_TYPE
+                }).ElseIf(modeN.equal(int(PNTS_MODE.RETURN_TYPE)), () => {
+                    const rtype = float(0.0).toVar();
+                    If(returnNumberAttr.greaterThan(numberOfReturnsAttr), () => { rtype.assign(float(4.0)); })
+                        .ElseIf(returnNumberAttr.equal(float(1.0)), () => {
+                            If(numberOfReturnsAttr.equal(float(1.0)), () => { rtype.assign(float(0.0)); })
+                                .Else(() => { rtype.assign(float(1.0)); });
+                        }).Else(() => {
+                            If(returnNumberAttr.equal(numberOfReturnsAttr), () => { rtype.assign(float(3.0)); })
+                                .Else(() => { rtype.assign(float(2.0)); });
+                        });
+                    c.assign(texture(discreteTexNode, vec2(rtype.div(255.0), 0.5)));
+                // RETURN_COUNT
+                }).ElseIf(modeN.equal(int(PNTS_MODE.RETURN_COUNT)), () => {
+                    c.assign(texture(discreteTexNode, vec2(numberOfReturnsAttr.div(255.0), 0.5)));
+                // POINT_SOURCE_ID
+                }).ElseIf(modeN.equal(int(PNTS_MODE.POINT_SOURCE_ID)), () => {
+                    c.assign(texture(discreteTexNode, vec2(pointSourceIDAttr.mod(8.0).div(255.0), 0.5)));
+                // SCAN_ANGLE
+                }).ElseIf(modeN.equal(int(PNTS_MODE.SCAN_ANGLE)), () => {
+                    const ai = angleRange.x.sub(scanAngleAttr).div(angleRange.x.sub(angleRange.y));
+                    c.assign(texture(gradTexNode, vec2(ai, float(1.0).sub(ai))));
+                // INTENSITY
+                }).ElseIf(modeN.equal(int(PNTS_MODE.INTENSITY)), () => {
+                    const ii = intensityAttr.sub(intRange.x).div(intRange.y.sub(intRange.x));
+                    c.assign(texture(gradTexNode, vec2(ii, float(1.0).sub(ii))));
+                // ELEVATION
+                }).ElseIf(modeN.equal(int(PNTS_MODE.ELEVATION)), () => {
+                    const zi = positionLocal.z.sub(elevRange.x).div(elevRange.y.sub(elevRange.x));
+                    c.assign(texture(gradTexNode, vec2(zi, float(1.0).sub(zi))));
+                });
+
+                // Visibility mask
+                const visiVal = texture(visiTexNode, classUV).r;
+                If(visiVal.lessThan(float(0.5)), () => { c.a.assign(float(0.0)); });
+            });
+
+            return c;
+        })();
+
+        this.colorNode = colorComputeFn;
+
+        // Shape-based discard is handled by PointsNodeMaterial sizeNode;
+        // gl_PointCoord is not directly available in TSL for custom discard yet.
+
+        // Gamma correction and ambient boost via opacityNode
+        this.outputNode = Fn(() => {
+            const col = this.colorNode.toVar();
+            col.rgb.assign(pow(max(col.rgb, vec3(ambientBoostNode)), vec3(float(1.0).div(gammaNode))));
+            return col;
+        })();
+    }
+
+    /** Expose classificationTexture for backward compat */
+    get classificationTexture() { return this._classificationTex; }
+    /** Expose discreteTexture for backward compat */
+    get discreteTexture() { return this._discreteTex; }
+    /** Expose visibilityTexture for backward compat */
+    get visibilityTexture() { return this._visibilityTex; }
+
+    get uniforms() { return this._uniforms ??= {}; }
 
     /**
      * Copy the parameters from the passed material into this material.
@@ -292,14 +391,10 @@ class PointsMaterial extends THREE.ShaderMaterial {
      * @returns {this}
      */
     copy(source) {
-        if (source.isShaderMaterial) {
-            super.copy(source);
-        } else {
-            THREE.Material.prototype.copy.call(this, source);
-        }
+        THREE.Material.prototype.copy.call(this, source);
 
         // Parameters of THREE.PointsMaterial
-        this.color.copy(source.color);
+        if (source.color) { this.color.copy(source.color); }
         this.map = source.map;
         this.alphaMap = source.alphaMap;
         this.size = source.size;
@@ -311,95 +406,81 @@ class PointsMaterial extends THREE.ShaderMaterial {
 
     /** @returns {THREE.Color} */
     get color() {
-        return this.uniforms.diffuse.value;
+        return this._colorUnif ??= new THREE.Color(1, 1, 1);
     }
 
     /** @param {THREE.Color} color */
     set color(color) {
-        this.uniforms.diffuse.value.copy(color);
+        this.color.copy(color);
     }
 
     /** @returns {THREE.Texture | null} */
     get map() {
-        return this.uniforms.map.value;
+        return this._map ?? null;
     }
 
     /** @param {THREE.Texture | null} map */
     set map(map) {
-        this.uniforms.map.value = map;
-        if (!map) { return; }
-
-        if (map.matrixAutoUpdate) {
-            map.updateMatrix();
-        }
-
-        this.uniforms.uvTransform.value.copy(map.matrix);
+        this._map = map;
     }
 
     /** @returns {THREE.Texture | null} */
     get alphaMap() {
-        return this.uniforms.alphaMap.value;
+        return this._alphaMap ?? null;
     }
 
     /** @param {THREE.Texture | null} map */
     set alphaMap(map) {
-        this.uniforms.alphaMap.value = map;
-        if (!map) { return; }
-
-        if (map.matrixAutoUpdate) {
-            map.updateMatrix();
-        }
-
-        this.uniforms.alphaMapTransform.value.copy(map.matrix);
+        this._alphaMap = map;
     }
 
     /** @returns {number} */
     get size() {
-        return this.uniforms.size.value;
+        return this._sizeNode?.value ?? 1;
     }
 
     /** @param {number} size */
     set size(size) {
-        this.uniforms.size.value = size;
+        if (this._sizeNode) { this._sizeNode.value = size; }
     }
 
     /** @returns {boolean} */
     get sizeAttenuation() {
-        return this.sizeMode !== PNTS_SIZE_MODE.VALUE;
+        return this._sizeMode !== PNTS_SIZE_MODE.VALUE;
     }
 
     /** @param {boolean} value */
     set sizeAttenuation(value) {
-        this.sizeMode = value ?
+        this._sizeMode = value ?
             PNTS_SIZE_MODE.ATTENUATED :
             PNTS_SIZE_MODE.VALUE;
     }
 
     /** @returns {number} */
     get gamma() {
-        return this.uniforms.gamma.value;
+        return this._gammaNode?.value ?? 1.0;
     }
 
     /** @param {number} gamma */
     set gamma(gamma) {
-        this.uniforms.gamma.value = gamma;
+        if (this._gammaNode) { this._gammaNode.value = gamma; }
     }
 
     /** @returns {number} */
     get ambientBoost() {
-        return this.uniforms.ambientBoost.value;
+        return this._ambientBoostNode?.value ?? 0.0;
     }
 
     /** @param {number} ambientBoost */
     set ambientBoost(ambientBoost) {
-        this.uniforms.ambientBoost.value = ambientBoost;
+        if (this._ambientBoostNode) { this._ambientBoostNode.value = ambientBoost; }
     }
 
     recomputeClassification() {
         recomputeTexture(this.classificationScheme, this.classificationTexture, 256);
         this.dispatchEvent({
             type: 'material_property_changed',
-            target: this.uniforms,
+            target: this,
         });
     }
 
@@ -407,25 +488,25 @@ class PointsMaterial extends THREE.ShaderMaterial {
         recomputeTexture(this.discreteScheme, this.discreteTexture);
         this.dispatchEvent({
             type: 'material_property_changed',
-            target: this.uniforms,
+            target: this,
         });
     }
 
     recomputeVisibilityTexture() {
-        const texture = this.visibilityTexture;
+        const tex = this.visibilityTexture;
         const scheme = this.classificationScheme;
 
-        const data = texture.image.data;
-        const width = texture.image.width;
+        const data = tex.image.data;
+        const width = tex.image.width;
 
-        texture.userData.transparent = false;
+        tex.userData.transparent = false;
         for (let i = 0; i < width; i++) {
             let visible;
 
             if (scheme[i]) {
-                visible  = scheme[i].visible;
+                visible = scheme[i].visible;
             } else if (scheme.DEFAULT) {
-                visible  = scheme.DEFAULT.visible;
+                visible = scheme.DEFAULT.visible;
             } else {
                 visible = true;
             }
@@ -433,19 +514,19 @@ class PointsMaterial extends THREE.ShaderMaterial {
             data[i] = visible ? 255 : 0;
 
             if (!visible) {
-                texture.userData.transparent = true;
+                tex.userData.transparent = true;
             }
         }
-        texture.needsUpdate = true;
+        tex.needsUpdate = true;
 
         this.dispatchEvent({
             type: 'material_property_changed',
-            target: this.uniforms,
+            target: this,
         });
     }
 
     enablePicking(picking) {
-        this.picking = picking;
+        if (this._pickingNode) { this._pickingNode.value = picking; }
         this.blending = picking ? THREE.NoBlending : THREE.NormalBlending;
     }
 

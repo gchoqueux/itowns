@@ -5,13 +5,13 @@ import { Coordinates } from '@itowns/geographic';
 
 const depthRGBA = new THREE.Vector4();
 // TileMesh picking support function
-function screenCoordsToNodeId(view, tileLayer, viewCoords, radius = 0) {
+async function screenCoordsToNodeId(view, tileLayer, viewCoords, radius = 0) {
     const dim = view.mainLoop.gfxEngine.getWindowSize();
 
     viewCoords = viewCoords || new THREE.Vector2(Math.floor(dim.x / 2), Math.floor(dim.y / 2));
 
     /** @type {THREE.RenderTarget} */
-    const buffer = RenderMode.scope(tileLayer.level0Nodes, RenderMode.MODES.ID, () => view.mainLoop.gfxEngine.renderViewToBuffer(
+    const buffer = await RenderMode.scope(tileLayer.level0Nodes, RenderMode.MODES.ID, () => view.mainLoop.gfxEngine.renderViewToBuffer(
         { camera: view.camera, scene: tileLayer.object3d },
         {
             x: viewCoords.x - radius,
@@ -101,8 +101,8 @@ const cameraPosCoord = new Coordinates('EPSG:4978'); // default crs, will be set
  *   - layer: the geometry layer used for picking
  */
 export default {
-    pickTilesAt(view, viewCoords, radius, layer, results = []) {
-        const _ids = screenCoordsToNodeId(view, layer, viewCoords, radius);
+    async pickTilesAt(view, viewCoords, radius, layer, results = []) {
+        const _ids = await screenCoordsToNodeId(view, layer, viewCoords, radius);
 
         const extractResult = (node) => {
             if (_ids.includes(node.id) && node.isTileMesh) {
@@ -118,7 +118,7 @@ export default {
         return results;
     },
 
-    pickPointsAt(view, viewCoords, radius, layer, result = []) {
+    async pickPointsAt(view, viewCoords, radius, layer, result = []) {
         if (!layer.root) {
             return;
         }
@@ -132,7 +132,7 @@ export default {
 
         // render 1 pixel
         // TODO: support more than 1 pixel selection
-        const buffer = view.mainLoop.gfxEngine.renderViewToBuffer(
+        const buffer = await view.mainLoop.gfxEngine.renderViewToBuffer(
             { camera: view.camera, scene: layer.object3d },
             {
                 x: viewCoords.x - radius,
@@ -207,7 +207,7 @@ export default {
     /*
      * Default picking method. Uses THREE.Raycaster
      */
-    pickObjectsAt(view, viewCoords, radius, object, target = []) {
+    async pickObjectsAt(view, viewCoords, radius, object, target = []) {
         // Raycaster use NDC coordinate
         view.viewToNormalizedCoords(viewCoords, normalized);
         if (radius === 0) {
@@ -239,7 +239,7 @@ export default {
         const renderer = engine.renderer;
         const origClearAlpha = renderer.getClearAlpha();
         renderer.setClearAlpha(0);
-        const pixels = view.mainLoop.gfxEngine.renderViewToBuffer(
+        const pixels = await view.mainLoop.gfxEngine.renderViewToBuffer(
             { scene: object, camera: view.camera },
             zone);
         renderer.setClearAlpha(origClearAlpha);

@@ -1,26 +1,11 @@
 import * as THREE from 'three';
+import { MeshBasicNodeMaterial } from 'three/webgpu';
+import { texture, uv, uniform } from 'three/tsl';
 import { RasterTile } from './RasterTile';
 
-// shader for copying a 2D texture to a framebuffer
-const copyTextureShader = {
-    vertexShader: `
-        varying vec2 vUv;
-        void main() {
-            vUv = uv;
-            gl_Position = projectionMatrix * modelViewMatrix * vec4(position, 1.0);
-        }
-    `,
-    fragmentShader: `
-        precision highp float;
-        uniform sampler2D sourceTexture;
-        varying vec2 vUv;
-        void main() {
-            gl_FragColor = texture2D(sourceTexture, vUv);
-        }
-    `,
-};
-
-let material: THREE.ShaderMaterial | null = null;
+// Persistent quad + TSL copy material (created on first use)
+let copyMaterial: MeshBasicNodeMaterial | null = null;
+let sourceTextureUniform: ReturnType<typeof uniform> | null = null;
 let quad: THREE.Mesh | null = null;
 const quadCam: THREE.OrthographicCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
 /**
@@ -42,41 +27,36 @@ export function makeDataArrayRenderTarget(
     count: number,
     tiles: RasterTile[],
     max: number,
-    renderer: THREE.WebGLRenderer,
+    renderer: THREE.WebGLRenderer | import('three/webgpu').WebGPURenderer,
 ): THREE.WebGLArrayRenderTarget | null {
     if (count === 0) { return null; }
 
-    // The render target's internal framebuffer will be used to attach layers.
     const renderTarget = new THREE.WebGLArrayRenderTarget(width, height, count, {
-        depthBuffer: false, // No depth buffer needed for simple 2D texture copy
+        depthBuffer: false,
     });
     const arrayTexture = renderTarget.texture;
 
-    // Set up the quad for rendering
+    // Build copy material and quad on first call
     if (!quad) {
+        sourceTextureUniform = uniform(null as unknown as THREE.Texture);
+        copyMaterial = new MeshBasicNodeMaterial();
+        // Sample the source 2-D texture and output its colour verbatim
+        copyMaterial.colorNode = texture(sourceTextureUniform as unknown as THREE.Texture, uv());
+        copyMaterial.depthWrite = false;
+        copyMaterial.depthTest = false;
+
         const geometry = new THREE.PlaneGeometry(2, 2);
-        material = new THREE.ShaderMaterial({
-            uniforms: {
-                // This uniform will be updated with each source 2D texture
-                sourceTexture: { value: null },
-            },
-            vertexShader: copyTextureShader.vertexShader,
-            fragmentShader: copyTextureShader.fragmentShader,
-        });
-        quad = new THREE.Mesh(geometry, material);
+        quad = new THREE.Mesh(geometry, copyMaterial);
     }
 
-    // Store renderer state and temporarily disable VR
+    // Save renderer viewport
+    const savedViewport = new THREE.Vector4();
+    renderer.getViewport(savedViewport);
     const previousRenderTarget = renderer.getRenderTarget();
-    const gl = renderer.getContext();
-    const glViewport = gl.getParameter(gl.VIEWPORT);
     const wasVREnabled = renderer.xr.enabled;
     if (wasVREnabled) { renderer.xr.enabled = false; }
 
-    // loop through each tile and its textures
-    // to render them into DataArrayTexture layers
     let currentLayerIndex = 0;
-
     let setTexture = false;
 
     for (const tile of tiles) {
@@ -85,36 +65,32 @@ export function makeDataArrayRenderTarget(
             i < tile.textures.length && currentLayerIndex < max;
             ++i, ++currentLayerIndex
         ) {
-            const texture = tile.textures[i];
-            if (!texture.isTexture) { continue; }
+            const tex = tile.textures[i];
+            if (!tex.isTexture) { continue; }
 
-            // Set the current source 2D texture on the quad's material
-            (material as THREE.ShaderMaterial).uniforms.sourceTexture.value = texture;
+            sourceTextureUniform!.value = tex;
 
             if (!setTexture) {
-                // Set parameters from the first valid texture
-                arrayTexture.magFilter = texture.magFilter;
-                arrayTexture.minFilter = texture.minFilter;
-                arrayTexture.wrapS = texture.wrapS;
-                arrayTexture.wrapT = texture.wrapT;
-                arrayTexture.format = texture.format;
-                arrayTexture.type = texture.type;
-                arrayTexture.internalFormat = texture.internalFormat;
-                arrayTexture.anisotropy = texture.anisotropy;
-                arrayTexture.premultiplyAlpha = texture.premultiplyAlpha;
+                arrayTexture.magFilter = tex.magFilter;
+                arrayTexture.minFilter = tex.minFilter;
+                arrayTexture.wrapS = tex.wrapS;
+                arrayTexture.wrapT = tex.wrapT;
+                arrayTexture.format = tex.format;
+                arrayTexture.type = tex.type;
+                arrayTexture.internalFormat = tex.internalFormat;
+                arrayTexture.anisotropy = tex.anisotropy;
+                arrayTexture.premultiplyAlpha = tex.premultiplyAlpha;
                 setTexture = true;
             }
 
-            // render this source texture into the current layer
             renderer.setRenderTarget(renderTarget, currentLayerIndex);
             renderer.render(quad, quadCam);
         }
     }
 
     // Restore renderer state
-    renderer.setRenderTarget(previousRenderTarget);
-    // renderer.setViewport is not enough to update internal GL state
-    gl.viewport(glViewport[0], glViewport[1], glViewport[2], glViewport[3]);
+    renderer.setRenderTarget(previousRenderTarget as THREE.WebGLRenderTarget | null);
+    renderer.setViewport(savedViewport);
     if (wasVREnabled) { renderer.xr.enabled = true; }
 
     return renderTarget;

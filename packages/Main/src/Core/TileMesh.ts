@@ -160,7 +160,7 @@ class TileMesh extends THREE.Mesh<TileGeometry, LayeredMaterial> {
      *
      * @param renderer - The renderer used to render textures.
      */
-    override onBeforeRender(renderer: THREE.WebGLRenderer) {
+    override onBeforeRender(renderer: THREE.WebGLRenderer | import('three/webgpu').WebGPURenderer) {
         if (this.material.layersNeedUpdate) {
             this.material.updateLayersUniforms(renderer);
         }

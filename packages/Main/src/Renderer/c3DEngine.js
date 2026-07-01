@@ -1,16 +1,37 @@
 /**
  * Generated On: 2015-10-5
  * Class: c3DEngine
- * Description: 3DEngine est l'interface avec le framework webGL.
+ * Description: 3DEngine est l'interface avec le framework webGL (WebGPU).
  */
 
 import * as THREE from 'three';
+import { WebGPURenderer } from 'three/webgpu';
 import Capabilities from 'Core/System/Capabilities';
 import { unpack1K } from 'Renderer/LayeredMaterial';
 import Label2DRenderer from 'Renderer/Label2DRenderer';
 import { deprecatedC3DEngineWebGLOptions } from 'Core/Deprecated/Undeprecator';
-import WEBGL from 'three/addons/capabilities/WebGL.js';
-import { EffectComposer } from 'postprocessing';
+
+/**
+ * Minimal stub maintaining the EffectComposer API surface.
+ * Full effect pass support requires migrating to Three.js PostProcessing API.
+ * @private
+ */
+class WebGPUComposerStub {
+    constructor() {
+        this.passes = [];
+    }
+    addPass(pass) {
+        this.passes.push(pass);
+        console.warn(
+            'c3DEngine: postprocessing v6 is not compatible with WebGPURenderer. '
+            + 'Custom effect passes will not render. '
+            + 'Migrate to the Three.js PostProcessing API (three/webgpu).',
+        );
+    }
+    render() { /* handled directly by renderView */ }
+    setSize() { /* no-op */ }
+    dispose() { /* no-op */ }
+}
 
 const depthRGBA = new THREE.Vector4();
 class c3DEngine {
@@ -58,15 +79,14 @@ class c3DEngine {
         this.fullSizeRenderTarget.depthTexture.type = THREE.UnsignedShortType;
 
         this.renderView = function _(view) {
-            // force internally calling state.buffers.color.setClear
-            // to get a correct background color
             this.renderer.setClearAlpha(this.renderer.getClearAlpha());
-
             this.renderer.clear();
             if (view._camXR) {
                 this.renderer.render(view.scene, view._camXR);
             } else if (this.composer.passes.length) {
-                this.composer.render();
+                // composer.render() is a no-op stub for WebGPU.
+                // User-added passes require migration to Three.js PostProcessing API.
+                this.renderer.render(view.scene, view.camera3D);
             } else {
                 this.renderer.render(view.scene, view.camera3D);
             }
@@ -90,26 +110,28 @@ class c3DEngine {
         }.bind(this);
 
         // Create renderer
-        try {
-            this.label2dRenderer = new Label2DRenderer();
-            this.label2dRenderer.setSize(this.width, this.height);
-            viewerDiv.appendChild(this.label2dRenderer.domElement);
 
-            this.renderer = renderer || new THREE.WebGLRenderer({
-                canvas: document.createElement('canvas'),
-                antialias: options.antialias,
-                alpha: options.alpha,
-                logarithmicDepthBuffer: options.logarithmicDepthBuffer,
-            });
-            this.renderer.domElement.style.position = 'relative';
-            this.renderer.domElement.style.zIndex = 0;
-            this.renderer.domElement.style.top = 0;
-        } catch (ex) {
-            if (!WEBGL.isWebGL2Available()) {
-                viewerDiv.appendChild(WEBGL.getWebGL2ErrorMessage());
-            }
-            throw ex;
-        }
+        this.label2dRenderer = new Label2DRenderer();
+        this.label2dRenderer.setSize(this.width, this.height);
+        viewerDiv.appendChild(this.label2dRenderer.domElement);
+
+        this.renderer = renderer || new WebGPURenderer({
+            canvas: document.createElement('canvas'),
+            antialias: options.antialias,
+            alpha: options.alpha,
+            logarithmicDepthBuffer: options.logarithmicDepthBuffer,
+        });
+
+        // WebGPURenderer requires async initialisation.
+        // Store the promise so callers can await it via waitForInit().
+        // Three.js r182 will display a warning and fall back to async
+        // rendering if render() is called before init() resolves.
+        this.initPromise = this.renderer.init();
+
+        this.renderer.domElement.style.position = 'relative';
+        this.renderer.domElement.style.zIndex = 0;
+        this.renderer.domElement.style.top = 0;
+
 
         // Let's allow our canvas to take focus
         // The condition below looks weird, but it's correct: querying tabIndex
@@ -125,7 +147,6 @@ class c3DEngine {
         this.renderer.setClearColor(0x030508);
         this.renderer.autoClear = false;
         this.renderer.sortObjects = true;
-        this.renderer.debug.checkShaderErrors = __DEBUG__;
 
         if (!renderer) {
             this.renderer.setPixelRatio(viewerDiv.devicePixelRatio);
@@ -133,11 +154,18 @@ class c3DEngine {
             viewerDiv.appendChild(this.renderer.domElement);
         }
 
-        // Use floating-point render buffer, as radiance/luminance will be stored here.
-        /** @type {EffectComposer} */
-        this.composer = new EffectComposer(this.renderer, {
-            frameBufferType: THREE.HalfFloatType,
-        });
+        // Use a no-op stub for the EffectComposer.
+        // postprocessing v6 is not compatible with WebGPURenderer.
+        // Migrate custom effects to Three.js PostProcessing API (three/webgpu).
+        this.composer = new WebGPUComposerStub();
+    }
+
+    /**
+     * Add a method to expose the async init promise.
+     * @returns {Promise<void>}
+     */
+    waitForInit() {
+        return this.initPromise ?? Promise.resolve();
     }
 
     dispose() {
@@ -156,14 +184,14 @@ class c3DEngine {
 
     /**
      * return renderer THREE.js
-     * @returns {THREE.WebGLRenderer}
+     * @returns {WebGPURenderer}
      */
     getRenderer() {
         return this.renderer;
     }
 
     /**
-     * Render view to a Uint8Array.
+     * Render view to a Uint8Array (async for WebGPU).
      *
      * @param {View} view - The view to render
      * @param {object} [zone] - partial zone to render
@@ -171,10 +199,9 @@ class c3DEngine {
      * @param {number} zone.y - y (in view coordinate)
      * @param {number} zone.width - width of area to render (in pixels)
      * @param {number} zone.height - height of area to render (in pixels)
-     * @returns {THREE.RenderTarget} - Uint8Array, 4 bytes per pixel. The first pixel in
-     * the array is the bottom-left pixel.
+     * @returns {Promise<Uint8Array>} - 4 bytes per pixel (RGBA).
      */
-    renderViewToBuffer(view, zone) {
+    async renderViewToBuffer(view, zone) {
         if (!zone) {
             zone = {
                 x: 0,
@@ -188,7 +215,7 @@ class c3DEngine {
 
         this.renderViewToRenderTarget(view, this.fullSizeRenderTarget, zone);
 
-        this.renderer.readRenderTargetPixels(
+        await this.renderer.readRenderTargetPixelsAsync(
             this.fullSizeRenderTarget,
             zone.x, this.height - (zone.y + zone.height), zone.width, zone.height, zone.buffer);
 

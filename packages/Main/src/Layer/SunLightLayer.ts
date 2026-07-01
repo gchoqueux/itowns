@@ -11,7 +11,7 @@ interface UpdateContext {
         camera3D: THREE.PerspectiveCamera | THREE.OrthographicCamera;
     };
     view: {
-        renderer: THREE.WebGLRenderer;
+        renderer: THREE.WebGLRenderer | import('three/webgpu').WebGPURenderer;
         scene: THREE.Scene;
         date: Date;
         skyManager: SkyManager;

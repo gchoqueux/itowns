@@ -1,19 +1,7 @@
-import SampleTestFS from '../../Renderer/Shader/SampleTestFS.glsl';
-import SampleTestVS from '../../Renderer/Shader/SampleTestVS.glsl';
-
 // default values
 let logDepthBufferSupported = false;
-let maxTexturesUnits = 8;
-let maxTextureSize = 4096;
-
-function _WebGLShader(renderer, type, string) {
-    const gl = renderer.getContext();
-    const shader = gl.createShader(type);
-
-    gl.shaderSource(shader, string);
-    gl.compileShader(shader);
-    return shader;
-}
+let maxTexturesUnits = 16;    // WebGPU minimum spec guarantee
+let maxTextureSize = 8192;    // WebGPU minimum spec guarantee
 
 export default {
     isLogDepthBufferSupported() {
@@ -26,31 +14,25 @@ export default {
         return maxTextureSize;
     },
     updateCapabilities(renderer) {
-        const gl = renderer.getContext();
-        maxTexturesUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
-        maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
-
-        const program = gl.createProgram();
-        const glVertexShader = _WebGLShader(renderer, gl.VERTEX_SHADER, SampleTestVS);
-
-        let fragmentShader = `#define SAMPLE ${maxTexturesUnits}\n`;
-        fragmentShader += SampleTestFS;
-
-        const glFragmentShader = _WebGLShader(renderer, gl.FRAGMENT_SHADER, fragmentShader);
-
-        gl.attachShader(program, glVertexShader);
-        gl.attachShader(program, glFragmentShader);
-        gl.linkProgram(program);
-
-        if (gl.getProgramParameter(program, gl.LINK_STATUS) === false) {
-            // the link operation failed
-            throw new Error(`The GPU capabilities could not be determined accurately.
-                Impossible to link a shader with the Maximum texture units ${maxTexturesUnits}`);
+        // Try WebGPU path first (no WebGL context exposed)
+        const backend = renderer.backend;
+        if (backend?.isWebGPUBackend) {
+            const device = backend.device;
+            if (device) {
+                maxTexturesUnits = device.limits?.maxSampledTexturesPerShaderStage ?? 16;
+                maxTextureSize = device.limits?.maxTextureDimension2D ?? 8192;
+            }
+            // WebGPU always has better depth precision — treat log depth as supported
+            logDepthBufferSupported = renderer.capabilities?.logarithmicDepthBuffer ?? true;
+            return;
         }
 
-        gl.deleteProgram(program);
-        gl.deleteShader(glVertexShader);
-        gl.deleteShader(glFragmentShader);
-        logDepthBufferSupported = renderer.capabilities.logarithmicDepthBuffer;
+        // WebGL fallback path
+        const gl = renderer.getContext?.();
+        if (gl) {
+            maxTexturesUnits = gl.getParameter(gl.MAX_TEXTURE_IMAGE_UNITS);
+            maxTextureSize = gl.getParameter(gl.MAX_TEXTURE_SIZE);
+        }
+        logDepthBufferSupported = renderer.capabilities?.logarithmicDepthBuffer ?? false;
     },
 };

@@ -13,7 +13,6 @@ import {
     FXAAEffect,
     ToneMappingMode,
     EffectMaterial,
-    EffectComposer,
 } from 'postprocessing';
 import GlobeView from 'Core/Prefab/GlobeView';
 
@@ -23,7 +22,13 @@ class SkyManager {
     aerialPerspective: AerialPerspectiveEffect;
     effectPass: EffectPass;
     scene: THREE.Scene;
-    composer: EffectComposer;
+    composer: {
+        passes: unknown[];
+        addPass(pass: unknown): void;
+        render(): void;
+        setSize(w: number, h: number): void;
+        dispose(): void;
+    };
     fog: THREE.Fog;
     view: GlobeView;
 
