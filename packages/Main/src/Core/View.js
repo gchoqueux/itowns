@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import proj4 from 'proj4';
+import { SingularValueDecomposition, Matrix } from 'ml-matrix';
 import { CRS, Coordinates } from '@itowns/geographic';
 import Camera from 'Renderer/Camera';
 import MainLoop, { MAIN_LOOP_EVENTS, RENDERING_PAUSED } from 'Core/MainLoop';
@@ -11,6 +13,56 @@ import Scheduler from 'Core/Scheduler/Scheduler';
 import Picking from 'Core/Picking';
 import LabelLayer from 'Layer/LabelLayer';
 import ObjectRemovalHelper from 'Process/ObjectRemovalHelper';
+
+const a = 0.01;
+const wgs84 = [
+    new Coordinates('EPSG:4326', 0, 0),
+    new Coordinates('EPSG:4326', a, a),
+    new Coordinates('EPSG:4326', a, 0),
+    new Coordinates('EPSG:4326', 0, a),
+];
+
+proj4.defs(
+    'EPSG:2154', '+proj=lcc +lat_1=49 +lat_2=44 +lat_0=46.5 +lon_0=3 +x_0=700000 +y_0=6600000 +ellps=GRS80 +towgs84=0,0,0,0,0,0,0 +units=m +no_defs');
+
+const lambert93 = wgs84.map(w => w.as('EPSG:2154'));
+
+// Calcul de la matrice de transformation affine 2D WGS84 -> Lambert93 par moindres carrés (SVD)
+// Résout : dest = M * [lon, lat, 1]^T  avec M de taille 3x3 (homogène 2D)
+const n = wgs84.length;
+const srcMat = new Matrix(n, 3);
+const dstX = new Matrix(n, 1);
+const dstY = new Matrix(n, 1);
+
+for (let i = 0; i < n; i++) {
+    srcMat.set(i, 0, wgs84[i].x); // longitude
+    srcMat.set(i, 1, wgs84[i].y); // latitude
+    srcMat.set(i, 2, 1);          // terme homogène
+    dstX.set(i, 0, lambert93[i].x); // easting
+    dstY.set(i, 0, lambert93[i].y); // northing
+}
+
+const svd = new SingularValueDecomposition(srcMat);
+const rowX = svd.solve(dstX); // [a, b, tx]^T
+const rowY = svd.solve(dstY); // [c, d, ty]^T
+
+// THREE.Matrix3.set() prend les paramètres en row-major
+const wgs84ToLambert93 = new THREE.Matrix3().set(
+    rowX.get(0, 0), rowX.get(1, 0), rowX.get(2, 0),
+    rowY.get(0, 0), rowY.get(1, 0), rowY.get(2, 0),
+    0,              0,              1,
+);
+console.log('wgs84ToLambert93', wgs84ToLambert93);
+
+// Test : transformation de (lon=0.5, lat=0.5) via la matrice vs proj4
+const testWgs84 = new Coordinates('EPSG:4326', a / 2, a / 2);
+const testRef = testWgs84.as('EPSG:2154'); // référence via proj4
+
+const v = new THREE.Vector3(testWgs84.x, testWgs84.y, 1).applyMatrix3(wgs84ToLambert93);
+console.log('matrice    :', v.x, v.y);
+console.log('proj4 ref  :', testRef.x, testRef.y);
+console.log('erreur (m) :', Math.abs(v.x - testRef.x), Math.abs(v.y - testRef.y));
+
 
 export const VIEW_EVENTS = {
     /**
