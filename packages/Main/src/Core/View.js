@@ -230,7 +230,7 @@ class View extends THREE.EventDispatcher {
 
         // Track devicePixelRatio changes (browser zoom, window moved to
         // another screen), which do not always fire a resize event.
-        this._stopDprListening = onDprChange(() => this.resize());
+        this._stopDprListening = onDprChange(() => this.mainLoop.gfxEngine.onDevicePixelRatioChange());
 
         this._changeSources = new Set();
 
